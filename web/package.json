@@ -1,0 +1,11 @@
+{
+  "name": "@signet/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Static proof and operator pages, generated from the repository's own evidence.",
+  "scripts": {
+    "build": "node src/build.mjs",
+    "check": "node test/check.mjs"
+  }
+}

@@ -42,3 +42,6 @@ extension/bin/
 # Tooling noise
 .DS_Store
 *.log
+
+# Generated proof site. Rebuilt by `make web` from committed evidence.
+web/dist/

@@ -374,6 +374,25 @@
         "decisionContext is supplied by the receipt, so a receipt that lied about it would produce a self-consistent commitment. Binding it to the registry's on-chain record needs the registry deployed, which is phase 10.",
         "The evidence bundle is a directory of receipts rather than a signed, content-addressed archive."
       ]
+    },
+    {
+      "id": "claim-proof-surface",
+      "wording": "A static proof page and operator view are generated from the repository's own evidence, with no server to trust. Build-failing checks assert that every claim and every limitation in the ledger is rendered, that unverified claims appear as prominently as verified ones, and that a receipt which only proves a seam is visibly labelled as one. Accessibility is checked structurally and by computed colour contrast.",
+      "status": "verified",
+      "proofLevel": 1,
+      "network": [],
+      "evidence": [
+        "web/src/build.mjs",
+        "web/test/check.mjs",
+        "docs/evidence/phase-12.md"
+      ],
+      "verifiedAt": "2026-08-11T17:10:00Z",
+      "limitations": [
+        "Not deployed. Cloudflare Pages credentials are an external blocker, so nothing about deployment has been exercised.",
+        "The two-minute judge path was not timed by a third party.",
+        "No screen-reader testing, no human keyboard walkthrough and no browser matrix. The checks are static analysis of the emitted HTML.",
+        "design.md's Fog is 4.40:1 on Paper, below the 4.5 needed for normal text; the pages use Steel there instead."
+      ]
     }
   ]
 }

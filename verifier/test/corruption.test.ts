@@ -11,7 +11,14 @@
  * verifier that fails everything catches corruption for the wrong reason.
  */
 import { describe, expect, it } from "vitest";
+import { redemptionPaymentReference, toHex } from "@signet/reference";
 import { verifyReceipt, type ObligationSource, type Receipt, type XrplTransaction } from "../src/verify.ts";
+
+const REQUEST_ID = 0x2acd438n;
+
+// Derived, not copied. A hardcoded expected memo would pass even if the derivation were wrong in
+// both the verifier and the fixture, which is exactly the mistake shared fixtures exist to prevent.
+const MEMO = toHex(redemptionPaymentReference(REQUEST_ID)).replace(/^0x/, "").toUpperCase();
 
 const TX: XrplTransaction = {
   Account: "rPvarExLQuuqtkMBfDHp3pNnESZ5HByXta",
@@ -21,20 +28,18 @@ const TX: XrplTransaction = {
   Flags: 0,
   Sequence: 19822144,
   LastLedgerSequence: 19823429,
-  Memos: [{ Memo: { MemoData: "4642505266410002000000000000000000000000000000000000000002ACD438" } }],
+  Memos: [{ Memo: { MemoData: MEMO } }],
   validated: true,
   ledger_index: 19823392,
   meta: { TransactionResult: "tesSUCCESS" },
 };
-
-const REQUEST_ID = 0x2acd438n;
 
 const HONEST: Receipt = {
   seam: "composed-lifecycle",
   requestId: REQUEST_ID.toString(),
   agentVault: "0xd5defe2c62d48788bb3889534fbfe7aea0602d64",
   authorizationCommitment: "0xcommitment",
-  txHash: "E7C3BD2C784FD05CE5955C142F8F3804F71C8D0358654541E2E6A2C045698241",
+  txHash: "28B48DC36ACFDA1C22E97C033941355E4680B8F28964DB78F68AA44B41FBEFF4",
   validatedLedger: 19823392,
 };
 
@@ -92,7 +97,8 @@ describe("a corrupted bundle", () => {
   it("is caught when the memo is not the reference this request id derives", async () => {
     const result = await verify(HONEST, {
       ...TX,
-      Memos: [{ Memo: { MemoData: "4642505266410002000000000000000000000000000000000000000000000001" } }],
+      // The reference for a different request id: right shape, wrong obligation.
+      Memos: [{ Memo: { MemoData: toHex(redemptionPaymentReference(REQUEST_ID + 1n)).replace(/^0x/, "").toUpperCase() } }],
     });
     expect(result.verdict).toBe("FAIL");
   });

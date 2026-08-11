@@ -132,6 +132,12 @@ test-e2e: lifecycle
 # real XRPL Testnet payment and does call the FDC verifier, so it needs network and a funded
 # testnet source account.
 # Verifies one receipt against public sources, with no credentials.
+# Regenerates the static proof and operator pages, then checks them.
+.PHONY: web
+web:
+	node web/src/build.mjs
+	node web/test/check.mjs
+
 .PHONY: verify-receipt
 verify-receipt:
 	@node --experimental-strip-types verifier/src/cli.ts $(RECEIPT)
@@ -152,7 +158,7 @@ scan:
 # ---------------------------------------------------------------------------- gates
 
 .PHONY: verify
-verify: verify-bootstrap lint typecheck test-unit test-property test-contract test-race test-conformance test-verifier test-xrpl-reconcile scan
+verify: verify-bootstrap lint typecheck test-unit test-property test-contract test-race test-conformance test-verifier web test-xrpl-reconcile scan
 
 .PHONY: test-verifier
 test-verifier:
