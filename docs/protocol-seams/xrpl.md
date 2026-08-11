@@ -80,9 +80,12 @@ transaction that has not been validated by anything. The code records it as an *
 to `SUBMITTED_PROVISIONAL`, never to success.
 
 **Absent is not the same as unknown.** After the window closes, "not found" only means
-`EXPIRED_NOT_FOUND` when a server's `complete_ledgers` range actually spans the window. If no
-endpoint can see the whole window the answer is `UNKNOWN_LEDGER_GAP`, and no replacement may be
-built from that state.
+`EXPIRED_NOT_FOUND` when an endpoint that **was itself asked for the transaction** can prove its
+`complete_ledgers` range spans the **entire** window, from the ledger current at first submission
+through `LastLedgerSequence`. Otherwise the answer is `UNKNOWN_LEDGER_GAP`, and no replacement may
+be built from that state.
+
+Both halves of that sentence were bought with a bug. See below.
 
 ## Adversarial cases
 
@@ -105,7 +108,9 @@ The expiry case is a real one: a transaction was signed, submitted and allowed t
 `LastLedgerSequence`, and the reconciler then had to distinguish a genuine absence from an
 unobservable one.
 
-## A defect this phase found in itself
+## Two defects this phase found in itself
+
+### The one the tests found
 
 The first adversarial run failed partway through with `tx: HTTP 418`. The public testnet cluster
 rate-limits an aggressive reconciliation loop, and the client treated any failed lookup as an
@@ -117,6 +122,44 @@ Fixed by classifying transient failures separately from answers. 408, 418, 425, 
 retried with exponential backoff across every locked endpoint, and the reconciler records an outage
 and waits rather than advancing the state machine. A transient failure can no longer produce
 `EXPIRED_NOT_FOUND`.
+
+### The one the review found, which was worse
+
+An adversarial review reproduced a second instance of the same bug class, and this one the ten live
+cases could never have caught.
+
+`reconcile` asked endpoint A whether it had the transaction, got "not found", and then asked
+`ledgerCoverage` whether *any* endpoint could see the window. If endpoint B said yes, the module
+returned `EXPIRED_NOT_FOUND` — on the strength of a coverage claim from a server that had never
+been asked about the transaction at all. If A were lagging or resyncing while B held the validated
+transaction, a payment that had actually succeeded would be reported as definitively absent. That
+is the state a later phase consumes to authorize a replacement, so it could have produced a second
+validated payment for one obligation.
+
+A second, narrower defect came with it: coverage was tested at the single point
+`LastLedgerSequence` rather than across the window, and the submission-time ledger was never
+recorded, so a node whose retention boundary was transiting the window would report it fully
+covered while having pruned the head where the transaction could have validated.
+
+Both are fixed:
+
+- every endpoint is asked for the transaction, and only an endpoint that answered "not found" may
+  testify to absence;
+- that endpoint's own coverage must span `[submittedAtLedger, lastLedgerSequence]` entirely, with
+  one contiguous range;
+- `requestFrom` asks one endpoint with retry but **no rotation**, because rotation is right for
+  "what is the answer" and wrong for "what does this server know";
+- a single endpoint reporting a validated transaction settles it, because a validated ledger cannot
+  be invented, whereas absence needs both consensus and coverage.
+
+`scripts/xrpl/reconcile.test.mjs` pins all of it with a stubbed transport, which is the only way to
+make two endpoints disagree on demand. Two of its five cases return `EXPIRED_NOT_FOUND` under the
+old logic and `UNKNOWN_LEDGER_GAP` under the new.
+
+The lesson worth keeping: both defects were the same mistake, letting a source that cannot see the
+whole picture stand in for one that can. The live suite found the first because real infrastructure
+rate-limited it. Only an adversarial reader found the second, because real infrastructure never
+disagreed with itself during the run.
 
 ## Reproduce
 

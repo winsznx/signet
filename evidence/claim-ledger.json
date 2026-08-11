@@ -197,7 +197,7 @@
     },
     {
       "id": "claim-xrpl-reliable-submission",
-      "wording": "Signet persists a signed XRPL transaction before first submission, never treats a provisional response as final, and distinguishes a definitively absent transaction from one it cannot observe.",
+      "wording": "Signet persists a signed XRPL transaction before first submission, never treats a provisional response as final, and reports a transaction definitively absent only when an endpoint that was itself asked for the transaction can prove it sees the entire payment window.",
       "status": "verified",
       "proofLevel": 3,
       "network": [
@@ -206,13 +206,15 @@
       "evidence": [
         "evidence/receipts/xrpl-adversarial.json",
         "scripts/xrpl/submit.mjs",
+        "scripts/xrpl/reconcile.test.mjs",
         "docs/protocol-seams/xrpl.md",
         "docs/evidence/phase-04.md"
       ],
       "verifiedAt": "2026-08-11T15:50:00Z",
       "limitations": [
-        "Ten adversarial cases on XRPL Testnet, including a real expiry allowed to pass its LastLedgerSequence.",
-        "Ledger-gap handling is proven by a pruned-window probe rather than by an actual history gap on a live server, which cannot be induced on demand.",
+        "Ten adversarial cases on XRPL Testnet, including a real expiry allowed to pass its LastLedgerSequence, plus five stubbed-transport regression tests for cross-endpoint disagreement, which the live network cannot be made to produce on demand.",
+        "An adversarial review reproduced a path where absence was inferred from an endpoint that had never been asked for the transaction. That is fixed and regression-tested; the claim above is worded to the fixed behaviour.",
+        "Persistence uses writeFileSync without fsync or atomic rename, so durability under OS-level crash is not guaranteed. Recorded as a phase 08 hardening item.",
         "The reconciler is a script, not the durable coordinator; restart-safety under a real database is owned by phase 08.",
         "Both endpoints are public infrastructure rather than independently operated providers under Signet's control."
       ]

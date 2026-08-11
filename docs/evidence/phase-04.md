@@ -83,7 +83,7 @@ Ten, all against the live testnet, recorded in `evidence/receipts/xrpl-adversari
 The expiry case is genuine: a transaction was signed, submitted and allowed to die past its
 `LastLedgerSequence`.
 
-## 6. A defect this phase found in itself
+## 6. Two defects this phase found in itself
 
 The first adversarial run failed with `tx: HTTP 418`. The public testnet cluster rate-limits an
 aggressive reconciliation loop, and the client treated any failed lookup as an answer.
@@ -99,6 +99,36 @@ rather than advancing the state machine. A transient failure can no longer produ
 
 Worth stating plainly: this was found by running the adversarial cases against real infrastructure,
 not by reading the code. A mocked RPC would have returned a clean answer every time.
+
+### The second, found by adversarial review, and worse
+
+The security review reproduced a second instance of the same bug class with a stubbed transport.
+
+`reconcile` asked endpoint A whether it had the transaction, got "not found", then asked
+`ledgerCoverage` whether *any* configured endpoint could see the window. If endpoint B said yes,
+the module returned `EXPIRED_NOT_FOUND` on the strength of a coverage claim from a server that had
+never been asked about the transaction. With A lagging and B holding the validated transaction, a
+payment that actually succeeded would be reported as definitively absent, which is the state a
+later phase consumes to authorize a replacement.
+
+A narrower defect came with it: coverage was tested at the single point `LastLedgerSequence`, and
+the submission-time ledger was never recorded, so a node whose retention boundary was transiting
+the window would report it fully covered while having pruned the head.
+
+Both fixed. Every endpoint is now asked for the transaction; only an endpoint that answered "not
+found" may testify to absence; its own coverage must span `[submittedAtLedger, lastLedgerSequence]`
+in one contiguous range; `requestFrom` asks a single endpoint with retry but no rotation, because
+rotation is right for "what is the answer" and wrong for "what does this server know"; and a single
+validated sighting settles the transaction, because a validated ledger cannot be invented.
+
+`scripts/xrpl/reconcile.test.mjs` pins all of it with a stubbed transport, the only way to make two
+endpoints disagree on demand. Two of its five cases return `EXPIRED_NOT_FOUND` under the old logic
+and `UNKNOWN_LEDGER_GAP` under the new, so the tests discriminate rather than merely pass.
+
+The pattern is worth naming: both defects were the same mistake, letting a source that cannot see
+the whole picture stand in for one that can. The live suite caught the first because real
+infrastructure rate-limited it. Only an adversarial reader caught the second, because real
+infrastructure never disagreed with itself during the run. Neither would have been found by a mock.
 
 ## 7. Sandbox interaction with the Phase 00 secret control
 
@@ -128,6 +158,19 @@ arise.
   Phase 08.
 - Both endpoints are public infrastructure, not independently operated providers under Signet's
   control.
+
+## 8a. Security review
+
+**CONDITIONAL PASS**, all conditions closed. One CRITICAL (absence inferred from an endpoint never
+asked for the transaction), one MEDIUM (single-point rather than span coverage), one LOW (no fsync
+or atomic rename on persistence, recorded as a Phase 08 hardening item), and two wording findings.
+The claim `claim-xrpl-reliable-submission` has been narrowed to the fixed behaviour rather than left
+as written.
+
+The review separately confirmed clean: persist-before-submit cannot be bypassed, provisional never
+becomes final, resubmission is identical-blob only, the template cannot be mutated between `decide()`
+and signing, no script can print or write a seed, and the `rangeCovers` parser fails closed on every
+malformed input tried.
 
 ## 9. Completion gate
 

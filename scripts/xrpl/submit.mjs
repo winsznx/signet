@@ -17,7 +17,7 @@
 import { mkdirSync, writeFileSync, readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { REPO_ROOT } from "../lib/source-lock.mjs";
-import { XRPL_ENDPOINTS, XrplTransientError, lookupTransaction, validatedLedger, xrplRequest } from "./client.mjs";
+import { XRPL_ENDPOINTS, XrplTransientError, lookupTransaction, requestFrom, validatedLedger, xrplRequest } from "./client.mjs";
 
 export const SUBMISSION_STATES = [
   "BUILT",
@@ -79,6 +79,11 @@ export async function submitPersisted(hash, endpoint = XRPL_ENDPOINTS[0]) {
   const record = loadRecord(hash);
   if (record === null) throw new Error(`refusing to submit ${hash}: not persisted first`);
 
+  // The window a transaction could have validated in starts at the ledger current when it was
+  // first submitted. Without this lower bound, coverage can only be checked at a single point, and
+  // a node whose retention boundary is transiting the window would report it fully covered.
+  const beforeSubmit = record.submittedAtLedger ?? (await validatedLedger()).index;
+
   const result = await xrplRequest("submit", { tx_blob: record.txBlob }, endpoint);
   const provisional = {
     engineResult: result.engine_result,
@@ -87,7 +92,11 @@ export async function submitPersisted(hash, endpoint = XRPL_ENDPOINTS[0]) {
     at: new Date().toISOString(),
   };
   const attempts = [...(record.submissionAttempts ?? []), provisional];
-  updateRecord(hash, { state: "SUBMITTED_PROVISIONAL", submissionAttempts: attempts });
+  updateRecord(hash, {
+    state: "SUBMITTED_PROVISIONAL",
+    submissionAttempts: attempts,
+    submittedAtLedger: beforeSubmit,
+  });
   return provisional;
 }
 
@@ -103,19 +112,55 @@ export async function reconcile(hash, { pollMs = 4_000, timeoutMs = 180_000 } = 
   const record = loadRecord(hash);
   if (record === null) throw new Error(`no persisted record for ${hash}`);
   const lastLedgerSequence = record.lastLedgerSequence;
+  // Lower bound of the window. Falls back to the build ledger, and finally to the sequence itself,
+  // so a missing bound can only ever make the coverage requirement stricter.
+  const windowFrom = record.submittedAtLedger ?? record.builtAtLedger ?? lastLedgerSequence;
   const observations = [];
   const deadline = Date.now() + timeoutMs;
 
   while (Date.now() < deadline) {
-    let found;
-    let ledger;
+    // Ask every endpoint the same question. One endpoint's silence is not the ledger's answer, and
+    // a "not found" is only usable later if it came from a server that can see the whole window.
+    const answers = await Promise.all(
+      XRPL_ENDPOINTS.map(async (endpoint) => {
+        try {
+          return { endpoint, ...(await lookupTransaction(hash, endpoint)) };
+        } catch (error) {
+          return { endpoint, transient: error instanceof XrplTransientError, error: error.message };
+        }
+      }),
+    );
+
+    const usable = answers.filter((a) => a.error === undefined);
+    if (usable.length === 0) {
+      // Infrastructure said nothing at all. That is not evidence about the ledger.
+      observations.push({ at: new Date().toISOString(), outage: answers.map((a) => a.error) });
+      await new Promise((resolve) => setTimeout(resolve, pollMs * 2));
+      continue;
+    }
+
+    // A single endpoint reporting a validated transaction settles it. Absence needs consensus and
+    // coverage; presence does not, because a validated ledger cannot be invented.
+    const validatedHit = usable.find((a) => a.found && a.validated);
+    if (validatedHit) {
+      const success = validatedHit.engineResult === "tesSUCCESS";
+      return updateRecord(hash, {
+        state: success ? "VALIDATED_SUCCESS" : "VALIDATED_FAILURE",
+        validatedLedger: validatedHit.ledgerIndex,
+        engineResult: validatedHit.engineResult,
+        closeTime: validatedHit.closeTime,
+        settledBy: validatedHit.endpoint,
+        reconciliationLog: [...(record.reconciliationLog ?? []), ...observations],
+      });
+    }
+
+    let heights;
     try {
-      found = await lookupTransaction(hash);
-      ledger = await validatedLedger();
+      heights = await Promise.all(
+        usable.map(async (a) => ({ endpoint: a.endpoint, index: (await validatedLedger(a.endpoint)).index })),
+      );
     } catch (error) {
       if (error instanceof XrplTransientError) {
-        // Infrastructure said nothing. That is not evidence the transaction is absent, so the loop
-        // records the outage and waits rather than advancing the state machine.
         observations.push({ at: new Date().toISOString(), transientError: error.message });
         await new Promise((resolve) => setTimeout(resolve, pollMs * 2));
         continue;
@@ -125,32 +170,28 @@ export async function reconcile(hash, { pollMs = 4_000, timeoutMs = 180_000 } = 
 
     observations.push({
       at: new Date().toISOString(),
-      validatedLedger: ledger.index,
-      found: found.found,
-      validated: found.validated,
-      engineResult: found.engineResult ?? null,
+      answers: usable.map((a) => ({ endpoint: a.endpoint, found: a.found, validated: a.validated })),
+      heights,
     });
 
-    if (found.found && found.validated) {
-      const success = found.engineResult === "tesSUCCESS";
-      return updateRecord(hash, {
-        state: success ? "VALIDATED_SUCCESS" : "VALIDATED_FAILURE",
-        validatedLedger: found.ledgerIndex,
-        engineResult: found.engineResult,
-        closeTime: found.closeTime,
-        reconciliationLog: [...(record.reconciliationLog ?? []), ...observations],
-      });
-    }
+    const pastWindow = heights.filter((h) => h.index > lastLedgerSequence).map((h) => h.endpoint);
+    if (pastWindow.length > 0) {
+      // Only endpoints that were actually asked about this transaction, said they do not have it,
+      // and are themselves past the window may testify to its absence. Their own complete-ledger
+      // range must then span the entire window, not merely its last ledger.
+      const witnesses = usable
+        .filter((a) => !a.found && pastWindow.includes(a.endpoint))
+        .map((a) => a.endpoint);
 
-    if (ledger.index > lastLedgerSequence) {
-      // The window has closed. Whether "not found" means "definitely never happened" depends on
-      // whether we can actually see every ledger in the window.
-      const coverage = await ledgerCoverage(lastLedgerSequence);
+      const coverage = await ledgerCoverage(windowFrom, lastLedgerSequence, witnesses);
       const state = coverage.complete ? "EXPIRED_NOT_FOUND" : "UNKNOWN_LEDGER_GAP";
       return updateRecord(hash, {
         state,
         ledgerCoverage: coverage,
         reconciliationLog: [...(record.reconciliationLog ?? []), ...observations],
+        ...(state === "UNKNOWN_LEDGER_GAP"
+          ? { note: "no endpoint both reported the transaction absent and proved it can see the whole window" }
+          : {}),
       });
     }
 
@@ -168,18 +209,44 @@ export async function reconcile(hash, { pollMs = 4_000, timeoutMs = 180_000 } = 
  * Asks every endpoint whether its complete ledger history actually spans the payment window.
  * A server that has pruned the window cannot testify that a transaction is absent from it.
  */
-export async function ledgerCoverage(lastLedgerSequence) {
+export async function ledgerCoverage(fromLedger, toLedger, witnesses = XRPL_ENDPOINTS) {
   const ranges = [];
-  for (const endpoint of XRPL_ENDPOINTS) {
+  for (const endpoint of witnesses) {
     try {
-      const info = await xrplRequest("server_info", {}, endpoint);
+      // Asked of that endpoint specifically, with no rotation: the point is what THIS server can
+      // see, so a fallback answer from a different one would defeat the check.
+      const info = await requestFrom(endpoint, "server_info");
       const complete = info.info?.complete_ledgers ?? "";
-      ranges.push({ endpoint, completeLedgers: complete, covers: rangeCovers(complete, lastLedgerSequence) });
+      ranges.push({
+        endpoint,
+        completeLedgers: complete,
+        covers: rangeCoversSpan(complete, fromLedger, toLedger),
+      });
     } catch (error) {
       ranges.push({ endpoint, error: error.message, covers: false });
     }
   }
-  return { complete: ranges.some((r) => r.covers), ranges, requiredThrough: lastLedgerSequence };
+  return {
+    complete: ranges.some((r) => r.covers),
+    ranges,
+    windowFrom: fromLedger,
+    windowTo: toLedger,
+    witnesses,
+  };
+}
+
+/** True only when a single contiguous reported range contains the whole span. */
+export function rangeCoversSpan(completeLedgers, fromLedger, toLedger) {
+  if (typeof completeLedgers !== "string" || completeLedgers === "" || completeLedgers === "empty") return false;
+  const from = Math.min(fromLedger, toLedger);
+  const to = Math.max(fromLedger, toLedger);
+  for (const part of completeLedgers.split(",")) {
+    const bounds = part.split("-").map((n) => Number.parseInt(n.trim(), 10));
+    const lo = bounds[0];
+    const hi = bounds.length > 1 ? bounds[1] : bounds[0];
+    if (Number.isFinite(lo) && Number.isFinite(hi) && from >= lo && to <= hi) return true;
+  }
+  return false;
 }
 
 /** Parses rippled's "a-b,c-d" complete_ledgers string and asks whether `target` falls inside it. */

@@ -89,6 +89,10 @@ export COSTON2_RPC_URL
 test-contract:
 	@if [ -n "$$(find contracts/test -name '*.t.sol' 2>/dev/null)" ]; then forge test -vv; else echo "PENDING test-contract: owned by phase 02"; fi
 
+.PHONY: test-xrpl-reconcile
+test-xrpl-reconcile:
+	node scripts/xrpl/reconcile.test.mjs
+
 .PHONY: test-fork
 test-fork:
 	@test -n "$(COSTON2_RPC_URL)" || { echo "COSTON2_RPC_URL is required for fork tests"; exit 1; }
@@ -118,7 +122,7 @@ scan:
 # ---------------------------------------------------------------------------- gates
 
 .PHONY: verify
-verify: verify-bootstrap lint typecheck test-unit test-property test-contract test-race scan
+verify: verify-bootstrap lint typecheck test-unit test-property test-contract test-race test-xrpl-reconcile scan
 	@echo "verify OK"
 
 .PHONY: verify-phase

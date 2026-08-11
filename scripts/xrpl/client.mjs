@@ -92,6 +92,28 @@ export async function xrplRequest(method, params = {}, endpoint = null) {
   throw lastTransient ?? new XrplTransientError(`${method}: exhausted every endpoint`, null);
 }
 
+/**
+ * Asks exactly one endpoint, with retry but no rotation.
+ *
+ * Rotation is right for "what is the answer" and wrong for "what does THIS server know". A coverage
+ * or absence question is about a specific server, so silently failing over to another one would let
+ * one server's answer stand in for another's, which is precisely the confusion that turns "unknown"
+ * into "absent".
+ */
+export async function requestFrom(endpoint, method, params = {}) {
+  let lastTransient = null;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      return await requestOnce(method, params, endpoint);
+    } catch (error) {
+      if (!(error instanceof XrplTransientError)) throw error;
+      lastTransient = error;
+      await new Promise((resolve) => setTimeout(resolve, 1_000 * 2 ** attempt));
+    }
+  }
+  throw lastTransient;
+}
+
 /** Asks every locked endpoint the same question. Disagreement is the caller's to handle, not to hide. */
 export async function xrplRequestAll(method, params = {}) {
   const answers = [];
@@ -105,8 +127,8 @@ export async function xrplRequestAll(method, params = {}) {
   return answers;
 }
 
-export async function validatedLedger(endpoint = XRPL_ENDPOINTS[0]) {
-  const info = await xrplRequest("server_info", {}, endpoint);
+export async function validatedLedger(endpoint = null) {
+  const info = endpoint ? await requestFrom(endpoint, "server_info") : await xrplRequest("server_info");
   const ledger = info.info?.validated_ledger;
   if (!ledger) throw new XrplRpcError("server reports no validated ledger", info);
   return {
@@ -126,9 +148,11 @@ export async function accountInfo(account, endpoint = XRPL_ENDPOINTS[0]) {
  * Looks up a transaction and reports only what a validated ledger says.
  * A provisional server response is never a result (FR-042).
  */
-export async function lookupTransaction(hash, endpoint = XRPL_ENDPOINTS[0]) {
+export async function lookupTransaction(hash, endpoint = null) {
   try {
-    const result = await xrplRequest("tx", { transaction: hash, binary: false }, endpoint);
+    const result = endpoint
+      ? await requestFrom(endpoint, "tx", { transaction: hash, binary: false })
+      : await xrplRequest("tx", { transaction: hash, binary: false });
     return {
       found: true,
       validated: result.validated === true,

@@ -53,6 +53,17 @@ const PROTOCOL_CONSTANTS = new Map([
   ["360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc", "EIP-1967 implementation storage slot"],
 ]);
 
+/**
+ * Credential-shaped values that are published by their operator and carry no authority.
+ * Each entry needs a reason, because "it is fine" is how a real key eventually gets added.
+ */
+const PUBLISHED_CREDENTIALS = new Map([
+  [
+    "00000000-0000-0000-0000-000000000000",
+    "FDC testnet verifier API key, published verbatim in Flare's own FDC walkthrough. It grants read-only access to a public testnet verifier and is the same for every caller.",
+  ],
+]);
+
 const BINARY_EXTENSIONS = /\.(png|jpg|jpeg|gif|webp|avif|ico|pdf|woff2?|ttf|otf|zip|gz|tgz|wasm|so|dylib|node)$/i;
 const MAX_SCAN_BYTES = 8 * 1024 * 1024;
 
@@ -224,7 +235,7 @@ for (const relative of trackedPaths) {
     const lineNumber = index + 1;
 
     const keyword = KEYWORD_ASSIGNMENT.exec(line);
-    if (keyword && !PLACEHOLDER.test(keyword[2])) {
+    if (keyword && !PLACEHOLDER.test(keyword[2]) && !PUBLISHED_CREDENTIALS.has(keyword[2].replace(/["';,]/g, ""))) {
       record("keyword-assignment", relative, lineNumber, `${keyword[1]} assigned a concrete value`);
     }
 
