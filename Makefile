@@ -158,7 +158,19 @@ scan:
 # ---------------------------------------------------------------------------- gates
 
 .PHONY: verify
-verify: verify-bootstrap lint typecheck test-unit test-property test-contract test-race test-conformance test-verifier web test-xrpl-reconcile scan
+verify: verify-bootstrap lint typecheck test-unit test-property test-contract test-race test-conformance test-verifier test-observer test-incident web test-xrpl-reconcile scan
+
+# The XRPL observer, and the incident it exists because of. Both run offline against stubs.
+.PHONY: test-observer
+test-observer:
+	node scripts/xrpl/observe.test.mjs
+
+.PHONY: test-incident
+test-incident:
+	@if [ ! -x .runtime/lifecycle/signet-extension ]; then \
+		mkdir -p .runtime/lifecycle && cd extension && GOWORK=off go build -trimpath -o ../.runtime/lifecycle/signet-extension ./cmd/signet-extension; \
+	fi
+	node scripts/lifecycle/incident-44928272.test.mjs
 
 .PHONY: test-verifier
 test-verifier:

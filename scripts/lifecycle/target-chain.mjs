@@ -22,6 +22,7 @@ import { Wallet, decode as decodeXrpl } from "xrpl";
 import { REPO_ROOT, readSourceLock } from "../lib/source-lock.mjs";
 import { accountInfo, currentFeeDrops, validatedLedger, XRPL_NETWORK_ID } from "../xrpl/client.mjs";
 import { persistBeforeSubmit, reconcile, submitPersisted } from "../xrpl/submit.mjs";
+import { observeUnderlying } from "../xrpl/observe.mjs";
 import { proveOnChain } from "../fdc/prove.mjs";
 
 const FOUNDRY = `${process.env.HOME}/.foundry/bin`;
@@ -201,9 +202,31 @@ const [acct, ledger, fees] = await Promise.all([
 ]);
 const feeDrops = fees.openLedgerFeeDrops > fees.baseFeeDrops ? fees.openLedgerFeeDrops : fees.baseFeeDrops;
 
+// ---------------------------------------------------------------- observe the underlying chain
+
+/**
+ * The check incident 44928272 was missing, now where it belongs.
+ *
+ * The first version of this guard lived in this script and scanned the destination account itself.
+ * That was the right check in the wrong place: a decision that depends on an external observation
+ * has to bind that observation, or nobody can tell afterwards whether it was made. V2 moved the
+ * check into the decision and the observation into the commitment, and this script's job is now
+ * only to be the sensor.
+ */
+const observation = await observeUnderlying({
+  destination: red.paymentAddress,
+  reference: red.paymentReference,
+  currentValidatedLedger: ledger.index,
+});
+check(
+  "the underlying observation completed across independent endpoints",
+  observation.available && observation.agreed,
+  `${observation.sourceCount} sources at ledger ${observation.observedAtLedger}, ${observation.payments.length} matching payment(s)`,
+);
+
 const baseInput = {
   domain: {
-    schemaVersion: 1,
+    schemaVersion: 2,
     flareChainId: 114n,
     instructionSender: deployment.instructionSender,
     assetManager: ASSET_MANAGER,
@@ -259,8 +282,24 @@ const baseInput = {
     safetyMarginLedgers: 50,
     safetyMarginSeconds: 300n,
     ledgerCloseIntervalSeconds: 4n,
+    minimumUnderlyingSources: 2,
+    maxObservationAgeLedgers: 20,
   },
   prior: [],
+  underlying: {
+    available: observation.available,
+    agreed: observation.agreed,
+    sourceCount: observation.sourceCount,
+    observedAtLedger: observation.observedAtLedger,
+    observedAtTime: BigInt(observation.observedAtTime),
+    payments: observation.payments.map((p) => ({
+      transactionHash: p.transactionHash,
+      destinationAddress: p.destinationAddress,
+      amountDrops: BigInt(p.amountDrops),
+      paymentReference: p.paymentReference,
+      validated: p.validated,
+    })),
+  },
 };
 
 // Every obligation field must be the one FAssets emitted on the real chain.
@@ -299,70 +338,6 @@ check(
   `0x${payment.Memos[0].Memo.MemoData.toLowerCase()}` === red.paymentReference.toLowerCase(),
   payment.Memos[0].Memo.MemoData,
 );
-
-// ---------------------------------------------------------------- has someone already paid this?
-
-/**
- * Refuses to sign when a validated payment already carries this obligation's reference.
- *
- * This run learned the hard way that a FAssets status of ACTIVE does not mean "unpaid": it means
- * "not yet confirmed on Flare". The agent paid request 44928272 on XRPL 36 ledgers before Signet
- * did, and Coston2 still read ACTIVE the whole time, because confirmation is a separate transaction
- * the agent submits afterwards. Every existing guard watches the wrong chain for this. The registry
- * action state, the coordinator's unique indexes and the ledger's sequence consumption all stop
- * Signet paying twice; none of them can see a payment made by someone else.
- *
- * docs/adr/0003 proposes the durable fix, which is a new decision input and a protocol version bump.
- * This is the same check one layer out, and it would have prevented the incident.
- */
-async function alreadyPaidUnderlying(destinationAddress, paymentReferenceHex) {
-  const wanted = paymentReferenceHex.replace(/^0x/, "").toLowerCase();
-  for (const endpoint of lock.networks.xrplTestnet.rpc) {
-    try {
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          method: "account_tx",
-          params: [{ account: destinationAddress, ledger_index_min: -1, ledger_index_max: -1, limit: 100, binary: false }],
-        }),
-        signal: AbortSignal.timeout(30_000),
-      });
-      if (!response.ok) continue;
-      const body = await response.json();
-      // rippled and clio disagree about where the transaction body lives in an account_tx entry,
-      // so every shape is accepted rather than one being assumed. An entry we cannot read is
-      // skipped, not treated as absence: this function may only ever return a payment it saw.
-      for (const entry of body?.result?.transactions ?? []) {
-        const tx = entry.tx_json ?? entry.tx ?? entry.transaction ?? null;
-        if (!tx || tx.TransactionType !== "Payment") continue;
-        if (tx.Destination !== destinationAddress) continue;
-        if (entry.validated !== true) continue;
-        const memo = tx.Memos?.[0]?.Memo?.MemoData?.toLowerCase();
-        if (memo === wanted) {
-          return { txHash: entry.hash ?? tx.hash, source: tx.Account, ledger: entry.ledger_index ?? tx.ledger_index };
-        }
-      }
-      return null;
-    } catch {
-      // try the next endpoint
-    }
-  }
-  return null;
-}
-
-const priorPayment = await alreadyPaidUnderlying(red.paymentAddress, red.paymentReference);
-if (priorPayment && priorPayment.txHash !== state.payment?.txHash) {
-  check(
-    "no one else has already paid this obligation",
-    false,
-    `${priorPayment.source} paid it in ledger ${priorPayment.ledger} (${priorPayment.txHash})`,
-  );
-  console.log("\nrefusing to sign: the obligation already has a validated underlying payment.");
-  console.log("see docs/adr/0003-underlying-payment-precheck.md");
-  process.exit(1);
-}
-check("no one else has already paid this obligation", true, "checked against the destination account");
 
 // ---------------------------------------------------------------- sign, persist, pay
 
@@ -494,6 +469,7 @@ writeFileSync(
   `${JSON.stringify(
     {
       seam: "target-chain-lifecycle",
+      schemaVersion: 2,
       network: "xrpl-testnet",
       flareChain: "coston2",
       requestId: red.requestId,
@@ -538,6 +514,17 @@ writeFileSync(
         lastUnderlyingBlock: red.lastUnderlyingBlock,
         lastUnderlyingTimestamp: red.lastUnderlyingTimestamp,
         maxFeeDrops: "50000",
+        underlying: {
+          available: observation.available,
+          agreed: observation.agreed,
+          sourceCount: observation.sourceCount,
+          observedAtLedger: observation.observedAtLedger,
+          observedAtTime: String(observation.observedAtTime),
+          payments: observation.payments.map((p) => ({
+            transactionHash: p.transactionHash,
+            amountDrops: String(p.amountDrops),
+          })),
+        },
       },
       template: signedTemplate,
       signedBy: "regular-key",

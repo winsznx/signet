@@ -1,8 +1,29 @@
 import type { Hex } from "./bytes.ts";
 import type { ErrorClass, ReasonCode } from "./reason-codes.ts";
 
-/** Schema version of the reference input and of the canonical encoding. Bumping this is a fork. */
-export const SIGNET_SCHEMA_VERSION = 1;
+/**
+ * Schema version of the reference input. Bumping this is a fork, and this is the fork.
+ *
+ * V2 exists because V1 could not express what an obligation's FAssets status does not tell you:
+ * whether the underlying payment already exists. A V1 input is refused rather than interpreted,
+ * because the one thing a V1 input cannot carry is the observation that V2 requires, and accepting
+ * it would mean accepting exactly the blindness that caused incident 44928272.
+ */
+export const SIGNET_SCHEMA_VERSION = 2;
+
+/**
+ * The obligation preimage's own version byte, which is NOT the input schema version.
+ *
+ * The obligation encoding identifies which obligation a decision concerns, and it has not changed:
+ * the same six fields in the same widths. It is also computed by `SignetInstructionSender` on
+ * Coston2, whose deployed bytecode writes a literal 1. Bumping this byte would change every
+ * obligation hash and silently break agreement with a contract that cannot be changed, so it stays
+ * at 1 and the authorization encoding carries the version that actually moved.
+ */
+export const OBLIGATION_ENCODING_VERSION = 1;
+
+/** The authorization preimage's version byte. V2 binds the underlying observation. */
+export const AUTHORIZATION_ENCODING_VERSION = 2;
 
 export type Address = `0x${string}`;
 
@@ -113,6 +134,10 @@ export interface PolicySnapshot {
   readonly extensionCodeHash: Hex;
   readonly revokedCodeHashes: readonly Hex[];
   readonly paused: boolean;
+  /** Independently operated XRPL endpoints that must agree before an observation counts. */
+  readonly minimumUnderlyingSources: number;
+  /** How many ledgers old an observation may be before it must be taken again. */
+  readonly maxObservationAgeLedgers: number;
   /** Ledgers that must remain between LastLedgerSequence and the obligation's last block. */
   readonly safetyMarginLedgers: number;
   /** Seconds that must remain between the projected close time and lastUnderlyingTimestamp. */
@@ -153,6 +178,44 @@ export interface PriorGenerationSnapshot {
  *   boundary from independent XRPL endpoints, never accepted as a coordinator assertion, because
  *   an under-reported ledger height makes an expired obligation look open.
  */
+/**
+ * One payment seen on the XRP ledger that carries an obligation's payment reference.
+ *
+ * The signing boundary must have observed these itself. A coordinator-supplied list is worthless:
+ * an empty list is exactly what an attacker would send, and the whole point of the check is that
+ * the party who wants the signature is not the party who reports whether the money already moved.
+ */
+export interface ObservedUnderlyingPayment {
+  readonly transactionHash: Hex;
+  readonly destinationAddress: string;
+  readonly amountDrops: bigint;
+  readonly paymentReference: Hex;
+  /** Only a validated payment counts. A provisional one is not a result. */
+  readonly validated: boolean;
+}
+
+/**
+ * What the signing boundary saw on the XRP ledger, and how sure it is.
+ *
+ * `available` and `agreed` are separate because "I could not look" and "I looked and my sources
+ * contradicted each other" are different failures with different correct responses. Collapsing them
+ * would make one of the two responses wrong.
+ */
+export interface UnderlyingObservationSnapshot {
+  /** False when the observation could not be completed at all. */
+  readonly available: boolean;
+  /** False when independently operated endpoints returned contradictory answers. */
+  readonly agreed: boolean;
+  /** How many independently operated endpoints answered consistently. */
+  readonly sourceCount: number;
+  /** The validated ledger index the observation covers up to. */
+  readonly observedAtLedger: number;
+  /** Close time of that ledger, used for nothing but evidence legibility. */
+  readonly observedAtTime: bigint;
+  /** Every payment seen carrying this obligation's reference. Usually empty. */
+  readonly payments: readonly ObservedUnderlyingPayment[];
+}
+
 export interface ReferenceInput {
   readonly domain: SignetDomain;
   readonly binding: AgentBindingSnapshot | null;
@@ -160,6 +223,11 @@ export interface ReferenceInput {
   readonly xrpl: XrplAllocationSnapshot | null;
   readonly policy: PolicySnapshot;
   readonly prior: readonly PriorGenerationSnapshot[];
+  /**
+   * The XRP ledger observation. Null means the signing boundary did not look, which is refused:
+   * a decision that skipped the check must never be indistinguishable from one that passed it.
+   */
+  readonly underlying: UnderlyingObservationSnapshot | null;
 }
 
 /**

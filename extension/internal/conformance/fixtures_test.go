@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/signet/extension/internal/canonical"
 	"github.com/signet/extension/internal/policy"
 	"github.com/signet/extension/internal/wire"
 )
@@ -57,7 +58,7 @@ type expectedJSON struct {
 
 func loadFixtures(t *testing.T) fixtureFile {
 	t.Helper()
-	path := filepath.Join("..", "..", "..", "reference", "test-vectors", "decision-fixtures.json")
+	path := filepath.Join("..", "..", "..", "reference", "test-vectors", "decision-fixtures-v2.json")
 	raw, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatalf("read fixtures: %v", err)
@@ -156,7 +157,11 @@ func normalise(v any) string {
 
 func TestEncodingConstantsMatchTheFixtureFile(t *testing.T) {
 	file := loadFixtures(t)
-	if file.ObligationPreimageLength != 141 || file.AuthorizationPreimageLength != 431 {
+	// The obligation preimage is unchanged at 141: the same six fields at the same widths, matching
+	// what SignetInstructionSender computes on Coston2. The authorization preimage grew to 468 in V2
+	// by the 37 bytes that bind the underlying observation.
+	if file.ObligationPreimageLength != canonical.ObligationPreimageLength ||
+		file.AuthorizationPreimageLength != canonical.AuthorizationPreimageLength {
 		t.Fatalf("preimage lengths drifted: obligation=%d authorization=%d",
 			file.ObligationPreimageLength, file.AuthorizationPreimageLength)
 	}

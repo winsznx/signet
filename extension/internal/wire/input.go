@@ -84,6 +84,8 @@ type inputJSON struct {
 		ExtensionCodeHash          string   `json:"extensionCodeHash"`
 		RevokedCodeHashes          []string `json:"revokedCodeHashes"`
 		Paused                     bool     `json:"paused"`
+		MinimumUnderlyingSources   int      `json:"minimumUnderlyingSources"`
+		MaxObservationAgeLedgers   int      `json:"maxObservationAgeLedgers"`
 		SafetyMarginLedgers        int      `json:"safetyMarginLedgers"`
 		SafetyMarginSeconds        string   `json:"safetyMarginSeconds"`
 		LedgerCloseIntervalSeconds string   `json:"ledgerCloseIntervalSeconds"`
@@ -94,6 +96,20 @@ type inputJSON struct {
 		SequenceOrTicket  int    `json:"sequenceOrTicket"`
 		Outcome           string `json:"outcome"`
 	} `json:"prior"`
+	Underlying *struct {
+		Available        bool   `json:"available"`
+		Agreed           bool   `json:"agreed"`
+		SourceCount      int    `json:"sourceCount"`
+		ObservedAtLedger int    `json:"observedAtLedger"`
+		ObservedAtTime   string `json:"observedAtTime"`
+		Payments         []struct {
+			TransactionHash    string `json:"transactionHash"`
+			DestinationAddress string `json:"destinationAddress"`
+			AmountDrops        string `json:"amountDrops"`
+			PaymentReference   string `json:"paymentReference"`
+			Validated          bool   `json:"validated"`
+		} `json:"payments"`
+	} `json:"underlying"`
 }
 
 func Decode(raw []byte) (policy.Input, error) {
@@ -121,6 +137,8 @@ func Decode(raw []byte) (policy.Input, error) {
 			SafetyMarginLedgers:        j.Policy.SafetyMarginLedgers,
 			SafetyMarginSeconds:        bigOf(j.Policy.SafetyMarginSeconds),
 			LedgerCloseIntervalSeconds: bigOf(j.Policy.LedgerCloseIntervalSeconds),
+			MinimumUnderlyingSources:   j.Policy.MinimumUnderlyingSources,
+			MaxObservationAgeLedgers:   j.Policy.MaxObservationAgeLedgers,
 		},
 	}
 	if j.Binding != nil {
@@ -177,6 +195,25 @@ func Decode(raw []byte) (policy.Input, error) {
 			SequenceOrTicket:  p.SequenceOrTicket,
 			Outcome:           p.Outcome,
 		})
+	}
+	if j.Underlying != nil {
+		observation := &policy.UnderlyingObservation{
+			Available:        j.Underlying.Available,
+			Agreed:           j.Underlying.Agreed,
+			SourceCount:      j.Underlying.SourceCount,
+			ObservedAtLedger: j.Underlying.ObservedAtLedger,
+			ObservedAtTime:   bigOf(j.Underlying.ObservedAtTime),
+		}
+		for _, p := range j.Underlying.Payments {
+			observation.Payments = append(observation.Payments, policy.ObservedUnderlyingPayment{
+				TransactionHash:    p.TransactionHash,
+				DestinationAddress: p.DestinationAddress,
+				AmountDrops:        bigOf(p.AmountDrops),
+				PaymentReference:   p.PaymentReference,
+				Validated:          p.Validated,
+			})
+		}
+		in.Underlying = observation
 	}
 	return in, nil
 }

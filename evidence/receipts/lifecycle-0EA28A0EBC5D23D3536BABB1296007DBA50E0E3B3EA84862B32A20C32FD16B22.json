@@ -1,0 +1,59 @@
+{
+  "seam": "composed-lifecycle",
+  "network": "xrpl-testnet",
+  "flareChain": "coston2-fork@33934268",
+  "requestId": "44932582",
+  "agentVault": "0x165c62b4531d28e34c68a8b2acbf4d0421e4e028",
+  "authorizationCommitment": "0xb665d3380428663fbedd1dd95bbaf4d3fb0a27d57ecac28fb57fe59503d3c054",
+  "obligationHash": "0x24bab7d15ddd15434eee34ef80945486391f7abe9ed1269da62192fd6151ad02",
+  "obligationHashOnChain": "0x24bab7d15ddd15434eee34ef80945486391f7abe9ed1269da62192fd6151ad02",
+  "extensionCodeHash": "0x29fdd664772fc0e1b413bc6a570cfeb3fd0006cde755b943ebda7a3629367347",
+  "txHash": "0EA28A0EBC5D23D3536BABB1296007DBA50E0E3B3EA84862B32A20C32FD16B22",
+  "validatedLedger": 19827362,
+  "engineResult": "tesSUCCESS",
+  "replayEngineResult": "tefPAST_SEQ",
+  "fdcStatus": "VALID",
+  "decisionContext": {
+    "flareChainId": "114",
+    "assetManager": "0xc1Ca88b937d0b528842F95d5731ffB586f4fbDFA",
+    "instructionSender": "0x42d3570A90b9439F94eE552B46b93854a747b64F",
+    "agentVault": "0x165c62b4531d28e34c68a8b2acbf4d0421e4e028",
+    "requestGeneration": 0,
+    "xrplNetworkId": 1,
+    "policyVersion": 1,
+    "extensionId": "1",
+    "extensionCodeHash": "0x29fdd664772fc0e1b413bc6a570cfeb3fd0006cde755b943ebda7a3629367347",
+    "firstUnderlyingBlock": "19827226",
+    "lastUnderlyingBlock": "19827854",
+    "lastUnderlyingTimestamp": "1786475990",
+    "maxFeeDrops": "50000",
+    "underlying": {
+      "available": true,
+      "agreed": true,
+      "sourceCount": 2,
+      "observedAtLedger": 19827358,
+      "observedAtTime": "1786475239",
+      "payments": []
+    }
+  },
+  "template": {
+    "TransactionType": "Payment",
+    "Account": "rPvarExLQuuqtkMBfDHp3pNnESZ5HByXta",
+    "Destination": "rpa8bBa8GS1Zit6y9PcpQbahkqFahpWMyb",
+    "Amount": "9950000",
+    "Fee": "10",
+    "Flags": 0,
+    "LastLedgerSequence": 19827398,
+    "Memos": [
+      {
+        "Memo": {
+          "MemoData": "4642505266410002000000000000000000000000000000000000000002AD9DE6"
+        }
+      }
+    ],
+    "Sequence": 19822150
+  },
+  "signedBy": "regular-key",
+  "checksPassed": "72/72",
+  "explorer": "https://testnet.xrpl.org/transactions/0EA28A0EBC5D23D3536BABB1296007DBA50E0E3B3EA84862B32A20C32FD16B22"
+}

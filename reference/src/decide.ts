@@ -15,7 +15,7 @@
  */
 import { obligationAmountDrops } from "./amount.ts";
 import { toHex } from "./bytes.ts";
-import { authorizationCommitment, keccakOfUtf8, obligationHash } from "./encoding.ts";
+import { authorizationCommitment, keccakOfUtf8, obligationHash, observationRoot } from "./encoding.ts";
 import { hexToBytes } from "./bytes.ts";
 import { isValidRedemptionReference, redemptionPaymentReference } from "./payment-reference.ts";
 import { errorClassOf, type ReasonCode } from "./reason-codes.ts";
@@ -28,6 +28,7 @@ import {
 } from "./types.ts";
 
 const UINT32_MAX = 0xffff_ffff;
+const UINT8_MAX = 0xff;
 
 /**
  * XRPL requires the NetworkID field only on networks whose id is 1025 or greater; including it on
@@ -52,7 +53,6 @@ function sameAddress(a: string | undefined, b: string | undefined): boolean {
 function refusalObligationHash(input: ReferenceInput): `0x${string}` {
   try {
     return obligationHash({
-      schemaVersion: input.domain.schemaVersion,
       flareChainId: input.domain.flareChainId,
       assetManager: input.domain.assetManager,
       agentVault: input.redemption?.agentVault ?? "0x0000000000000000000000000000000000000000",
@@ -86,7 +86,7 @@ function evaluate(input: ReferenceInput): ReferenceDecision {
     errorClass: errorClassOf(reason),
   });
 
-  const { domain, binding, redemption, xrpl, policy, prior } = input;
+  const { domain, binding, redemption, xrpl, policy, prior, underlying } = input;
 
   // 1. Schema. An unsupported version fails closed rather than being interpreted (I-020).
   if (domain.schemaVersion !== SIGNET_SCHEMA_VERSION) return refuse("S001_UNKNOWN_SCHEMA");
@@ -209,7 +209,64 @@ function evaluate(input: ReferenceInput): ReferenceDecision {
   const amount = obligationAmountDrops(redemption.valueUBA, redemption.feeUBA, redemption.assetMintingDecimals);
   if (!amount.ok) return refuse("S010_AMOUNT_INVALID");
 
-  // 18. Fee ceiling and signing-mode floor (FR-034, I-007). A multi-signed XRPL transaction costs
+  // 18. The obligation must not already have been paid on the underlying chain.
+  //
+  //     This is the check incident 44928272 was missing, and the reason the schema moved to V2.
+  //     FAssets reporting ACTIVE means the payment has not been *confirmed on Flare*, which is not
+  //     the same as unpaid: confirmation is a separate transaction the agent submits after its
+  //     payment validates and after it obtains an FDC proof. In that window FAssets says the
+  //     obligation is open while the money has already moved. Every other duplicate-payment guard
+  //     in this system watches Flare or Signet's own state, and none of them can see a payment
+  //     made by somebody else.
+  //
+  //     Every branch below fails closed. The decision must never be able to reach an authorization
+  //     by failing to look, by looking badly, or by looking a long time ago.
+  if (underlying === null) return refuse("S022_UNDERLYING_STATE_UNAVAILABLE");
+  if (!underlying.available) return refuse("S022_UNDERLYING_STATE_UNAVAILABLE");
+
+  //     Contradictory sources are not retried automatically. See reason-codes.ts: a loop that
+  //     retries until the endpoints agree is a loop that keeps asking until it gets the answer that
+  //     lets it pay.
+  if (!underlying.agreed) return refuse("S023_UNDERLYING_STATE_DISAGREEMENT");
+
+  if (!Number.isInteger(policy.minimumUnderlyingSources) || policy.minimumUnderlyingSources < 1) {
+    return refuse("S020_INTERNAL_FAIL_CLOSED");
+  }
+  if (!Number.isInteger(underlying.sourceCount) || underlying.sourceCount < policy.minimumUnderlyingSources) {
+    return refuse("S022_UNDERLYING_STATE_UNAVAILABLE");
+  }
+  if (underlying.sourceCount > UINT8_MAX) return refuse("S020_INTERNAL_FAIL_CLOSED");
+
+  //     Staleness, both directions. An observation older than the policy allows is refused because
+  //     the ledger has moved on; an observation from a ledger the caller has not yet seen validated
+  //     is refused because it is incoherent, and an incoherent observation is a fabricated one.
+  if (!Number.isInteger(policy.maxObservationAgeLedgers) || policy.maxObservationAgeLedgers < 0) {
+    return refuse("S020_INTERNAL_FAIL_CLOSED");
+  }
+  if (!Number.isInteger(underlying.observedAtLedger) || underlying.observedAtLedger <= 0) {
+    return refuse("S024_UNDERLYING_OBSERVATION_STALE");
+  }
+  if (underlying.observedAtLedger > xrpl.currentValidatedLedger) {
+    return refuse("S024_UNDERLYING_OBSERVATION_STALE");
+  }
+  if (xrpl.currentValidatedLedger - underlying.observedAtLedger > policy.maxObservationAgeLedgers) {
+    return refuse("S024_UNDERLYING_OBSERVATION_STALE");
+  }
+
+  //     The match predicate is deliberately broader than the one FAssets applies on confirmation.
+  //     FAssets requires the destination, the reference and an amount at least equal to what is
+  //     owed. Signet refuses on destination and reference alone, ignoring the amount, because a
+  //     payment carrying this obligation's reference to this destination for the wrong amount is a
+  //     state a human needs to look at, not a state to pay over the top of.
+  const alreadyObserved = underlying.payments.some(
+    (payment) =>
+      payment.validated &&
+      payment.destinationAddress === redemption.paymentAddress &&
+      payment.paymentReference.toLowerCase() === redemption.paymentReference.toLowerCase(),
+  );
+  if (alreadyObserved) return refuse("S021_PAYMENT_ALREADY_OBSERVED");
+
+  // 19. Fee ceiling and signing-mode floor (FR-034, I-007). A multi-signed XRPL transaction costs
   //     the base fee times one plus the number of signatures, so a fee that is lawful for a single
   //     RegularKey signature is not necessarily lawful for a signer list. Underpaying is not a
   //     safety failure but it guarantees the payment never validates, which near a deadline is
@@ -224,13 +281,13 @@ function evaluate(input: ReferenceInput): ReferenceDecision {
   const feeMultiplier = binding.signingMode === "SIGNER_LIST" ? 1n + BigInt(binding.signerCount) : 1n;
   if (xrpl.feeDrops < xrpl.baseFeeDrops * feeMultiplier) return refuse("S013_FEE_CAP_EXCEEDED");
 
-  // 19. The obligation must still be payable. FAssets defaults only once BOTH the last underlying
+  // 20. The obligation must still be payable. FAssets defaults only once BOTH the last underlying
   //     block and the last underlying timestamp have passed, so both must still be open.
   const ledgerPassed = BigInt(xrpl.currentValidatedLedger) > redemption.lastUnderlyingBlock;
   const timePassed = xrpl.currentLedgerCloseTime > redemption.lastUnderlyingTimestamp;
   if (ledgerPassed && timePassed) return refuse("S007_EXPIRED_WINDOW");
 
-  // 20. Safety margin (I-008, FR-034). Signet is deliberately stricter than the protocol minimum:
+  // 21. Safety margin (I-008, FR-034). Signet is deliberately stricter than the protocol minimum:
   //     it requires the transaction to expire before BOTH limits, not just one, so a payment can
   //     never land in the window where FAssets' acceptance depends on which limit passed first.
   if (!Number.isInteger(xrpl.lastLedgerSequence) || xrpl.lastLedgerSequence <= xrpl.currentValidatedLedger) {
@@ -249,7 +306,7 @@ function evaluate(input: ReferenceInput): ReferenceDecision {
     return refuse("S008_INSUFFICIENT_SAFETY_MARGIN");
   }
 
-  // 21. The source must be the bound account (FR-036). A malformed bound account is a
+  // 22. The source must be the bound account (FR-036). A malformed bound account is a
   //     configuration failure, not a property of this obligation, so it fails closed internally.
   if (!isCanonicalClassicAddress(binding.xrplSourceAddress)) return refuse("S020_INTERNAL_FAIL_CLOSED");
   const sourceAccountId = decodeClassicAddress(binding.xrplSourceAddress);
@@ -258,7 +315,19 @@ function evaluate(input: ReferenceInput): ReferenceDecision {
   const destinationTagMode = redemption.requiresDestinationTag ? 1 : 0;
 
   const commitment = authorizationCommitment({
-    schemaVersion: domain.schemaVersion,
+    observedAtLedger: underlying.observedAtLedger,
+    observedSourceCount: underlying.sourceCount,
+    observationRoot: observationRoot({
+      available: underlying.available,
+      agreed: underlying.agreed,
+      observedAtLedger: underlying.observedAtLedger,
+      observedAtTime: underlying.observedAtTime,
+      sourceCount: underlying.sourceCount,
+      payments: underlying.payments.map((p) => ({
+        transactionHash: p.transactionHash,
+        amountDrops: p.amountDrops,
+      })),
+    }),
     flareChainId: domain.flareChainId,
     instructionSender: domain.instructionSender,
     assetManager: domain.assetManager,
@@ -312,7 +381,6 @@ function evaluate(input: ReferenceInput): ReferenceDecision {
   return {
     kind: "authorize",
     obligationHash: obligationHash({
-      schemaVersion: domain.schemaVersion,
       flareChainId: domain.flareChainId,
       assetManager: domain.assetManager,
       agentVault: binding.agentVault,

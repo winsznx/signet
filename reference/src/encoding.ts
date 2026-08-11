@@ -14,6 +14,7 @@
 import { keccak_256 } from "@noble/hashes/sha3";
 import { addressBytes, bytes32, concat, hexToBytes, toHex, uintBE } from "./bytes.ts";
 import type { Hex } from "./bytes.ts";
+import { AUTHORIZATION_ENCODING_VERSION, OBLIGATION_ENCODING_VERSION } from "./types.ts";
 
 export const OBLIGATION_DOMAIN_STRING = "SIGNET_FASSETS_OBLIGATION_V1";
 export const AUTHORIZATION_DOMAIN_STRING = "SIGNET_FASSETS_REDEMPTION_V1";
@@ -21,12 +22,73 @@ export const AUTHORIZATION_DOMAIN_STRING = "SIGNET_FASSETS_REDEMPTION_V1";
 export const OBLIGATION_DOMAIN = keccak_256(new TextEncoder().encode(OBLIGATION_DOMAIN_STRING));
 export const AUTHORIZATION_DOMAIN = keccak_256(new TextEncoder().encode(AUTHORIZATION_DOMAIN_STRING));
 
-/** Exact byte length of the authorization preimage. Asserted by the encoder and by tests. */
-export const AUTHORIZATION_PREIMAGE_LENGTH = 431;
+/**
+ * Exact byte lengths, asserted by the encoder and by tests.
+ *
+ * The authorization preimage grew by 37 bytes in V2: a 4-byte observed ledger, a 1-byte source
+ * count, and a 32-byte root over the payments that observation found. Binding them is what makes
+ * the check auditable rather than merely performed: the commitment now states which ledger the
+ * decision saw, how many independent sources agreed on it, and what they found.
+ */
+export const AUTHORIZATION_PREIMAGE_LENGTH = 468;
 export const OBLIGATION_PREIMAGE_LENGTH = 141;
 
+export const OBSERVATION_DOMAIN_STRING = "SIGNET_UNDERLYING_OBSERVATION_V1";
+export const OBSERVATION_DOMAIN = keccak_256(new TextEncoder().encode(OBSERVATION_DOMAIN_STRING));
+
+export interface ObservedPaymentForRoot {
+  readonly transactionHash: string;
+  readonly amountDrops: bigint;
+}
+
+/**
+ * Root over what the observation found.
+ *
+ * The match list is the only variable-length part of the whole scheme, so it is hashed to a fixed
+ * 32 bytes rather than inlined; everything else stays fixed-width with no length prefixes. Matches
+ * are sorted by transaction hash so that two observers who saw the same payments in a different
+ * order produce the same root, and the count is bound explicitly so a truncated list cannot pass as
+ * a shorter one.
+ *
+ * `available` and `agreed` are inside the root because a decision that was allowed to proceed on an
+ * unavailable or contradictory observation would otherwise be indistinguishable, after the fact,
+ * from one that had a clean look at the ledger.
+ */
+export function observationRoot(fields: {
+  available: boolean;
+  agreed: boolean;
+  observedAtLedger: number;
+  observedAtTime: bigint;
+  sourceCount: number;
+  payments: readonly ObservedPaymentForRoot[];
+}): Uint8Array {
+  const sorted = [...fields.payments].sort((a, b) =>
+    a.transactionHash.toLowerCase() < b.transactionHash.toLowerCase() ? -1 : 1,
+  );
+  return keccak_256(
+    concat(
+      OBSERVATION_DOMAIN,
+      uintBE(fields.available ? 1n : 0n, 1),
+      uintBE(fields.agreed ? 1n : 0n, 1),
+      uintBE(BigInt(fields.observedAtLedger), 4),
+      uintBE(fields.observedAtTime, 8),
+      uintBE(BigInt(fields.sourceCount), 1),
+      uintBE(BigInt(sorted.length), 4),
+      ...sorted.flatMap((p) => [bytes32(p.transactionHash), uintBE(p.amountDrops, 8)]),
+    ),
+  );
+}
+
+/**
+ * Note the absence of a `schemaVersion` field.
+ *
+ * Both version bytes are constants of the encoding rather than inputs: the obligation preimage is
+ * frozen at 1 to stay equal to what the deployed contract computes, and the authorization preimage
+ * is 2. A caller-supplied version would be a field that looks like it changes the commitment and
+ * does not, which is worse than no field at all. The input schema version gates acceptance in
+ * `decide`; it is not part of either preimage.
+ */
 export interface ObligationCommitmentFields {
-  readonly schemaVersion: number;
   readonly flareChainId: bigint;
   readonly assetManager: string;
   readonly agentVault: string;
@@ -58,6 +120,12 @@ export interface AuthorizationCommitmentFields extends ObligationCommitmentField
   readonly policyVersion: number;
   readonly extensionId: bigint;
   readonly extensionCodeHash: Uint8Array;
+  /** The validated ledger the underlying observation covers up to. */
+  readonly observedAtLedger: number;
+  /** How many independently operated endpoints agreed on that observation. */
+  readonly observedSourceCount: number;
+  /** Root over the payments the observation found. */
+  readonly observationRoot: Uint8Array;
 }
 
 function requireLength(bytes: Uint8Array, length: number, label: string): Uint8Array {
@@ -65,10 +133,20 @@ function requireLength(bytes: Uint8Array, length: number, label: string): Uint8A
   return bytes;
 }
 
+/**
+ * The obligation preimage.
+ *
+ * Its version byte is a constant 1 rather than the input's schema version, and that is deliberate.
+ * The obligation encoding identifies which obligation a decision concerns and has not changed
+ * across V2: the same six fields at the same widths. It is also what `SignetInstructionSender`
+ * computes on Coston2, and that deployed bytecode writes a literal 1. Writing the input's version
+ * here would change every obligation hash and silently break agreement with a contract nobody can
+ * redeploy under the same address.
+ */
 export function encodeObligation(fields: ObligationCommitmentFields): Uint8Array {
   const encoded = concat(
     OBLIGATION_DOMAIN,
-    uintBE(BigInt(fields.schemaVersion), 1),
+    uintBE(BigInt(OBLIGATION_ENCODING_VERSION), 1),
     uintBE(fields.flareChainId, 32),
     addressBytes(fields.assetManager),
     addressBytes(fields.agentVault),
@@ -91,7 +169,7 @@ export function encodeAuthorization(fields: AuthorizationCommitmentFields): Uint
 
   const encoded = concat(
     AUTHORIZATION_DOMAIN,
-    uintBE(BigInt(fields.schemaVersion), 1),
+    uintBE(BigInt(AUTHORIZATION_ENCODING_VERSION), 1),
     uintBE(fields.flareChainId, 32),
     addressBytes(fields.instructionSender),
     addressBytes(fields.assetManager),
@@ -118,6 +196,9 @@ export function encodeAuthorization(fields: AuthorizationCommitmentFields): Uint
     uintBE(BigInt(fields.policyVersion), 4),
     uintBE(fields.extensionId, 32),
     requireLength(fields.extensionCodeHash, 32, "extensionCodeHash"),
+    uintBE(BigInt(fields.observedAtLedger), 4),
+    uintBE(BigInt(fields.observedSourceCount), 1),
+    requireLength(fields.observationRoot, 32, "observationRoot"),
   );
   return requireLength(encoded, AUTHORIZATION_PREIMAGE_LENGTH, "authorization preimage");
 }

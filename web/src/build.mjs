@@ -208,13 +208,51 @@ const proofBody = `
   <div class="grid">${ledger.claims.map(claimCard).join("")}</div>
 </section>
 
+<section aria-labelledby="guarantee-h">
+  <h2 id="guarantee-h">What this does and does not guarantee</h2>
+  <p class="section-note">Stated narrowly because the previous framing was wide enough to be false.
+  Signet paid a live Coston2 redemption twice, and the correction is a schema change rather than a
+  note in a limitations list.</p>
+  <div class="grid">
+    <article class="card">
+      <h3>Enforced</h3>
+      <p class="wording">For an obligation whose only legitimate payment authority is Signet, at most
+      one payment per request generation. No authorization at all unless Signet has itself observed
+      the XRP ledger, across independently operated endpoints that agreed, recently, and seen no
+      validated payment already carrying that obligation's reference.</p>
+      <p class="limits-title">Fails closed on</p>
+      <ul class="limits">
+        <li>a matching payment already observed (<code>S021</code>)</li>
+        <li>no observation, or too few agreeing sources (<code>S022</code>)</li>
+        <li>endpoints contradicting each other (<code>S023</code>), never auto-retried</li>
+        <li>an observation that is stale, or from a ledger nobody validated (<code>S024</code>)</li>
+      </ul>
+    </article>
+    <article class="card">
+      <h3>Not enforced</h3>
+      <p class="wording">Exactly-once payment against an independent actor able to pay the same
+      obligation. A competing payment that validates after Signet's observation and before Signet's
+      own payment validates is not detectable, and no arrangement of observations closes that
+      window.</p>
+      <p class="limits-title">What exists instead</p>
+      <ul class="limits">
+        <li>the window is bounded: 4 to 12 ledgers in this build</li>
+        <li>the observed ledger is bound into the authorization commitment, so the width of the
+        window for any payment Signet ever made is public arithmetic</li>
+        <li>in the intended deployment Signet holds the agent's only XRPL signing authority, so no
+        independent legitimate payer exists. That is a design claim, not demonstrated here.</li>
+      </ul>
+    </article>
+  </div>
+</section>
+
 <section aria-labelledby="tx-h">
   <h2 id="tx-h">Transactions</h2>
   <p class="section-note">Every payment this system has made, on a public ledger anyone can read.</p>
   <div class="card scroll">
     <table>
       <caption class="section-note" style="text-align:left;margin:0 0 12px">XRPL Testnet payments recorded in <code>evidence/receipts/</code></caption>
-      <thead><tr><th scope="col">Transaction</th><th scope="col">Request</th><th scope="col">Ledger</th><th scope="col">Result</th><th scope="col">Settles</th></tr></thead>
+      <thead><tr><th scope="col">Transaction</th><th scope="col">Request</th><th scope="col">Ledger</th><th scope="col">Result</th><th scope="col">Schema</th><th scope="col">Settles</th></tr></thead>
       <tbody>
         ${settlementReceipts
           .map(
@@ -223,6 +261,7 @@ const proofBody = `
           <td class="mono">${escape(r.body.requestId ?? "—")}</td>
           <td class="mono">${escape(r.body.validatedLedger ?? "—")}</td>
           <td class="mono">${escape(r.body.engineResult ?? "—")}</td>
+          <td class="mono">${escape(r.body.schemaVersion ?? 1)}</td>
           <td>${
             r.body.settles === false
               ? '<span class="status unverifiable"><span class="dot"></span>seam proof only</span>'

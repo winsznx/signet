@@ -28,6 +28,7 @@ import * as chain from "./chain.mjs";
 import { Wallet, decode as decodeXrpl } from "xrpl";
 import { accountInfo, currentFeeDrops, validatedLedger, XRPL_NETWORK_ID } from "../xrpl/client.mjs";
 import { persistBeforeSubmit, reconcile, submitPersisted } from "../xrpl/submit.mjs";
+import { observeUnderlying } from "../xrpl/observe.mjs";
 import { preparePaymentAttestation } from "../fdc/verifier.mjs";
 
 const PORT = Number(process.env.SIGNET_FORK_PORT ?? 8546);
@@ -229,13 +230,31 @@ const sequence = info.account_data.Sequence;
 const feeDrops = fees.openLedgerFeeDrops > fees.baseFeeDrops ? fees.openLedgerFeeDrops : fees.baseFeeDrops;
 const lastLedgerSequence = ledger.index + 40;
 
+/**
+ * The underlying observation, taken before the decision and bound into it by V2.
+ *
+ * Each run mints a fresh obligation, so this normally finds nothing. That is the point: the check
+ * has to run on the happy path too, or the only evidence that it works comes from the cases where
+ * it fires.
+ */
+const observation = await observeUnderlying({
+  destination: obligation.paymentAddress,
+  reference: obligation.paymentReference,
+  currentValidatedLedger: ledger.index,
+});
+check(
+  "the underlying observation completed across independent endpoints",
+  observation.available && observation.agreed,
+  `${observation.sourceCount} sources at ledger ${observation.observedAtLedger}, ${observation.payments.length} matching payment(s)`,
+);
+
 // The underlying window comes from FAssets and is used verbatim. An earlier version of this file
 // substituted `ledger.index ± n` here, which silently turned the deadline and safety-margin checks
 // into checks against a window this harness invented. Nothing may be substituted: if the window
 // FAssets issued does not work, that is a finding, not something to adjust around.
 const baseInput = {
   domain: {
-    schemaVersion: 1,
+    schemaVersion: 2,
     flareChainId: chain.COSTON2_CHAIN_ID,
     instructionSender: deployment.sender,
     assetManager: chain.ASSET_MANAGER,
@@ -291,8 +310,24 @@ const baseInput = {
     safetyMarginLedgers: 50,
     safetyMarginSeconds: 300n,
     ledgerCloseIntervalSeconds: 4n,
+    minimumUnderlyingSources: 2,
+    maxObservationAgeLedgers: 20,
   },
   prior: [],
+  underlying: {
+    available: observation.available,
+    agreed: observation.agreed,
+    sourceCount: observation.sourceCount,
+    observedAtLedger: observation.observedAtLedger,
+    observedAtTime: BigInt(observation.observedAtTime),
+    payments: observation.payments.map((p) => ({
+      transactionHash: p.transactionHash,
+      destinationAddress: p.destinationAddress,
+      amountDrops: BigInt(p.amountDrops),
+      paymentReference: p.paymentReference,
+      validated: p.validated,
+    })),
+  },
 };
 
 // ---------------------------------------------------------------- the valid lifecycle
@@ -418,6 +453,33 @@ attack("paused system", { policy: { paused: true } }, "S016_PAUSED");
 // codes rather than one. A retired binding is a governance decision, a mismatched vault is a lie
 // about whose obligation this is, and a missing binding means the extension could not read its own
 // state. Only the last is safe to retry, so collapsing them would make retry behaviour wrong.
+// V2: the observation checks, exercised against a live obligation rather than a fixture.
+const withObservation = (patch) => ({ ...baseInput, underlying: { ...baseInput.underlying, ...patch } });
+for (const [label, patch, expected] of [
+  ["an already observed payment", {
+    payments: [{
+      transactionHash: `0x${"cd".repeat(32)}`,
+      destinationAddress: obligation.paymentAddress,
+      amountDrops: obligation.valueUBA - obligation.feeUBA,
+      paymentReference: obligation.paymentReference,
+      validated: true,
+    }],
+  }, "S021_PAYMENT_ALREADY_OBSERVED"],
+  ["an unavailable observation", { available: false }, "S022_UNDERLYING_STATE_UNAVAILABLE"],
+  ["disagreeing endpoints", { agreed: false }, "S023_UNDERLYING_STATE_DISAGREEMENT"],
+  ["too few sources", { sourceCount: 1 }, "S022_UNDERLYING_STATE_UNAVAILABLE"],
+  ["a stale observation", { observedAtLedger: ledger.index - 100 }, "S024_UNDERLYING_OBSERVATION_STALE"],
+]) {
+  const d = decideBoth(`attack ${label}`, withObservation(patch));
+  check(`attack ${label} is refused with ${expected}`, d.kind === "refuse" && d.reason === expected, d.reason ?? d.kind);
+}
+const missingObservation = decideBoth("attack no observation at all", { ...baseInput, underlying: null });
+check(
+  "a decision that did not look is refused",
+  missingObservation.kind === "refuse" && missingObservation.reason === "S022_UNDERLYING_STATE_UNAVAILABLE",
+  missingObservation.reason ?? "",
+);
+
 attack("retired binding", { binding: { status: "RETIRED" } }, "S003_UNBOUND_AGENT");
 attack(
   "binding covers a different vault",
@@ -635,6 +697,7 @@ writeFileSync(
   `${JSON.stringify(
     {
       seam: "composed-lifecycle",
+      schemaVersion: 2,
       network: "xrpl-testnet",
       flareChain: `coston2-fork@${FORK_BLOCK}`,
       requestId: obligation.requestId.toString(),
@@ -665,6 +728,17 @@ writeFileSync(
         lastUnderlyingBlock: obligation.lastUnderlyingBlock.toString(),
         lastUnderlyingTimestamp: obligation.lastUnderlyingTimestamp.toString(),
         maxFeeDrops: baseInput.xrpl.maxFeeDrops.toString(),
+        underlying: {
+          available: observation.available,
+          agreed: observation.agreed,
+          sourceCount: observation.sourceCount,
+          observedAtLedger: observation.observedAtLedger,
+          observedAtTime: String(observation.observedAtTime),
+          payments: observation.payments.map((p) => ({
+            transactionHash: p.transactionHash,
+            amountDrops: String(p.amountDrops),
+          })),
+        },
       },
       template: tx,
       signedBy: "regular-key",

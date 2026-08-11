@@ -2,27 +2,27 @@
   "fork": {
     "rpc": "http://127.0.0.1:8546",
     "chainId": 114,
-    "forkBlock": 33928981,
+    "forkBlock": 33934268,
     "assetManager": "0xc1Ca88b937d0b528842F95d5731ffB586f4fbDFA"
   },
   "extension": {
-    "codeHash": "0xbf72a89dd099181f651046dfe10e770b90bb5f250f4187b277371b1960ad1996",
+    "codeHash": "0x29fdd664772fc0e1b413bc6a570cfeb3fd0006cde755b943ebda7a3629367347",
     "extensionId": "1",
     "policyVersion": 1
   },
   "obligation": {
-    "requestId": "44892968",
-    "agentVault": "0xd5defe2c62d48788bb3889534fbfe7aea0602d64",
+    "requestId": "44932582",
+    "agentVault": "0x165c62b4531d28e34c68a8b2acbf4d0421e4e028",
     "paymentAddress": "rpa8bBa8GS1Zit6y9PcpQbahkqFahpWMyb",
-    "paymentReference": "0x4642505266410002000000000000000000000000000000000000000002ad0328",
+    "paymentReference": "0x4642505266410002000000000000000000000000000000000000000002ad9de6",
     "valueUBA": "10000000",
     "feeUBA": "50000",
-    "obligationHashOnChain": "0x2471ac8799e2efa0f23a700b8884b41d05b4bf08c2fff5150b8a5e2b073d66a7"
+    "obligationHashOnChain": "0x24bab7d15ddd15434eee34ef80945486391f7abe9ed1269da62192fd6151ad02"
   },
   "decision": {
     "kind": "authorize",
-    "obligationHash": "0x2471ac8799e2efa0f23a700b8884b41d05b4bf08c2fff5150b8a5e2b073d66a7",
-    "authorizationCommitment": "0xa85cfa60ee41a21706e2940d6a1b5e012d4f83fc2075a15f0cb57153d112d9b2",
+    "obligationHash": "0x24bab7d15ddd15434eee34ef80945486391f7abe9ed1269da62192fd6151ad02",
+    "authorizationCommitment": "0xb665d3380428663fbedd1dd95bbaf4d3fb0a27d57ecac28fb57fe59503d3c054",
     "payment": {
       "TransactionType": "Payment",
       "Account": "rPvarExLQuuqtkMBfDHp3pNnESZ5HByXta",
@@ -30,24 +30,24 @@
       "Amount": "9950000",
       "Fee": "10",
       "Flags": 0,
-      "LastLedgerSequence": 19823804,
+      "LastLedgerSequence": 19827398,
       "Memos": [
         {
           "Memo": {
-            "MemoData": "4642505266410002000000000000000000000000000000000000000002AD0328"
+            "MemoData": "4642505266410002000000000000000000000000000000000000000002AD9DE6"
           }
         }
       ],
-      "Sequence": 19822147
+      "Sequence": 19822150
     }
   },
-  "bindingId": "0x59f73fa9b88026833021241eee4104809b99928b3b6773dc9fd185847e55761f",
+  "bindingId": "0x515074b603f51eff149637214bab52fe41a53eb025cd5e32ac5741b83a875f82",
   "xrpl": {
     "network": "xrpl-testnet",
     "source": "rPvarExLQuuqtkMBfDHp3pNnESZ5HByXta",
-    "txHash": "28B48DC36ACFDA1C22E97C033941355E4680B8F28964DB78F68AA44B41FBEFF4",
+    "txHash": "0EA28A0EBC5D23D3536BABB1296007DBA50E0E3B3EA84862B32A20C32FD16B22",
     "finalState": "VALIDATED_SUCCESS",
-    "validatedLedger": 19823767,
+    "validatedLedger": 19827362,
     "replayEngineResult": "tefPAST_SEQ"
   },
   "fdc": {
@@ -57,42 +57,47 @@
     {
       "name": "fork started",
       "ok": true,
-      "note": "coston2 @ 33928981"
+      "note": "coston2 @ 33934268"
     },
     {
       "name": "extension built and measured",
       "ok": true,
-      "note": "0xbf72a89dd099181f… over 3889698 bytes"
+      "note": "0x29fdd664772fc0e1… over 3942034 bytes"
     },
     {
       "name": "signet deployed on the fork",
       "ok": true,
-      "note": "registry 0xc54dD0Ce0Ae243Ace013172fEedbf8B0DfBaa35d"
+      "note": "registry 0xAB46585f82eFF31F9b9C290b3464A43a626f5EE6"
     },
     {
       "name": "fassets produced an obligation for our destination",
       "ok": true,
-      "note": "request 44892968, agent 0xd5defe2c62d48788bb3889534fbfe7aea0602d64"
+      "note": "request 44932582, agent 0x165c62b4531d28e34c68a8b2acbf4d0421e4e028"
     },
     {
       "name": "action opened by the pinned instruction sender",
       "ok": true,
-      "note": "0x2471ac8799e2efa0f23a700b8884b41d05b4bf08c2fff5150b8a5e2b073d66a7"
+      "note": "0x24bab7d15ddd15434eee34ef80945486391f7abe9ed1269da62192fd6151ad02"
+    },
+    {
+      "name": "the underlying observation completed across independent endpoints",
+      "ok": true,
+      "note": "2 sources at ledger 19827358, 0 matching payment(s)"
     },
     {
       "name": "obligation field firstUnderlyingBlock is the one fassets emitted",
       "ok": true,
-      "note": "19823217"
+      "note": "19827226"
     },
     {
       "name": "obligation field lastUnderlyingBlock is the one fassets emitted",
       "ok": true,
-      "note": "19824527"
+      "note": "19827854"
     },
     {
       "name": "obligation field lastUnderlyingTimestamp is the one fassets emitted",
       "ok": true,
-      "note": "1786464776"
+      "note": "1786475990"
     },
     {
       "name": "obligation field valueUBA is the one fassets emitted",
@@ -107,7 +112,7 @@
     {
       "name": "obligation field paymentReference is the one fassets emitted",
       "ok": true,
-      "note": "0x4642505266410002000000000000000000000000000000000000000002ad0328"
+      "note": "0x4642505266410002000000000000000000000000000000000000000002ad9de6"
     },
     {
       "name": "obligation field paymentAddress is the one fassets emitted",
@@ -127,7 +132,7 @@
     {
       "name": "obligation hash agrees across solidity, go and typescript",
       "ok": true,
-      "note": "0x2471ac8799e2efa0f23a700b8884b41d05b4bf08c2fff5150b8a5e2b073d66a7"
+      "note": "0x24bab7d15ddd15434eee34ef80945486391f7abe9ed1269da62192fd6151ad02"
     },
     {
       "name": "destination came from fassets",
@@ -142,7 +147,7 @@
     {
       "name": "memo carries the fassets payment reference",
       "ok": true,
-      "note": "4642505266410002000000000000000000000000000000000000000002ad0328"
+      "note": "4642505266410002000000000000000000000000000000000000000002ad9de6"
     },
     {
       "name": "source is the bound account",
@@ -162,12 +167,12 @@
     {
       "name": "moving the destination does not change the obligation identity",
       "ok": true,
-      "note": "0x2471ac8799e2efa0f23a700b8884b41d05b4bf08c2fff5150b8a5e2b073d66a7"
+      "note": "0x24bab7d15ddd15434eee34ef80945486391f7abe9ed1269da62192fd6151ad02"
     },
     {
       "name": "moving the destination breaks the authorization commitment",
       "ok": true,
-      "note": "0xa85cfa60ee41a217… → 0xb3ac8a7cd8823958…"
+      "note": "0xb665d3380428663f… → 0x611363dcb44dba9b…"
     },
     {
       "name": "attack amount raised: go and reference agree",
@@ -228,6 +233,66 @@
       "name": "attack paused system is refused with S016_PAUSED",
       "ok": true,
       "note": "S016_PAUSED"
+    },
+    {
+      "name": "attack an already observed payment: go and reference agree",
+      "ok": true,
+      "note": "refuse S021_PAYMENT_ALREADY_OBSERVED"
+    },
+    {
+      "name": "attack an already observed payment is refused with S021_PAYMENT_ALREADY_OBSERVED",
+      "ok": true,
+      "note": "S021_PAYMENT_ALREADY_OBSERVED"
+    },
+    {
+      "name": "attack an unavailable observation: go and reference agree",
+      "ok": true,
+      "note": "refuse S022_UNDERLYING_STATE_UNAVAILABLE"
+    },
+    {
+      "name": "attack an unavailable observation is refused with S022_UNDERLYING_STATE_UNAVAILABLE",
+      "ok": true,
+      "note": "S022_UNDERLYING_STATE_UNAVAILABLE"
+    },
+    {
+      "name": "attack disagreeing endpoints: go and reference agree",
+      "ok": true,
+      "note": "refuse S023_UNDERLYING_STATE_DISAGREEMENT"
+    },
+    {
+      "name": "attack disagreeing endpoints is refused with S023_UNDERLYING_STATE_DISAGREEMENT",
+      "ok": true,
+      "note": "S023_UNDERLYING_STATE_DISAGREEMENT"
+    },
+    {
+      "name": "attack too few sources: go and reference agree",
+      "ok": true,
+      "note": "refuse S022_UNDERLYING_STATE_UNAVAILABLE"
+    },
+    {
+      "name": "attack too few sources is refused with S022_UNDERLYING_STATE_UNAVAILABLE",
+      "ok": true,
+      "note": "S022_UNDERLYING_STATE_UNAVAILABLE"
+    },
+    {
+      "name": "attack a stale observation: go and reference agree",
+      "ok": true,
+      "note": "refuse S024_UNDERLYING_OBSERVATION_STALE"
+    },
+    {
+      "name": "attack a stale observation is refused with S024_UNDERLYING_OBSERVATION_STALE",
+      "ok": true,
+      "note": "S024_UNDERLYING_OBSERVATION_STALE"
+    },
+    {
+      "name": "attack no observation at all: go and reference agree",
+      "ok": true,
+      "note": "refuse S022_UNDERLYING_STATE_UNAVAILABLE"
+    },
+    {
+      "name": "a decision that did not look is refused",
+      "ok": true,
+      "note": "S022_UNDERLYING_STATE_UNAVAILABLE"
     },
     {
       "name": "attack retired binding: go and reference agree",
@@ -307,7 +372,7 @@
     {
       "name": "the signed blob decodes to exactly the authorized payment",
       "ok": true,
-      "note": "28B48DC36ACFDA1C22E97C033941355E4680B8F28964DB78F68AA44B41FBEFF4"
+      "note": "0EA28A0EBC5D23D3536BABB1296007DBA50E0E3B3EA84862B32A20C32FD16B22"
     },
     {
       "name": "the signed blob carries the fassets reference unchanged",
@@ -327,7 +392,7 @@
     {
       "name": "signed transaction persisted before first submission",
       "ok": true,
-      "note": "./.runtime/xrpl/submissions/28B48DC36ACFDA1C22E97C033941355E4680B8F28964DB78F68AA44B41FBEFF4.json"
+      "note": "./.runtime/xrpl/submissions/0EA28A0EBC5D23D3536BABB1296007DBA50E0E3B3EA84862B32A20C32FD16B22.json"
     },
     {
       "name": "provisional response received",
@@ -337,7 +402,7 @@
     {
       "name": "payment reached validated success on xrpl testnet",
       "ok": true,
-      "note": "VALIDATED_SUCCESS at ledger 19823767"
+      "note": "VALIDATED_SUCCESS at ledger 19827362"
     },
     {
       "name": "resubmitting the identical blob cannot pay twice",

@@ -13,7 +13,7 @@ import type { Hex } from "./bytes.ts";
 import { redemptionPaymentReference } from "./payment-reference.ts";
 import { toHex } from "./bytes.ts";
 import { encodeClassicAddress } from "./xrpl-address.ts";
-import type { PriorGenerationSnapshot, ReferenceInput } from "./types.ts";
+import { SIGNET_SCHEMA_VERSION, type PriorGenerationSnapshot, type ReferenceInput } from "./types.ts";
 
 const accountId = (fill: number): Uint8Array => new Uint8Array(20).fill(fill);
 
@@ -39,7 +39,7 @@ const REQUEST_ID = 4242n;
 export function baseInput(): ReferenceInput {
   return {
     domain: {
-      schemaVersion: 1,
+      schemaVersion: SIGNET_SCHEMA_VERSION,
       flareChainId: 114n,
       instructionSender: INSTRUCTION_SENDER,
       assetManager: ASSET_MANAGER,
@@ -95,10 +95,40 @@ export function baseInput(): ReferenceInput {
       safetyMarginLedgers: 50,
       safetyMarginSeconds: 300n,
       ledgerCloseIntervalSeconds: 4n,
+      minimumUnderlyingSources: 2,
+      maxObservationAgeLedgers: 10,
     },
     prior: [],
+    underlying: {
+      available: true,
+      agreed: true,
+      sourceCount: 2,
+      observedAtLedger: 19_800_010,
+      observedAtTime: 1_800_000_020n,
+      payments: [],
+    },
   };
 }
+
+const withUnderlying = (patch: Partial<NonNullable<ReferenceInput["underlying"]>>): Mutator => (input) => ({
+  ...input,
+  underlying: input.underlying === null ? null : { ...input.underlying, ...patch },
+});
+
+/**
+ * The payment the agent made in incident 44928272, in the shape the observer would report it.
+ *
+ * Recorded as a scenario rather than as prose so that the case that caused a real duplicate payment
+ * on Coston2 can never be quietly regressed. The hash, destination, amount and reference are the
+ * ones the XRP ledger actually holds; only the obligation identity is the fixture's own, because
+ * the fixture set must stay network-free.
+ */
+const INCIDENT_44928272_AGENT_PAYMENT = {
+  transactionHash: "0x8f304fb4f20d22d6e5b987d36a989a05e03c4900923b1d0fa01244cdd49e85e6" as Hex,
+  destinationAddress: DESTINATION_ADDRESS,
+  amountDrops: 9_950_000n,
+  validated: true,
+};
 
 type Mutator = (input: ReferenceInput) => ReferenceInput;
 
@@ -116,6 +146,26 @@ const withXrpl = (patch: Partial<NonNullable<ReferenceInput["xrpl"]>>): Mutator 
   ...input,
   xrpl: input.xrpl === null ? null : { ...input.xrpl, ...patch },
 });
+
+/**
+ * Moves the validated ledger and keeps the observation alongside it.
+ *
+ * A scenario that advances the ledger without advancing the observation is testing staleness, not
+ * whatever it meant to test. Every case that moves time forward for some other reason uses this, so
+ * the staleness check stays the concern of the cases that are actually about staleness.
+ */
+const withXrplAndObservation = (patch: Partial<NonNullable<ReferenceInput["xrpl"]>>): Mutator => (input) => {
+  const moved = withXrpl(patch)(input);
+  if (moved.xrpl === null || moved.underlying === null) return moved;
+  return {
+    ...moved,
+    underlying: {
+      ...moved.underlying,
+      observedAtLedger: moved.xrpl.currentValidatedLedger,
+      observedAtTime: moved.xrpl.currentLedgerCloseTime,
+    },
+  };
+};
 
 const withPolicy = (patch: Partial<ReferenceInput["policy"]>): Mutator => (input) => ({
   ...input,
@@ -186,7 +236,7 @@ export const SCENARIOS: readonly Scenario[] = [
     intent: "An unsupported schema version fails closed rather than being interpreted.",
     expect: "refuse",
     reason: "S001_UNKNOWN_SCHEMA",
-    mutate: withDomain({ schemaVersion: 2 }),
+    mutate: withDomain({ schemaVersion: 99 }),
   },
   {
     id: "refuse-wrong-asset-manager",
@@ -239,7 +289,7 @@ export const SCENARIOS: readonly Scenario[] = [
     intent: "Both the block and the time limit have passed, so the obligation can no longer be paid.",
     expect: "refuse",
     reason: "S007_EXPIRED_WINDOW",
-    mutate: withXrpl({ currentValidatedLedger: 19_800_600, currentLedgerCloseTime: 1_800_001_000n }),
+    mutate: withXrplAndObservation({ currentValidatedLedger: 19_800_600, currentLedgerCloseTime: 1_800_001_000n }),
   },
   {
     id: "refuse-margin-ledgers",
@@ -505,7 +555,7 @@ export const SCENARIOS: readonly Scenario[] = [
     expect: "refuse",
     reason: "S018_REPLACEMENT_NOT_AUTHORIZED",
     mutate: (input) =>
-      withXrpl({ currentValidatedLedger: 19_800_600, currentLedgerCloseTime: 1_800_001_000n })(
+      withXrplAndObservation({ currentValidatedLedger: 19_800_600, currentLedgerCloseTime: 1_800_001_000n })(
         withPrior([
           { requestGeneration: 0, sequenceMode: "SEQUENCE", sequenceOrTicket: 90, outcome: "UNRESOLVED" },
         ])(withRedemption({ requestGeneration: 1 })(input)),
@@ -555,7 +605,7 @@ export const SCENARIOS: readonly Scenario[] = [
     reason: "S008_INSUFFICIENT_SAFETY_MARGIN",
     mutate: (input) =>
       withPolicy({ safetyMarginLedgers: 0, safetyMarginSeconds: 0n })(
-        withXrpl({ currentValidatedLedger: 19_800_500, lastLedgerSequence: 19_800_501 })(input),
+        withXrplAndObservation({ currentValidatedLedger: 19_800_500, lastLedgerSequence: 19_800_501 })(input),
       ),
   },
   {
@@ -563,7 +613,7 @@ export const SCENARIOS: readonly Scenario[] = [
     intent: "One past both limits is genuinely expired, and the reason changes to the expiry one.",
     expect: "refuse",
     reason: "S007_EXPIRED_WINDOW",
-    mutate: withXrpl({ currentValidatedLedger: 19_800_501, currentLedgerCloseTime: 1_800_000_901n }),
+    mutate: withXrplAndObservation({ currentValidatedLedger: 19_800_501, currentLedgerCloseTime: 1_800_000_901n }),
   },
   {
     id: "boundary-max-request-id",
@@ -625,6 +675,124 @@ export const SCENARIOS: readonly Scenario[] = [
     expect: "refuse",
     reason: "S018_REPLACEMENT_NOT_AUTHORIZED",
     mutate: withRedemption({ requestGeneration: -1 }),
+  },
+  // ---------------------------------------------------------------- V2 underlying observation
+  //
+  // Every one of these was unreachable in V1, because V1 had no way to say what the XRP ledger
+  // already held. The first is the incident.
+  {
+    id: "refuse-payment-already-observed-incident-44928272",
+    intent:
+      "the agent had already paid this obligation and the observation saw it, which is the case that produced a real duplicate payment on Coston2 before V2 existed",
+    expect: "refuse",
+    reason: "S021_PAYMENT_ALREADY_OBSERVED",
+    mutate: (input) =>
+      withUnderlying({
+        payments: [
+          {
+            ...INCIDENT_44928272_AGENT_PAYMENT,
+            paymentReference: input.redemption!.paymentReference,
+          },
+        ],
+      })(input),
+  },
+  {
+    id: "refuse-payment-already-observed-wrong-amount",
+    intent:
+      "a payment carrying this obligation's reference for the wrong amount still refuses; a near miss is a state for a human, not a state to pay over the top of",
+    expect: "refuse",
+    reason: "S021_PAYMENT_ALREADY_OBSERVED",
+    mutate: (input) =>
+      withUnderlying({
+        payments: [
+          {
+            ...INCIDENT_44928272_AGENT_PAYMENT,
+            amountDrops: 1n,
+            paymentReference: input.redemption!.paymentReference,
+          },
+        ],
+      })(input),
+  },
+  {
+    id: "authorize-unrelated-payment-to-same-destination",
+    intent:
+      "a payment to the same destination carrying a different obligation's reference is not this obligation and must not block it",
+    expect: "authorize",
+    mutate: (input) =>
+      withUnderlying({
+        payments: [
+          {
+            ...INCIDENT_44928272_AGENT_PAYMENT,
+            paymentReference: ("0x" + "11".repeat(32)) as Hex,
+          },
+        ],
+      })(input),
+  },
+  {
+    id: "authorize-matching-payment-not-validated",
+    intent:
+      "a provisional payment is not a result, so it does not count as already paid; only a validated one does",
+    expect: "authorize",
+    mutate: (input) =>
+      withUnderlying({
+        payments: [
+          {
+            ...INCIDENT_44928272_AGENT_PAYMENT,
+            validated: false,
+            paymentReference: input.redemption!.paymentReference,
+          },
+        ],
+      })(input),
+  },
+  {
+    id: "refuse-underlying-observation-missing",
+    intent: "a decision that did not look at the ledger must not be indistinguishable from one that looked and saw nothing",
+    expect: "refuse",
+    reason: "S022_UNDERLYING_STATE_UNAVAILABLE",
+    mutate: (input) => ({ ...input, underlying: null }),
+  },
+  {
+    id: "refuse-underlying-observation-unavailable",
+    intent: "the observation could not be completed, which is transient and must never authorize",
+    expect: "refuse",
+    reason: "S022_UNDERLYING_STATE_UNAVAILABLE",
+    mutate: withUnderlying({ available: false }),
+  },
+  {
+    id: "refuse-underlying-sources-disagree",
+    intent: "independently operated endpoints contradicted each other about whether this obligation is already paid",
+    expect: "refuse",
+    reason: "S023_UNDERLYING_STATE_DISAGREEMENT",
+    mutate: withUnderlying({ agreed: false }),
+  },
+  {
+    id: "refuse-underlying-too-few-sources",
+    intent: "one endpoint is one party; the policy requires independent agreement before an observation counts",
+    expect: "refuse",
+    reason: "S022_UNDERLYING_STATE_UNAVAILABLE",
+    mutate: withUnderlying({ sourceCount: 1 }),
+  },
+  {
+    id: "refuse-underlying-observation-stale",
+    intent: "an observation older than the policy allows is refused, because the ledger has moved on since",
+    expect: "refuse",
+    reason: "S024_UNDERLYING_OBSERVATION_STALE",
+    mutate: withUnderlying({ observedAtLedger: 19_799_000 }),
+  },
+  {
+    id: "refuse-underlying-observation-from-the-future",
+    intent: "an observation of a ledger the caller has not seen validated is incoherent, and an incoherent observation is a fabricated one",
+    expect: "refuse",
+    reason: "S024_UNDERLYING_OBSERVATION_STALE",
+    mutate: withUnderlying({ observedAtLedger: 19_800_011 }),
+  },
+  {
+    id: "refuse-v1-schema-is-no-longer-accepted",
+    intent:
+      "a V1 input cannot carry the observation V2 requires, so accepting it would be accepting exactly the blindness that caused the incident",
+    expect: "refuse",
+    reason: "S001_UNKNOWN_SCHEMA",
+    mutate: (input) => ({ ...input, domain: { ...input.domain, schemaVersion: 1 } }),
   },
 ];
 

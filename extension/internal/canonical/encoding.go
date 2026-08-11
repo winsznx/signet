@@ -8,10 +8,12 @@
 package canonical
 
 import (
+	"bytes"
 	"encoding/binary"
 	"errors"
 	"fmt"
 	"math/big"
+	"sort"
 
 	"golang.org/x/crypto/sha3"
 )
@@ -21,10 +23,18 @@ const (
 	// field added or resized without updating them fails loudly rather than silently changing a
 	// commitment.
 	ObligationPreimageLength    = 141
-	AuthorizationPreimageLength = 431
+	AuthorizationPreimageLength = 468
 
 	ObligationDomainString    = "SIGNET_FASSETS_OBLIGATION_V1"
 	AuthorizationDomainString = "SIGNET_FASSETS_REDEMPTION_V1"
+	ObservationDomainString   = "SIGNET_UNDERLYING_OBSERVATION_V1"
+
+	// ObligationEncodingVersion is frozen at 1 and is not the input schema version. The obligation
+	// encoding identifies which obligation a decision concerns and did not change in V2, and it is
+	// what SignetInstructionSender computes on Coston2, whose deployed bytecode writes a literal 1.
+	ObligationEncodingVersion = 1
+	// AuthorizationEncodingVersion moved to 2 when the underlying observation was bound into it.
+	AuthorizationEncodingVersion = 2
 )
 
 var (
@@ -46,7 +56,6 @@ func domain(s string) [32]byte { return Keccak256([]byte(s)) }
 
 // ObligationFields identifies which obligation and generation a decision concerns.
 type ObligationFields struct {
-	SchemaVersion     uint8
 	FlareChainID      *big.Int
 	AssetManager      [20]byte
 	AgentVault        [20]byte
@@ -78,6 +87,52 @@ type AuthorizationFields struct {
 	PolicyVersion                uint32
 	ExtensionID                  *big.Int
 	ExtensionCodeHash            [32]byte
+	ObservedAtLedger             uint32
+	ObservedSourceCount          uint8
+	ObservationRoot              [32]byte
+}
+
+// ObservedPayment is one payment the signing boundary saw carrying an obligation's reference.
+type ObservedPayment struct {
+	TransactionHash [32]byte
+	AmountDrops     uint64
+}
+
+// ObservationRoot commits to what the underlying observation found.
+//
+// The match list is the only variable-length part of the scheme, so it is hashed to a fixed 32
+// bytes rather than inlined. Matches are sorted by transaction hash so two observers who saw the
+// same payments in a different order agree, and the count is bound so a truncated list cannot pass
+// as a shorter one. Availability and agreement are inside the root because a decision that was
+// allowed to proceed on an unavailable or contradictory observation must not be indistinguishable,
+// afterwards, from one that had a clean look at the ledger.
+func ObservationRoot(available, agreed bool, observedAtLedger uint32, observedAtTime uint64, sourceCount uint8, payments []ObservedPayment) [32]byte {
+	sorted := make([]ObservedPayment, len(payments))
+	copy(sorted, payments)
+	sort.Slice(sorted, func(i, j int) bool {
+		return bytes.Compare(sorted[i].TransactionHash[:], sorted[j].TransactionHash[:]) < 0
+	})
+
+	d := domain(ObservationDomainString)
+	buf := make([]byte, 0, 32+1+1+4+8+1+4+len(sorted)*40)
+	buf = append(buf, d[:]...)
+	buf = append(buf, boolByte(available), boolByte(agreed))
+	buf = binary.BigEndian.AppendUint32(buf, observedAtLedger)
+	buf = binary.BigEndian.AppendUint64(buf, observedAtTime)
+	buf = append(buf, sourceCount)
+	buf = binary.BigEndian.AppendUint32(buf, uint32(len(sorted)))
+	for _, p := range sorted {
+		buf = append(buf, p.TransactionHash[:]...)
+		buf = binary.BigEndian.AppendUint64(buf, p.AmountDrops)
+	}
+	return Keccak256(buf)
+}
+
+func boolByte(v bool) byte {
+	if v {
+		return 1
+	}
+	return 0
 }
 
 // uint256BE renders a big.Int as exactly 32 big-endian bytes, refusing anything that does not fit
@@ -112,7 +167,7 @@ func EncodeObligation(f ObligationFields) ([]byte, error) {
 	buf := make([]byte, 0, ObligationPreimageLength)
 	d := domain(ObligationDomainString)
 	buf = append(buf, d[:]...)
-	buf = append(buf, f.SchemaVersion)
+	buf = append(buf, byte(ObligationEncodingVersion))
 	buf = append(buf, chainID[:]...)
 	buf = append(buf, f.AssetManager[:]...)
 	buf = append(buf, f.AgentVault[:]...)
@@ -157,7 +212,7 @@ func EncodeAuthorization(f AuthorizationFields) ([]byte, error) {
 	buf := make([]byte, 0, AuthorizationPreimageLength)
 	d := domain(AuthorizationDomainString)
 	buf = append(buf, d[:]...)
-	buf = append(buf, f.SchemaVersion)
+	buf = append(buf, byte(AuthorizationEncodingVersion))
 	buf = append(buf, chainID[:]...)
 	buf = append(buf, f.InstructionSender[:]...)
 	buf = append(buf, f.AssetManager[:]...)
@@ -184,6 +239,9 @@ func EncodeAuthorization(f AuthorizationFields) ([]byte, error) {
 	buf = binary.BigEndian.AppendUint32(buf, f.PolicyVersion)
 	buf = append(buf, extensionID[:]...)
 	buf = append(buf, f.ExtensionCodeHash[:]...)
+	buf = binary.BigEndian.AppendUint32(buf, f.ObservedAtLedger)
+	buf = append(buf, f.ObservedSourceCount)
+	buf = append(buf, f.ObservationRoot[:]...)
 
 	if len(buf) != AuthorizationPreimageLength {
 		return nil, fmt.Errorf("%w: authorization preimage is %d bytes", ErrFieldWidth, len(buf))

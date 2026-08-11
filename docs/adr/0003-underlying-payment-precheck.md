@@ -1,6 +1,6 @@
 # ADR 0003 — An obligation's FAssets status does not mean it is unpaid
 
-Status: proposed, not implemented
+Status: **accepted and implemented** in schema V2
 Date: 2026-08-11
 Found by: the Phase 10 target-chain run, which double-paid a live Coston2 redemption
 
@@ -62,23 +62,61 @@ with a new reason code, `S021_ALREADY_PAID_UNDERLYING`, and the same trust cavea
 `prior` field carries: it must come from the signing boundary's own observation of the XRP ledger,
 never from a coordinator request.
 
-## Why this is proposed and not done
+## What was implemented
 
-Changing the decision inputs changes the canonical encoding, which changes the authorization
-commitment, which invalidates the 62 frozen fixtures and the fixture set hash the Phase 01 gate
-holds. That is a protocol version bump, not a patch, and doing it in the last hours of a build run
-would replace a known and documented gap with an unreviewed change to the most safety-critical
-surface in the system.
+The protocol version bump was made. Schema V2 exists and V1 is no longer accepted.
 
-The interim mitigation is at the operational layer, where it costs nothing to get wrong twice:
-`scripts/lifecycle/target-chain.mjs` now scans the destination account for a validated payment
-carrying the obligation's reference and refuses to sign if it finds one. That is the same check, one
-layer out, and it would have prevented this incident.
+### Inputs
+
+```
+underlying: {
+  available, agreed, sourceCount, observedAtLedger, observedAtTime,
+  payments: [{ transactionHash, destinationAddress, amountDrops, paymentReference, validated }]
+}
+policy.minimumUnderlyingSources    how many independent endpoints must agree
+policy.maxObservationAgeLedgers    how old an observation may be
+```
+
+`underlying` must come from the signing boundary's own observation. A coordinator-supplied list is
+worthless, because an empty list is exactly what an attacker would send.
+
+### Reason codes
+
+| code | when | class |
+|---|---|---|
+| `S021_PAYMENT_ALREADY_OBSERVED` | a validated payment already carries this reference to this destination | policy denial |
+| `S022_UNDERLYING_STATE_UNAVAILABLE` | no observation, an unavailable one, or too few agreeing sources | transient |
+| `S023_UNDERLYING_STATE_DISAGREEMENT` | independently operated endpoints contradicted each other | **policy denial, deliberately not transient** |
+| `S024_UNDERLYING_OBSERVATION_STALE` | older than the policy allows, or from a ledger nobody validated | transient |
+
+`S023` is not transient on purpose. Retrying until the endpoints agree is a loop that keeps asking
+until it gets the answer that lets it pay. A disagreement about whether money has already moved is an
+operator's decision.
+
+### Encoding
+
+The authorization preimage grew from 431 to 468 bytes: `observedAtLedger` (4), `observedSourceCount`
+(1) and `observationRoot` (32). The root is keccak over a domain-separated, sorted, count-bound
+serialisation of the matches, with `available` and `agreed` inside it, so a decision made on a bad
+observation is not afterwards indistinguishable from one made on a clean look.
+
+The **obligation** preimage did not change and its version byte stays 1. That is what keeps the
+deployed `SignetInstructionSender` on Coston2 agreeing with the model: verified live, the contract
+and both implementations return `0x2cea228b…` for request 44928272.
+
+### Matching predicate
+
+Deliberately broader than FAssets' own: destination and reference only, ignoring the amount. A
+payment carrying this obligation's reference to this destination for the wrong amount is a state a
+human needs to look at, not a state to pay over the top of.
 
 ## Consequences
 
-- The claim that Signet cannot double-pay is narrowed: it cannot double-pay *by itself*.
-- The threat model gains a threat that was previously missing, rather than one that was known and
-  accepted.
-- A future protocol version implements the check inside the decision, at which point the operational
-  scan becomes a redundant second line rather than the only one.
+- The claim that Signet cannot double-pay is narrowed to what is true. See
+  [`docs/guarantee.md`](../guarantee.md).
+- V1 inputs are refused with `S001_UNKNOWN_SCHEMA`. The V1 fixture set is preserved byte-for-byte as
+  historical evidence, because every V1 commitment ever published is only checkable against it.
+- Receipts written before V2 carry no observation, so the verifier reports their commitment as
+  `UNVERIFIABLE` and says why, rather than failing them or silently passing them.
+- The residual TOCTOU window is not closed and cannot be. It is bounded and, because
+  `observedAtLedger` is in the commitment, publicly measurable for any payment Signet ever made.

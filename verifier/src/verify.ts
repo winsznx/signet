@@ -144,6 +144,8 @@ export async function lookupOnEveryEndpoint(
 
 export interface Receipt {
   readonly seam?: string;
+  /** 2 for receipts produced after the underlying-observation correction. Absent means V1. */
+  readonly schemaVersion?: number;
   /** Absent means the receipt claims to settle its obligation. Only an explicit false relaxes that. */
   readonly settles?: boolean;
   readonly network?: string;
@@ -310,7 +312,9 @@ export async function verifyReceipt(
     findings.push(
       unverifiable(
         "the authorization commitment matches the payment",
-        "the commitment covers binding and policy fields that are not in this receipt, so it cannot be recomputed from public data alone",
+        receipt.decisionContext
+          ? "this receipt predates the V2 correction: its commitment used the V1 encoding, which bound no underlying observation and which this verifier no longer computes. The V1 encoding is preserved in reference/test-vectors/decision-fixtures-v1-historical.json"
+          : "the commitment covers binding and policy fields that are not in this receipt, so it cannot be recomputed from public data alone",
       ),
     );
   } else {
@@ -325,8 +329,8 @@ export async function verifyReceipt(
 }
 
 /** Recomputes the obligation hash from the receipt's own identifying fields. */
-export function recomputeObligationHash(fields: Omit<ObligationCommitmentFields, "schemaVersion">): string {
-  return obligationHash({ schemaVersion: 1, ...fields });
+export function recomputeObligationHash(fields: ObligationCommitmentFields): string {
+  return obligationHash(fields);
 }
 
 export function recomputeCommitment(fields: AuthorizationCommitmentFields): string {

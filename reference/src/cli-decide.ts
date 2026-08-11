@@ -38,7 +38,7 @@ function only(value: unknown, path: string, allowed: readonly string[]): Record<
 }
 
 function parseInput(raw: string): ReferenceInput {
-  const j = only(JSON.parse(raw), "input", ["domain", "binding", "redemption", "xrpl", "policy", "prior"]);
+  const j = only(JSON.parse(raw), "input", ["domain", "binding", "redemption", "xrpl", "policy", "prior", "underlying"]);
   only(j.domain, "domain", ["schemaVersion", "flareChainId", "instructionSender", "assetManager", "xrplNetworkId"]);
   if (j.binding) {
     only(j.binding, "binding", [
@@ -61,8 +61,18 @@ function parseInput(raw: string): ReferenceInput {
   }
   only(j.policy, "policy", [
     "policyVersion", "extensionId", "extensionCodeHash", "revokedCodeHashes", "paused", "safetyMarginLedgers",
-    "safetyMarginSeconds", "ledgerCloseIntervalSeconds",
+    "safetyMarginSeconds", "ledgerCloseIntervalSeconds", "minimumUnderlyingSources", "maxObservationAgeLedgers",
   ]);
+  if (j.underlying) {
+    only(j.underlying, "underlying", [
+      "available", "agreed", "sourceCount", "observedAtLedger", "observedAtTime", "payments",
+    ]);
+    for (const [index, p] of (j.underlying.payments ?? []).entries()) {
+      only(p, `underlying.payments[${index}]`, [
+        "transactionHash", "destinationAddress", "amountDrops", "paymentReference", "validated",
+      ]);
+    }
+  }
   for (const [index, p] of (j.prior ?? []).entries()) {
     only(p, `prior[${index}]`, ["requestGeneration", "sequenceMode", "sequenceOrTicket", "outcome"]);
   }
@@ -130,7 +140,25 @@ function parseInput(raw: string): ReferenceInput {
       safetyMarginLedgers: j.policy.safetyMarginLedgers,
       safetyMarginSeconds: big(j.policy.safetyMarginSeconds, "policy.safetyMarginSeconds"),
       ledgerCloseIntervalSeconds: big(j.policy.ledgerCloseIntervalSeconds, "policy.ledgerCloseIntervalSeconds"),
+      minimumUnderlyingSources: j.policy.minimumUnderlyingSources,
+      maxObservationAgeLedgers: j.policy.maxObservationAgeLedgers,
     },
+    underlying: j.underlying
+      ? {
+          available: j.underlying.available,
+          agreed: j.underlying.agreed,
+          sourceCount: j.underlying.sourceCount,
+          observedAtLedger: j.underlying.observedAtLedger,
+          observedAtTime: big(j.underlying.observedAtTime, "underlying.observedAtTime"),
+          payments: (j.underlying.payments ?? []).map((p: Record<string, any>) => ({
+            transactionHash: p.transactionHash,
+            destinationAddress: p.destinationAddress,
+            amountDrops: big(p.amountDrops, "underlying.payments[].amountDrops"),
+            paymentReference: p.paymentReference,
+            validated: p.validated,
+          })),
+        }
+      : null,
     prior: (j.prior ?? []).map((p: Record<string, any>) => ({
       requestGeneration: p.requestGeneration,
       sequenceMode: p.sequenceMode,

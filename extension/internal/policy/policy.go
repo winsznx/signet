@@ -15,7 +15,7 @@ import (
 	"github.com/signet/extension/internal/canonical"
 )
 
-const SchemaVersion = 1
+const SchemaVersion = 2
 
 // Reason codes, frozen by PRD section 20.4. Strings, not integers, because they appear in signed
 // refusal receipts and in public evidence.
@@ -40,9 +40,14 @@ const (
 	ReasonReplacementNotAuthorized = "S018_REPLACEMENT_NOT_AUTHORIZED"
 	ReasonKeyNotActive             = "S019_KEY_NOT_ACTIVE"
 	ReasonInternalFailClosed       = "S020_INTERNAL_FAIL_CLOSED"
+	ReasonPaymentAlreadyObserved   = "S021_PAYMENT_ALREADY_OBSERVED"
+	ReasonUnderlyingUnavailable    = "S022_UNDERLYING_STATE_UNAVAILABLE"
+	ReasonUnderlyingDisagreement   = "S023_UNDERLYING_STATE_DISAGREEMENT"
+	ReasonObservationStale         = "S024_UNDERLYING_OBSERVATION_STALE"
 )
 
 const uint32Max = 0xffffffff
+const uint8Max = 0xff
 
 // networkIDRequiredFrom mirrors the XRPL rule: the NetworkID field belongs only on networks whose
 // id is 1025 or greater.
@@ -106,6 +111,8 @@ type Policy struct {
 	ExtensionCodeHash          string
 	RevokedCodeHashes          []string
 	Paused                     bool
+	MinimumUnderlyingSources   int
+	MaxObservationAgeLedgers   int
 	SafetyMarginLedgers        int
 	SafetyMarginSeconds        *big.Int
 	LedgerCloseIntervalSeconds *big.Int
@@ -122,6 +129,30 @@ type PriorGeneration struct {
 // own durable state and the registry's on-chain action state, never from a coordinator request, and
 // CurrentValidatedLedger must be observed by the signing boundary rather than accepted from a
 // caller. See docs/adr/0002-policy-semantics.md, "Trust sources".
+// ObservedUnderlyingPayment is one payment seen on the XRP ledger carrying an obligation's
+// reference. The signing boundary must have observed these itself: a coordinator-supplied list is
+// worthless, because an empty list is exactly what an attacker would send.
+type ObservedUnderlyingPayment struct {
+	TransactionHash    string
+	DestinationAddress string
+	AmountDrops        *big.Int
+	PaymentReference   string
+	Validated          bool
+}
+
+// UnderlyingObservation is what the signing boundary saw on the XRP ledger, and how sure it is.
+//
+// Available and Agreed are separate because "I could not look" and "I looked and my sources
+// contradicted each other" are different failures with different correct responses.
+type UnderlyingObservation struct {
+	Available        bool
+	Agreed           bool
+	SourceCount      int
+	ObservedAtLedger int
+	ObservedAtTime   *big.Int
+	Payments         []ObservedUnderlyingPayment
+}
+
 type Input struct {
 	Domain     Domain
 	Binding    *Binding
@@ -129,6 +160,9 @@ type Input struct {
 	Xrpl       *XrplAllocation
 	Policy     Policy
 	Prior      []PriorGeneration
+	// Underlying is nil when the signing boundary did not look, which is refused: a decision that
+	// skipped the check must never be indistinguishable from one that passed it.
+	Underlying *UnderlyingObservation
 }
 
 type Memo struct {
@@ -164,8 +198,32 @@ type Decision struct {
 	Payment                 *Payment
 }
 
+// observationRootOf mirrors the reference model's root exactly, including the sort.
+func observationRootOf(u *UnderlyingObservation) [32]byte {
+	payments := make([]canonical.ObservedPayment, 0, len(u.Payments))
+	for _, p := range u.Payments {
+		amount := uint64(0)
+		if p.AmountDrops != nil && p.AmountDrops.IsUint64() {
+			amount = p.AmountDrops.Uint64()
+		}
+		payments = append(payments, canonical.ObservedPayment{
+			TransactionHash: mustBytes32(p.TransactionHash),
+			AmountDrops:     amount,
+		})
+	}
+	observedAt := uint64(0)
+	if u.ObservedAtTime != nil && u.ObservedAtTime.IsUint64() {
+		observedAt = u.ObservedAtTime.Uint64()
+	}
+	return canonical.ObservationRoot(u.Available, u.Agreed, uint32(u.ObservedAtLedger), observedAt, uint8(u.SourceCount), payments)
+}
+
 func errorClassOf(reason string) string {
-	if reason == ReasonStateUnavailable {
+	// S023 is deliberately not transient: a loop that retries until the endpoints agree is a loop
+	// that keeps asking until it gets the answer that lets it pay. S024 is transient, because a
+	// stale observation becomes a fresh one by looking again rather than by shopping for an answer.
+	switch reason {
+	case ReasonStateUnavailable, ReasonUnderlyingUnavailable, ReasonObservationStale:
 		return "TRANSIENT_INFRA"
 	}
 	return "POLICY_DENIAL"
@@ -215,7 +273,6 @@ func refusalObligationHash(in Input) string {
 		return "0x" + hexOf(u[:])
 	}
 	h, err := canonical.ObligationHash(canonical.ObligationFields{
-		SchemaVersion:     uint8(in.Domain.SchemaVersion),
 		FlareChainID:      in.Domain.FlareChainID,
 		AssetManager:      mustAddress(in.Domain.AssetManager),
 		AgentVault:        mustAddress(agent),
@@ -374,7 +431,56 @@ func evaluate(in Input) Decision {
 	if !ok {
 		return refuse(in, ReasonAmountInvalid)
 	}
-	// 18. fee ceiling and signing-mode floor
+	// 18. the obligation must not already have been paid on the underlying chain.
+	//
+	// This is the check incident 44928272 was missing. FAssets reporting ACTIVE means the payment
+	// has not been confirmed on Flare, which is not the same as unpaid: confirmation is a separate
+	// transaction the agent submits after its payment validates. Every other duplicate-payment
+	// guard watches Flare or Signet's own state and cannot see a payment made by somebody else.
+	//
+	// Every branch fails closed. The decision must never reach an authorization by failing to look,
+	// by looking badly, or by looking a long time ago.
+	u := in.Underlying
+	if u == nil || !u.Available {
+		return refuse(in, ReasonUnderlyingUnavailable)
+	}
+	if !u.Agreed {
+		return refuse(in, ReasonUnderlyingDisagreement)
+	}
+	if p.MinimumUnderlyingSources < 1 {
+		return refuse(in, ReasonInternalFailClosed)
+	}
+	if u.SourceCount < p.MinimumUnderlyingSources {
+		return refuse(in, ReasonUnderlyingUnavailable)
+	}
+	if u.SourceCount > uint8Max {
+		return refuse(in, ReasonInternalFailClosed)
+	}
+	if p.MaxObservationAgeLedgers < 0 {
+		return refuse(in, ReasonInternalFailClosed)
+	}
+	if u.ObservedAtLedger <= 0 || u.ObservedAtLedger > x.CurrentValidatedLedger {
+		return refuse(in, ReasonObservationStale)
+	}
+	if x.CurrentValidatedLedger-u.ObservedAtLedger > p.MaxObservationAgeLedgers {
+		return refuse(in, ReasonObservationStale)
+	}
+	// The match predicate is deliberately broader than the one FAssets applies on confirmation: it
+	// ignores the amount, because a payment carrying this obligation's reference to this
+	// destination for the wrong amount is a state a human needs to look at.
+	for _, obs := range u.Payments {
+		if !obs.Validated {
+			continue
+		}
+		if obs.DestinationAddress != r.PaymentAddress {
+			continue
+		}
+		if strings.EqualFold(obs.PaymentReference, r.PaymentReference) {
+			return refuse(in, ReasonPaymentAlreadyObserved)
+		}
+	}
+
+	// 19. fee ceiling and signing-mode floor
 	if x.FeeDrops == nil || x.FeeDrops.Sign() <= 0 || x.MaxFeeDrops == nil || x.MaxFeeDrops.Sign() <= 0 {
 		return refuse(in, ReasonFeeCapExceeded)
 	}
@@ -444,7 +550,6 @@ func evaluate(in Input) Decision {
 
 	commitment, err := canonical.AuthorizationCommitment(canonical.AuthorizationFields{
 		ObligationFields: canonical.ObligationFields{
-			SchemaVersion:     uint8(in.Domain.SchemaVersion),
 			FlareChainID:      in.Domain.FlareChainID,
 			AssetManager:      mustAddress(in.Domain.AssetManager),
 			AgentVault:        mustAddress(b.AgentVault),
@@ -472,13 +577,15 @@ func evaluate(in Input) Decision {
 		PolicyVersion:                uint32(p.PolicyVersion),
 		ExtensionID:                  p.ExtensionID,
 		ExtensionCodeHash:            mustBytes32(p.ExtensionCodeHash),
+		ObservedAtLedger:             uint32(u.ObservedAtLedger),
+		ObservedSourceCount:          uint8(u.SourceCount),
+		ObservationRoot:              observationRootOf(u),
 	})
 	if err != nil {
 		return refuse(in, ReasonInternalFailClosed)
 	}
 
 	obligation, err := canonical.ObligationHash(canonical.ObligationFields{
-		SchemaVersion:     uint8(in.Domain.SchemaVersion),
 		FlareChainID:      in.Domain.FlareChainID,
 		AssetManager:      mustAddress(in.Domain.AssetManager),
 		AgentVault:        mustAddress(b.AgentVault),

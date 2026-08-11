@@ -5,7 +5,7 @@ import { buildFixtures, canonicalJson, serialiseFixtures, type FixtureFile } fro
 import { decide } from "../src/decide.ts";
 import { SCENARIOS, baseInput } from "../src/scenarios.ts";
 
-const path = fileURLToPath(new URL("../test-vectors/decision-fixtures.json", import.meta.url));
+const path = fileURLToPath(new URL("../test-vectors/decision-fixtures-v2.json", import.meta.url));
 const committed = readFileSync(path, "utf8");
 const parsed = JSON.parse(committed) as FixtureFile;
 
@@ -66,8 +66,12 @@ describe("frozen fixtures", () => {
   it("pins the encoding constants the other languages must implement", () => {
     expect(parsed.authorizationDomain).toBe("SIGNET_FASSETS_REDEMPTION_V1");
     expect(parsed.obligationDomain).toBe("SIGNET_FASSETS_OBLIGATION_V1");
-    expect(parsed.authorizationPreimageLength).toBe(431);
+    expect(parsed.authorizationPreimageLength).toBe(468);
+    // The obligation preimage is unchanged at 141 bytes and still domain-separated by the V1
+    // string, because the obligation encoding did not move: the same six fields at the same widths,
+    // matching what SignetInstructionSender computes on Coston2. The authorization preimage grew by
+    // the 37 bytes that bind the underlying observation.
     expect(parsed.obligationPreimageLength).toBe(141);
-    expect(parsed.schemaVersion).toBe(1);
+    expect(parsed.schemaVersion).toBe(2);
   });
 });

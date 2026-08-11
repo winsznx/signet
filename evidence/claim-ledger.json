@@ -483,7 +483,7 @@
     },
     {
       "id": "claim-duplicate-payment-gap",
-      "wording": "A FAssets redemption status of ACTIVE does not mean the obligation is unpaid; it means the underlying payment has not yet been confirmed on Flare. Signet paid a live Coston2 obligation that the agent had already paid 36 ledgers earlier, while FAssets still reported ACTIVE. None of Signet's duplicate-payment guards can see a payment made by another party.",
+      "wording": "A FAssets redemption status of ACTIVE does not mean the obligation is unpaid; it means the underlying payment has not yet been confirmed on Flare. Signet paid a live Coston2 obligation that the agent had already paid 36 ledgers earlier. Schema V2 corrects this: the decision now requires the signing boundary's own XRP ledger observation, refuses when a matching validated payment already exists, refuses when the observation is missing, unavailable, insufficiently sourced, contradictory or stale, and binds the observation into the authorization commitment. The incident is replayed against both implementations as a permanent regression test, which also proves no V2 input reproduces the original authorization.",
       "status": "verified",
       "proofLevel": 3,
       "network": [
@@ -492,14 +492,57 @@
       ],
       "evidence": [
         "docs/adr/0003-underlying-payment-precheck.md",
-        "docs/evidence/phase-10.md",
-        "evidence/receipts/target-chain-8A1492D15309AEBA34ABDE3D03D2FAD5B735165435A3C90F8C6CAFCB571AB51A.json"
+        "docs/guarantee.md",
+        "scripts/lifecycle/incident-44928272.test.mjs",
+        "scripts/xrpl/observe.mjs",
+        "reference/test-vectors/decision-fixtures-v2.json",
+        "docs/evidence/phase-10.md"
       ],
-      "verifiedAt": "2026-08-11T17:35:00Z",
+      "verifiedAt": "2026-08-11T20:15:00Z",
       "limitations": [
-        "This is a recorded defect, not a fixed one. The durable fix is a new decision input and a protocol version bump, proposed in ADR 0003 and deliberately not made during this run.",
-        "An operational mitigation exists in scripts/lifecycle/target-chain.mjs, which scans the destination account for an existing payment carrying the obligation's reference and refuses to sign. It is one layer out from where the check belongs.",
-        "In the deployment Signet is designed for it is the agent's only signer, so the second payer that triggered this should not exist. That narrows the exposure; it does not close it."
+        "The residual window cannot be closed: a competing payment validated after Signet's observation and before Signet's own payment validates is not detectable. It measured 4 to 12 ledgers in this build and is bounded and publicly measurable, because observedAtLedger is bound into the commitment.",
+        "The reference model is a pure function and cannot tell a true observation from a fabricated one. A lying observer is made attributable rather than prevented, and preventing it needs the TEE this build does not have.",
+        "The production configuration under which no independent legitimate payer exists, Signet holding the agent's only XRPL signing authority, is a design claim and is not demonstrated: this build does not control an FAssets agent account."
+      ]
+    },
+    {
+      "id": "claim-v2-underlying-observation",
+      "wording": "Signet's decision schema V2 refuses to authorize a redemption payment unless the signing boundary has itself observed the XRP ledger across at least two independently operated endpoints that agreed, no more than the policy's ledger budget ago, and seen no validated payment already carrying that obligation's reference to that destination. The observation is bound into the authorization commitment, so an independent verifier recomputes it from public data. Go and TypeScript agree on all 73 V2 fixtures, and V1 inputs are refused rather than interpreted.",
+      "status": "verified",
+      "proofLevel": 2,
+      "network": [
+        "xrpl-testnet"
+      ],
+      "evidence": [
+        "reference/src/decide.ts",
+        "reference/test-vectors/decision-fixtures-v2.json",
+        "extension/internal/policy/policy.go",
+        "scripts/xrpl/observe.mjs",
+        "scripts/xrpl/observe.test.mjs",
+        "reference/test/property/observation.property.test.ts",
+        "docs/guarantee.md"
+      ],
+      "verifiedAt": "2026-08-11T20:15:00Z",
+      "limitations": [
+        "This is not hardware-attested execution. The observer runs in the same ordinary process as the decider, so a fabricated observation is attributable but not prevented.",
+        "The residual TOCTOU window between observation and validation is not closed and cannot be by any arrangement of observations.",
+        "Two endpoints is the configured minimum and is what XRPL Testnet offers here; it is a low bar for independence."
+      ]
+    },
+    {
+      "id": "claim-v1-preserved",
+      "wording": "The 62 V1 decision fixtures are preserved byte-for-byte with the hash the phase 01 gate froze, and a test holds them to it, so every authorization commitment Signet published under V1 remains checkable even though the model no longer accepts V1 inputs.",
+      "status": "verified",
+      "proofLevel": 1,
+      "network": [],
+      "evidence": [
+        "reference/test-vectors/decision-fixtures-v1-historical.json",
+        "reference/test/v1-historical.test.ts"
+      ],
+      "verifiedAt": "2026-08-11T20:15:00Z",
+      "limitations": [
+        "The V1 encoder itself is not retained, so the verifier cannot recompute a V1 commitment and reports pre-V2 receipts as UNVERIFIABLE rather than checking them.",
+        "One V1 fixture, refuse-unknown-schema, used version 2 as its unknown value; version 2 is now real, so that case is excluded from the preservation test and the exclusion is asserted."
       ]
     }
   ]

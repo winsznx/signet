@@ -8,6 +8,9 @@ medium risk, and an honest claim ledger. This is the accounting.
 | threat | closure |
 |---|---|
 | Coordinator obtains a signature for an arbitrary payment | **Not closed.** See below. |
+| An obligation already paid on the underlying chain is paid again | Closed in V2 for anything validated at or before the observation; residual window stated in `docs/guarantee.md`. |
+| A decision is made without looking at the underlying chain | `S022`. Refusing is the default; there is no input that authorizes without an observation. |
+| An observation is stale, unsourced or contradictory | `S022`/`S023`/`S024`, all fail closed. `S023` is deliberately not auto-retried. |
 | Coordinator replays an obligation to pay twice | Registry rejects a repeated action (`ActionExists`); the coordinator database enforces one completion per obligation by unique index; the XRP ledger refuses a consumed sequence with `tefPAST_SEQ`. Three independent layers, each proven. |
 | Duplicate event delivery creates duplicate authority | `observed_events` primary key with `ON CONFLICT DO NOTHING`; proven under three concurrent workers. |
 | A crash between signing and submitting loses or duplicates a payment | The blob is persisted before first submission and survives restart with `submitted_at` null; proven. |
@@ -46,29 +49,41 @@ snapshot, which is architecture work, not hardening. It is recorded in the claim
 outside a TEE already has no isolation between the decider and the process that supplies its inputs,
 so closing this in isolation would not buy what it appears to.
 
-## Open: an obligation already paid by someone else
+## Closed in V2: an obligation already paid by someone else
 
-Found by running Phase 10 against the live chain, where it caused a real duplicate payment.
+Found by running Phase 10 against the live chain, where it caused a real duplicate payment on
+request 44928272. Now corrected at the protocol layer rather than mitigated around.
 
 A FAssets status of `ACTIVE` does not mean an obligation is unpaid. It means the underlying payment
 has not yet been confirmed on Flare, and confirmation is a separate transaction submitted after the
 payment validates. In that window FAssets reports the obligation as open while the payment exists.
 
-Signet's three duplicate-payment guards all watch the wrong chain for this. The registry action
-state, the coordinator's unique indexes and the ledger's sequence consumption prevent *Signet*
+Signet's three original duplicate-payment guards all watched the wrong chain for it. The registry
+action state, the coordinator's unique indexes and the ledger's sequence consumption prevent *Signet*
 paying twice; none can see a payment made by another party.
 
-In the deployment Signet is designed for it is the agent's only signer, so no second payer exists.
-The exposure is an agent running any other payment path alongside Signet, during a migration or a
-fallback, and the consequence is the agent's own funds leaving twice for one obligation.
+**Schema V2 adds the missing observation.** The decision now requires the signing boundary to have
+looked at the XRP ledger itself, and refuses on every way that look can fail:
 
-**Risk rating: high, recorded and mitigated operationally, not closed.**
-[ADR 0003](adr/0003-underlying-payment-precheck.md) proposes the durable fix: a new decision input
-carrying validated underlying payments the signing boundary observed, and a reason code
-`S021_ALREADY_PAID_UNDERLYING`. That changes the canonical encoding and invalidates the frozen
-fixture set, so it is a protocol version bump rather than something to do unreviewed at the end of a
-build run. `scripts/lifecycle/target-chain.mjs` implements the same check one layer out and, replayed
-against the incident, refuses.
+| code | when |
+|---|---|
+| `S021_PAYMENT_ALREADY_OBSERVED` | a validated payment already carries this reference to this destination |
+| `S022_UNDERLYING_STATE_UNAVAILABLE` | no observation, an unavailable one, or too few agreeing sources |
+| `S023_UNDERLYING_STATE_DISAGREEMENT` | independently operated endpoints contradicted each other |
+| `S024_UNDERLYING_OBSERVATION_STALE` | older than policy allows, or from a ledger nobody validated |
+
+The observation is bound into the authorization commitment, so a decision made on a bad look is not
+afterwards indistinguishable from one made on a clean look, and the width of the window for any
+historical payment is public arithmetic.
+
+`scripts/lifecycle/incident-44928272.test.mjs` replays the incident against both implementations
+every time the gate runs. It asserts the refusal and, more importantly, that **no V2 input reproduces
+the original authorization**.
+
+**Residual, and it cannot be closed:** a competing payment that validates after Signet's observation
+and before Signet's own payment validates is not detectable. That window measured 4 to 12 ledgers in
+this build. See [`docs/guarantee.md`](guarantee.md) for the precise statement and for the production
+configuration under which no independent legitimate payer exists at all.
 
 ## Accepted medium risks
 

@@ -12,6 +12,7 @@ import {
   encodeObligation,
   keccakOfUtf8,
   obligationHash,
+  observationRoot,
   type AuthorizationCommitmentFields,
 } from "../src/encoding.ts";
 import { toHex, uintBE } from "../src/bytes.ts";
@@ -21,7 +22,6 @@ import { DESTINATION_ADDRESS, SOURCE_ADDRESS } from "../src/scenarios.ts";
 
 function baseFields(): AuthorizationCommitmentFields {
   return {
-    schemaVersion: 1,
     flareChainId: 114n,
     instructionSender: "0x00000000000000000000000000000000000000c1",
     assetManager: "0x00000000000000000000000000000000000000b1",
@@ -47,13 +47,38 @@ function baseFields(): AuthorizationCommitmentFields {
     maxFeeDrops: 5_000n,
     policyVersion: 1,
     extensionId: 7n,
-    extensionCodeHash: new Uint8Array(32).fill(0x11),
+    observedAtLedger: 19_800_010,
+  observedSourceCount: 2,
+  observationRoot: observationRoot({
+    available: true,
+    agreed: true,
+    observedAtLedger: 19_800_010,
+    observedAtTime: 1_800_000_020n,
+    sourceCount: 2,
+    payments: [],
+  }),
+  extensionCodeHash: new Uint8Array(32).fill(0x11),
   };
 }
 
 /** Each entry changes exactly one field of the base commitment input. */
 const FIELD_MUTATIONS: ReadonlyArray<readonly [string, (f: AuthorizationCommitmentFields) => AuthorizationCommitmentFields]> = [
-  ["schemaVersion", (f) => ({ ...f, schemaVersion: 2 })],
+  ["observedAtLedger", (f) => ({ ...f, observedAtLedger: f.observedAtLedger + 1 })],
+  ["observedSourceCount", (f) => ({ ...f, observedSourceCount: f.observedSourceCount + 1 })],
+  [
+    "observationRoot",
+    (f) => ({
+      ...f,
+      observationRoot: observationRoot({
+        available: true,
+        agreed: true,
+        observedAtLedger: 19_800_010,
+        observedAtTime: 1_800_000_020n,
+        sourceCount: 2,
+        payments: [{ transactionHash: `0x${"ab".repeat(32)}`, amountDrops: 1n }],
+      }),
+    }),
+  ],
   ["flareChainId", (f) => ({ ...f, flareChainId: 16n })],
   ["instructionSender", (f) => ({ ...f, instructionSender: "0x00000000000000000000000000000000000000c2" })],
   ["assetManager", (f) => ({ ...f, assetManager: "0x00000000000000000000000000000000000000b2" })],
@@ -85,10 +110,9 @@ const FIELD_MUTATIONS: ReadonlyArray<readonly [string, (f: AuthorizationCommitme
 describe("canonical encoding", () => {
   it("produces a preimage of exactly the frozen length", () => {
     expect(encodeAuthorization(baseFields())).toHaveLength(AUTHORIZATION_PREIMAGE_LENGTH);
-    expect(AUTHORIZATION_PREIMAGE_LENGTH).toBe(431);
+    expect(AUTHORIZATION_PREIMAGE_LENGTH).toBe(468);
     expect(
       encodeObligation({
-        schemaVersion: 1,
         flareChainId: 114n,
         assetManager: "0x00000000000000000000000000000000000000b1",
         agentVault: "0x00000000000000000000000000000000000000a1",
@@ -165,7 +189,6 @@ describe("canonical encoding", () => {
 
   it("keeps the obligation hash independent of authorization-only fields", () => {
     const a = obligationHash({
-      schemaVersion: 1,
       flareChainId: 114n,
       assetManager: "0x00000000000000000000000000000000000000b1",
       agentVault: "0x00000000000000000000000000000000000000a1",
@@ -173,7 +196,6 @@ describe("canonical encoding", () => {
       requestGeneration: 0,
     });
     const b = obligationHash({
-      schemaVersion: 1,
       flareChainId: 114n,
       assetManager: "0x00000000000000000000000000000000000000b1",
       agentVault: "0x00000000000000000000000000000000000000a1",

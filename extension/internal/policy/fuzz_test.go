@@ -15,12 +15,13 @@ import (
 // The fields fuzzed are the ones an attacker most plausibly controls through a compromised
 // coordinator: amounts, generations, ledger positions and status strings.
 func FuzzDecideIsTotal(f *testing.F) {
-	f.Add(int64(10_000_000), int64(50_000), 0, 100, "ACTIVE")
-	f.Add(int64(0), int64(0), -1, 0, "")
-	f.Add(int64(-1), int64(-1), 2147483647, -2147483648, "SUCCESSFUL")
-	f.Add(int64(1), int64(1), 1, 1, "\x00\xff")
+	f.Add(int64(10_000_000), int64(50_000), 0, 100, "ACTIVE", 2, 100, true)
+	f.Add(int64(0), int64(0), -1, 0, "", 0, 0, false)
+	f.Add(int64(-1), int64(-1), 2147483647, -2147483648, "SUCCESSFUL", -1, -1, true)
+	f.Add(int64(1), int64(1), 1, 1, "\x00\xff", 255, 2147483647, false)
+	f.Add(int64(10_000_000), int64(50_000), 0, 100, "ACTIVE", 2, 100, false)
 
-	f.Fuzz(func(t *testing.T, value, fee int64, generation, ledger int, status string) {
+	f.Fuzz(func(t *testing.T, value, fee int64, generation, ledger int, status string, sourceCount, observedAt int, observedPayment bool) {
 		in := Input{
 			Domain: Domain{
 				SchemaVersion:     SchemaVersion,
@@ -51,6 +52,29 @@ func FuzzDecideIsTotal(f *testing.F) {
 				LedgerCloseIntervalSeconds: big.NewInt(4),
 			},
 		}
+
+		// The V2 observation is fuzzed too: source counts, observed ledgers and the presence of a
+		// matching payment are all attacker-influenced through a compromised coordinator, and the
+		// decision must stay total across every combination of them.
+		observation := &UnderlyingObservation{
+			Available:        true,
+			Agreed:           true,
+			SourceCount:      sourceCount,
+			ObservedAtLedger: observedAt,
+			ObservedAtTime:   big.NewInt(int64(observedAt)),
+		}
+		if observedPayment {
+			observation.Payments = []ObservedUnderlyingPayment{{
+				TransactionHash:    "0x" + "ab",
+				DestinationAddress: "rpa8bBa8GS1Zit6y9PcpQbahkqFahpWMyb",
+				AmountDrops:        big.NewInt(value),
+				PaymentReference:   "0x4642505266410002000000000000000000000000000000000000000000000001",
+				Validated:          true,
+			}}
+		}
+		in.Underlying = observation
+		in.Policy.MinimumUnderlyingSources = 1
+		in.Policy.MaxObservationAgeLedgers = 100
 
 		d := Decide(in)
 		if d.Kind != "authorize" && d.Kind != "refuse" {

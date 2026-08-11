@@ -1,4 +1,9 @@
 // SPDX-License-Identifier: MIT
+// NOTE ON V2: the reference model moved to schema version 2 when the underlying-payment
+// observation was bound into the authorization commitment. The obligation preimage did not move.
+// Its version byte is frozen at 1 precisely so that this contract, which is deployed on Coston2 at
+// an address nobody can change, keeps agreeing with the model. These vectors are unchanged across
+// the V2 fork, and that is the property being asserted.
 pragma solidity 0.8.28;
 
 import {Test} from "forge-std/Test.sol";

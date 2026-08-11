@@ -10,7 +10,7 @@
  * whatever the receipt claims, which is the failure mode of a verifier that always agrees.
  */
 import { keccak_256 } from "@noble/hashes/sha3";
-import { authorizationCommitment, decodeClassicAddress, hexToBytes } from "@signet/reference";
+import { authorizationCommitment, decodeClassicAddress, hexToBytes, observationRoot } from "@signet/reference";
 import type { Receipt, XrplTransaction } from "./verify.ts";
 
 /** FAssets compares underlying addresses by keccak over the address string, so the commitment does too. */
@@ -31,18 +31,33 @@ interface DecisionContext {
   readonly lastUnderlyingBlock: string;
   readonly lastUnderlyingTimestamp: string;
   readonly maxFeeDrops: string;
+  /** What the signing boundary saw on the XRP ledger, which V2 binds into the commitment. */
+  readonly underlying?: {
+    readonly available: boolean;
+    readonly agreed: boolean;
+    readonly sourceCount: number;
+    readonly observedAtLedger: number;
+    readonly observedAtTime: string;
+    readonly payments: readonly { readonly transactionHash: string; readonly amountDrops: string }[];
+  };
 }
 
 export function commitmentFromReceipt(receipt: Receipt, tx: XrplTransaction): string | null {
   const context = (receipt as Receipt & { decisionContext?: DecisionContext }).decisionContext;
   if (!context || !receipt.requestId) return null;
 
+  // V2 binds the underlying observation. A receipt without it cannot have its commitment
+  // recomputed, and the verifier reports UNVERIFIABLE rather than guessing: an assumed-clean
+  // observation would produce a commitment matching whatever the receipt claims, which is the
+  // failure mode of a verifier that always agrees.
+  const observation = context.underlying;
+  if (!observation) return null;
+
   const usesTicket = tx.TicketSequence !== undefined;
   const sequenceOrTicket = usesTicket ? tx.TicketSequence : tx.Sequence;
   if (sequenceOrTicket === undefined || tx.LastLedgerSequence === undefined) return null;
 
   return authorizationCommitment({
-      schemaVersion: 1,
       flareChainId: BigInt(context.flareChainId),
       instructionSender: context.instructionSender,
       assetManager: context.assetManager,
@@ -69,5 +84,18 @@ export function commitmentFromReceipt(receipt: Receipt, tx: XrplTransaction): st
       policyVersion: context.policyVersion,
       extensionId: BigInt(context.extensionId),
       extensionCodeHash: hexToBytes(context.extensionCodeHash),
+      observedAtLedger: observation.observedAtLedger,
+      observedSourceCount: observation.sourceCount,
+      observationRoot: observationRoot({
+        available: observation.available,
+        agreed: observation.agreed,
+        observedAtLedger: observation.observedAtLedger,
+        observedAtTime: BigInt(observation.observedAtTime),
+        sourceCount: observation.sourceCount,
+        payments: observation.payments.map((p) => ({
+          transactionHash: p.transactionHash,
+          amountDrops: BigInt(p.amountDrops),
+        })),
+      }),
   });
 }

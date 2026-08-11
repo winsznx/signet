@@ -20,7 +20,7 @@ import {
 import { SCENARIOS, scenarioInput } from "./scenarios.ts";
 import { SIGNET_SCHEMA_VERSION, type ReferenceDecision, type ReferenceInput } from "./types.ts";
 
-export const FIXTURE_FORMAT_VERSION = 1;
+export const FIXTURE_FORMAT_VERSION = 2;
 
 type Json = string | number | boolean | null | Json[] | { [key: string]: Json };
 
