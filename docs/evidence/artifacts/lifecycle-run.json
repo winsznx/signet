@@ -1,0 +1,353 @@
+{
+  "fork": {
+    "rpc": "http://127.0.0.1:8546",
+    "chainId": 114,
+    "forkBlock": 33928608,
+    "assetManager": "0xc1Ca88b937d0b528842F95d5731ffB586f4fbDFA"
+  },
+  "extension": {
+    "codeHash": "0x741f602259e952e6218e0be7a26b40c76a09e0c21c81ae8b427b8d8ec9484cc9",
+    "extensionId": "1",
+    "policyVersion": 1
+  },
+  "obligation": {
+    "requestId": "44891974",
+    "agentVault": "0xd5defe2c62d48788bb3889534fbfe7aea0602d64",
+    "paymentAddress": "rpa8bBa8GS1Zit6y9PcpQbahkqFahpWMyb",
+    "paymentReference": "0x4642505266410002000000000000000000000000000000000000000002acff46",
+    "valueUBA": "10000000",
+    "feeUBA": "50000",
+    "obligationHashOnChain": "0x4ca0b3411b06a85bea5d4dad83c05a4cb86897f352fbe59e1c35c45a5cec6371"
+  },
+  "decision": {
+    "kind": "authorize",
+    "obligationHash": "0x4ca0b3411b06a85bea5d4dad83c05a4cb86897f352fbe59e1c35c45a5cec6371",
+    "authorizationCommitment": "0x5959ee0f3de988fd9601693210a39994c272c72d1d468b15e04504629dea7ecc",
+    "payment": {
+      "TransactionType": "Payment",
+      "Account": "rPvarExLQuuqtkMBfDHp3pNnESZ5HByXta",
+      "Destination": "rpa8bBa8GS1Zit6y9PcpQbahkqFahpWMyb",
+      "Amount": "9950000",
+      "Fee": "10",
+      "Flags": 0,
+      "LastLedgerSequence": 19823612,
+      "Memos": [
+        {
+          "Memo": {
+            "MemoData": "4642505266410002000000000000000000000000000000000000000002ACFF46"
+          }
+        }
+      ],
+      "Sequence": 19822146
+    }
+  },
+  "bindingId": "0x59f73fa9b88026833021241eee4104809b99928b3b6773dc9fd185847e55761f",
+  "xrpl": {
+    "network": "xrpl-testnet",
+    "source": "rPvarExLQuuqtkMBfDHp3pNnESZ5HByXta",
+    "txHash": "2EA5DAA5E79E56A746127E74591784BE88D6442629D78324A955443378E25DB9",
+    "finalState": "VALIDATED_SUCCESS",
+    "validatedLedger": 19823574,
+    "replayEngineResult": "tefPAST_SEQ"
+  },
+  "fdc": {
+    "status": "VALID"
+  },
+  "steps": [
+    {
+      "name": "fork started",
+      "ok": true,
+      "note": "coston2 @ 33928608"
+    },
+    {
+      "name": "extension built and measured",
+      "ok": true,
+      "note": "0x741f602259e952e6… over 3889698 bytes"
+    },
+    {
+      "name": "signet deployed on the fork",
+      "ok": true,
+      "note": "registry 0x06D470CE7306A5A707b1036DbacB0270B624e91e"
+    },
+    {
+      "name": "fassets produced an obligation for our destination",
+      "ok": true,
+      "note": "request 44891974, agent 0xd5defe2c62d48788bb3889534fbfe7aea0602d64"
+    },
+    {
+      "name": "action opened by the pinned instruction sender",
+      "ok": true,
+      "note": "0x4ca0b3411b06a85bea5d4dad83c05a4cb86897f352fbe59e1c35c45a5cec6371"
+    },
+    {
+      "name": "obligation field firstUnderlyingBlock is the one fassets emitted",
+      "ok": true,
+      "note": "19823217"
+    },
+    {
+      "name": "obligation field lastUnderlyingBlock is the one fassets emitted",
+      "ok": true,
+      "note": "19824222"
+    },
+    {
+      "name": "obligation field lastUnderlyingTimestamp is the one fassets emitted",
+      "ok": true,
+      "note": "1786464166"
+    },
+    {
+      "name": "obligation field valueUBA is the one fassets emitted",
+      "ok": true,
+      "note": "10000000"
+    },
+    {
+      "name": "obligation field feeUBA is the one fassets emitted",
+      "ok": true,
+      "note": "50000"
+    },
+    {
+      "name": "obligation field paymentReference is the one fassets emitted",
+      "ok": true,
+      "note": "0x4642505266410002000000000000000000000000000000000000000002acff46"
+    },
+    {
+      "name": "obligation field paymentAddress is the one fassets emitted",
+      "ok": true,
+      "note": "rpa8bBa8GS1Zit6y9PcpQbahkqFahpWMyb"
+    },
+    {
+      "name": "valid lifecycle: go and reference agree",
+      "ok": true,
+      "note": "authorize"
+    },
+    {
+      "name": "valid lifecycle authorizes",
+      "ok": true,
+      "note": ""
+    },
+    {
+      "name": "obligation hash agrees across solidity, go and typescript",
+      "ok": true,
+      "note": "0x4ca0b3411b06a85bea5d4dad83c05a4cb86897f352fbe59e1c35c45a5cec6371"
+    },
+    {
+      "name": "destination came from fassets",
+      "ok": true,
+      "note": "rpa8bBa8GS1Zit6y9PcpQbahkqFahpWMyb"
+    },
+    {
+      "name": "amount is value minus fee, exactly",
+      "ok": true,
+      "note": "9950000 drops"
+    },
+    {
+      "name": "memo carries the fassets payment reference",
+      "ok": true,
+      "note": "4642505266410002000000000000000000000000000000000000000002acff46"
+    },
+    {
+      "name": "source is the bound account",
+      "ok": true,
+      "note": "rPvarExLQuuqtkMBfDHp3pNnESZ5HByXta"
+    },
+    {
+      "name": "attack destination moved: go and reference agree",
+      "ok": true,
+      "note": "authorize"
+    },
+    {
+      "name": "the moved destination still authorizes, so detection cannot rely on refusal",
+      "ok": true,
+      "note": "authorize"
+    },
+    {
+      "name": "moving the destination does not change the obligation identity",
+      "ok": true,
+      "note": "0x4ca0b3411b06a85bea5d4dad83c05a4cb86897f352fbe59e1c35c45a5cec6371"
+    },
+    {
+      "name": "moving the destination breaks the authorization commitment",
+      "ok": true,
+      "note": "0x5959ee0f3de988fd… → 0xa972b10ca80a0c5e…"
+    },
+    {
+      "name": "attack amount raised: go and reference agree",
+      "ok": true,
+      "note": "authorize"
+    },
+    {
+      "name": "raising the amount breaks the authorization commitment",
+      "ok": true,
+      "note": "commitment moved"
+    },
+    {
+      "name": "attack inactive redemption: go and reference agree",
+      "ok": true,
+      "note": "refuse S004_INACTIVE_REDEMPTION"
+    },
+    {
+      "name": "attack inactive redemption is refused with S004_INACTIVE_REDEMPTION",
+      "ok": true,
+      "note": "S004_INACTIVE_REDEMPTION"
+    },
+    {
+      "name": "attack wrong agent: go and reference agree",
+      "ok": true,
+      "note": "refuse S005_WRONG_AGENT"
+    },
+    {
+      "name": "attack wrong agent is refused with S005_WRONG_AGENT",
+      "ok": true,
+      "note": "S005_WRONG_AGENT"
+    },
+    {
+      "name": "attack expired underlying window: go and reference agree",
+      "ok": true,
+      "note": "refuse S007_EXPIRED_WINDOW"
+    },
+    {
+      "name": "attack expired underlying window is refused with S007_EXPIRED_WINDOW",
+      "ok": true,
+      "note": "S007_EXPIRED_WINDOW"
+    },
+    {
+      "name": "attack fee above the cap: go and reference agree",
+      "ok": true,
+      "note": "refuse S013_FEE_CAP_EXCEEDED"
+    },
+    {
+      "name": "attack fee above the cap is refused with S013_FEE_CAP_EXCEEDED",
+      "ok": true,
+      "note": "S013_FEE_CAP_EXCEEDED"
+    },
+    {
+      "name": "attack paused system: go and reference agree",
+      "ok": true,
+      "note": "refuse S016_PAUSED"
+    },
+    {
+      "name": "attack paused system is refused with S016_PAUSED",
+      "ok": true,
+      "note": "S016_PAUSED"
+    },
+    {
+      "name": "attack retired binding: go and reference agree",
+      "ok": true,
+      "note": "refuse S003_UNBOUND_AGENT"
+    },
+    {
+      "name": "attack retired binding is refused with S003_UNBOUND_AGENT",
+      "ok": true,
+      "note": "S003_UNBOUND_AGENT"
+    },
+    {
+      "name": "attack binding covers a different vault: go and reference agree",
+      "ok": true,
+      "note": "refuse S005_WRONG_AGENT"
+    },
+    {
+      "name": "attack binding covers a different vault is refused with S005_WRONG_AGENT",
+      "ok": true,
+      "note": "S005_WRONG_AGENT"
+    },
+    {
+      "name": "attack binding state unreadable: go and reference agree",
+      "ok": true,
+      "note": "refuse S017_STATE_UNAVAILABLE"
+    },
+    {
+      "name": "attack binding state unreadable is refused with S017_STATE_UNAVAILABLE",
+      "ok": true,
+      "note": "S017_STATE_UNAVAILABLE"
+    },
+    {
+      "name": "attack revoked code version: go and reference agree",
+      "ok": true,
+      "note": "refuse S015_CODE_VERSION_REVOKED"
+    },
+    {
+      "name": "attack revoked code version is refused with S015_CODE_VERSION_REVOKED",
+      "ok": true,
+      "note": "S015_CODE_VERSION_REVOKED"
+    },
+    {
+      "name": "attack replacement without a resolved prior: go and reference agree",
+      "ok": true,
+      "note": "refuse S018_REPLACEMENT_NOT_AUTHORIZED"
+    },
+    {
+      "name": "attack replacement without a resolved prior is refused with S018_REPLACEMENT_NOT_AUTHORIZED",
+      "ok": true,
+      "note": "S018_REPLACEMENT_NOT_AUTHORIZED"
+    },
+    {
+      "name": "malformed input unknown top-level field is rejected identically",
+      "ok": true,
+      "note": "go exit 1, reference exit 1"
+    },
+    {
+      "name": "malformed input unknown nested field is rejected identically",
+      "ok": true,
+      "note": "go exit 1, reference exit 1"
+    },
+    {
+      "name": "malformed input unknown field inside prior is rejected identically",
+      "ok": true,
+      "note": "go exit 1, reference exit 1"
+    },
+    {
+      "name": "replaying the action on chain reverts",
+      "ok": true,
+      "note": "0x214712b6"
+    },
+    {
+      "name": "an unbound agent cannot open an action",
+      "ok": true,
+      "note": "0x63ed1f97"
+    },
+    {
+      "name": "the signed blob decodes to exactly the authorized payment",
+      "ok": true,
+      "note": "2EA5DAA5E79E56A746127E74591784BE88D6442629D78324A955443378E25DB9"
+    },
+    {
+      "name": "the signed blob carries the fassets reference unchanged",
+      "ok": true,
+      "note": "memo intact"
+    },
+    {
+      "name": "partial payment is not enabled",
+      "ok": true,
+      "note": "Flags=0"
+    },
+    {
+      "name": "the blob was signed by the key the registry approved",
+      "ok": true,
+      "note": "ED29732A81F6F6B3812462BCAFCACC46CC39B72A1A50040435E798CE7CCE01D093"
+    },
+    {
+      "name": "signed transaction persisted before first submission",
+      "ok": true,
+      "note": "./.runtime/xrpl/submissions/2EA5DAA5E79E56A746127E74591784BE88D6442629D78324A955443378E25DB9.json"
+    },
+    {
+      "name": "provisional response received",
+      "ok": true,
+      "note": "tesSUCCESS (not a result)"
+    },
+    {
+      "name": "payment reached validated success on xrpl testnet",
+      "ok": true,
+      "note": "VALIDATED_SUCCESS at ledger 19823574"
+    },
+    {
+      "name": "resubmitting the identical blob cannot pay twice",
+      "ok": true,
+      "note": "tefPAST_SEQ"
+    },
+    {
+      "name": "fdc verifier accepts an attestation request for the executed payment",
+      "ok": true,
+      "note": "VALID 0x5852505061796d65…"
+    }
+  ]
+}

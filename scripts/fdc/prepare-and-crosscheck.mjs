@@ -19,13 +19,7 @@ import { keccak_256 } from "@noble/hashes/sha3";
 import { REPO_ROOT } from "../lib/source-lock.mjs";
 import { redemptionPaymentReference } from "../../reference/src/payment-reference.ts";
 import { toHex } from "../../reference/src/bytes.ts";
-
-const VERIFIER = "https://fdc-verifiers-testnet.flare.network/verifier/xrp/XRPPayment";
-/** Documented public key for the testnet verifiers, from the official FDC walkthrough. */
-const VERIFIER_API_KEY = "00000000-0000-0000-0000-000000000000";
-
-const ATTESTATION_TYPE = `0x${Buffer.from("XRPPayment", "utf8").toString("hex").padEnd(64, "0")}`;
-const SOURCE_ID = `0x${Buffer.from("testXRP", "utf8").toString("hex").padEnd(64, "0")}`;
+import { ATTESTATION_TYPE, requestBodyFor, SOURCE_ID, verifierCall } from "./verifier.mjs";
 
 const receiptPath = process.argv[2];
 if (!receiptPath) {
@@ -36,21 +30,10 @@ const receipt = JSON.parse(readFileSync(join(REPO_ROOT, receiptPath), "utf8"));
 const transactionId = `0x${receipt.txHash.toLowerCase()}`;
 const proofOwner = "0x88f61BcDC3C0Cfe4E12dc0576960bcF3ECa88F7d";
 
-async function verifier(path, body) {
-  const response = await fetch(`${VERIFIER}/${path}`, {
-    method: "POST",
-    headers: { "content-type": "application/json", "x-api-key": VERIFIER_API_KEY },
-    body: JSON.stringify(body),
-    signal: AbortSignal.timeout(90_000),
-  });
-  if (!response.ok) throw new Error(`${path}: HTTP ${response.status}`);
-  return response.json();
-}
+const requestBody = requestBodyFor(transactionId, proofOwner);
 
-const requestBody = { attestationType: ATTESTATION_TYPE, sourceId: SOURCE_ID, requestBody: { transactionId, proofOwner } };
-
-const prepared = await verifier("prepareRequest", requestBody);
-const answered = await verifier("prepareResponse", requestBody);
+const prepared = await verifierCall("prepareRequest", requestBody);
+const answered = await verifierCall("prepareResponse", requestBody);
 
 if (prepared.status !== "VALID" || answered.status !== "VALID") {
   console.error(`verifier did not consider the payment valid: ${prepared.status} / ${answered.status}`);

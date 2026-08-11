@@ -126,8 +126,14 @@ db-down:
 	docker rm -f signet-postgres
 
 .PHONY: test-e2e
-test-e2e:
-	@echo "PENDING test-e2e: owned by phase 09"
+test-e2e: lifecycle
+
+# The composed lifecycle. Starts its own Coston2 fork, so it needs no C2FLR, but it does submit a
+# real XRPL Testnet payment and does call the FDC verifier, so it needs network and a funded
+# testnet source account.
+.PHONY: lifecycle
+lifecycle:
+	node scripts/lifecycle/run.mjs
 
 # ---------------------------------------------------------------------------- security
 
