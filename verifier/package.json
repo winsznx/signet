@@ -1,0 +1,21 @@
+{
+  "name": "@signet/verifier",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Independent verifier. Checks Signet receipts against public sources, from a fresh clone, with no credentials.",
+  "exports": { ".": "./src/verify.ts" },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "verify:receipt": "node --experimental-strip-types src/cli.ts"
+  },
+  "dependencies": {
+    "@noble/hashes": "1.8.0",
+    "@signet/reference": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "5.9.2",
+    "vitest": "3.2.6"
+  }
+}

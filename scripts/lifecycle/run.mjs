@@ -648,6 +648,24 @@ writeFileSync(
       engineResult: provisional.engineResult,
       replayEngineResult: replay.engineResult,
       fdcStatus: attestation.status,
+      // Everything the authorization commitment covers that the ledger does not hold. Without this
+      // an independent verifier cannot recompute the commitment, and a commitment nobody can
+      // recompute is a number rather than a check.
+      decisionContext: {
+        flareChainId: chain.COSTON2_CHAIN_ID.toString(),
+        assetManager: chain.ASSET_MANAGER,
+        instructionSender: deployment.sender,
+        agentVault: obligation.agentVault,
+        requestGeneration: 0,
+        xrplNetworkId: XRPL_NETWORK_ID,
+        policyVersion: POLICY_VERSION,
+        extensionId: EXTENSION_ID.toString(),
+        extensionCodeHash: CODE_HASH,
+        firstUnderlyingBlock: obligation.firstUnderlyingBlock.toString(),
+        lastUnderlyingBlock: obligation.lastUnderlyingBlock.toString(),
+        lastUnderlyingTimestamp: obligation.lastUnderlyingTimestamp.toString(),
+        maxFeeDrops: baseInput.xrpl.maxFeeDrops.toString(),
+      },
       template: tx,
       signedBy: "regular-key",
       checksPassed: `${steps.filter((s) => s.ok).length}/${steps.length}`,

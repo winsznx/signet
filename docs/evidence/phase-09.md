@@ -56,11 +56,11 @@ rather than in this repository:
 
 | | |
 |---|---|
-| Coston2 fork block | 33928608 |
-| FAssets request id | 44891974 |
+| Coston2 fork block | 33928981 |
+| FAssets request id | 44892968 |
 | agent vault | 0xd5defe2c62d48788bb3889534fbfe7aea0602d64 |
 | FXRP holder impersonated | 0xff02f742106b8a25c26e65c1f0d66bec3c90d429 |
-| XRPL transaction | 2EA5DAA5E79E56A746127E74591784BE88D6442629D78324A955443378E25DB9 |
+| XRPL transaction | 28B48DC36ACFDA1C22E97C033941355E4680B8F28964DB78F68AA44B41FBEFF4 |
 
 A rerun picks a fresh head and a fresh request id, and would fail loudly rather than silently pass
 if that holder's balance or the agent's redeemable capacity changed.
@@ -73,8 +73,8 @@ go         extension/cmd/signet-extension
 typescript reference/src/cli-decide.ts
 ```
 
-All three returned `0x4ca0b3411b06a85bea5d4dad83c05a4cb86897f352fbe59e1c35c45a5cec6371` for request
-44891974. The Go and TypeScript deciders were handed byte-identical input and were required to agree
+All three returned `0x2471ac8799e2efa0f23a700b8884b41d05b4bf08c2fff5150b8a5e2b073d66a7` for request
+44892968. The Go and TypeScript deciders were handed byte-identical input and were required to agree
 on kind, obligation hash, authorization commitment and reason code for **every** case in the run,
 valid and attack alike.
 
@@ -101,12 +101,12 @@ never approved is precisely the failure this system exists to prevent.
 ```text
 ok   signed transaction persisted before first submission
 ok   provisional response received                    tesSUCCESS (not a result)
-ok   payment reached validated success on xrpl testnet  ledger 19823574
+ok   payment reached validated success on xrpl testnet  ledger 19823767
 ok   resubmitting the identical blob cannot pay twice   tefPAST_SEQ
 ok   fdc verifier accepts an attestation request        VALID
 ```
 
-Transaction `2EA5DAA5E79E56A746127E74591784BE88D6442629D78324A955443378E25DB9` on XRPL Testnet.
+Transaction `28B48DC36ACFDA1C22E97C033941355E4680B8F28964DB78F68AA44B41FBEFF4` on XRPL Testnet.
 
 The replay line is the one worth reading twice. The identical signed blob was submitted a second
 time and the ledger refused it, because its sequence was already consumed. That is the last line of

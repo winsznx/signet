@@ -131,6 +131,11 @@ test-e2e: lifecycle
 # The composed lifecycle. Starts its own Coston2 fork, so it needs no C2FLR, but it does submit a
 # real XRPL Testnet payment and does call the FDC verifier, so it needs network and a funded
 # testnet source account.
+# Verifies one receipt against public sources, with no credentials.
+.PHONY: verify-receipt
+verify-receipt:
+	@node --experimental-strip-types verifier/src/cli.ts $(RECEIPT)
+
 .PHONY: lifecycle
 lifecycle:
 	node scripts/lifecycle/run.mjs
@@ -147,7 +152,11 @@ scan:
 # ---------------------------------------------------------------------------- gates
 
 .PHONY: verify
-verify: verify-bootstrap lint typecheck test-unit test-property test-contract test-race test-conformance test-xrpl-reconcile scan
+verify: verify-bootstrap lint typecheck test-unit test-property test-contract test-race test-conformance test-verifier test-xrpl-reconcile scan
+
+.PHONY: test-verifier
+test-verifier:
+	cd verifier && npx vitest run
 	@echo "verify OK"
 
 .PHONY: verify-phase

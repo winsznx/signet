@@ -56,6 +56,10 @@ const PROTOCOL_CONSTANTS = new Map([
     "7fffffffffffffffffffffffffffffff5d576e7357a4501ddfe92f46681b20a0",
     "secp256k1 half-order, the EIP-2 low-s bound used to reject signature malleability",
   ],
+  [
+    "8cbbd73a8d1b8b02a53c4c3b0ee34b472fe3099cc19bcfb57f1aae09e8a9847e",
+    "keccak of the RedemptionRequested event signature, from pinned FAssets IAssetManagerEvents.sol",
+  ],
 ]);
 
 /**
@@ -108,6 +112,10 @@ const PUBLIC_HASH_KEYS = new Set([
   "firstMemoData",
   "paymentReference",
   "runtimeCodeHash",
+  "extensionCodeHash",
+  "obligationHashOnChain",
+  "bindingId",
+  "codeHash",
   "proxyImplementationCodeHash",
   "contentSha256",
   "expected",
@@ -117,8 +125,14 @@ const PUBLIC_HASH_KEYS = new Set([
   "chainId",
 ]);
 
-/** Receipts are machine-generated evidence; only their public-identifier keys are trusted. */
-const KEYED_HASH_SOURCES = ["evidence/receipts"];
+/**
+ * Machine-generated evidence. Only their public-identifier keys are trusted, never a whole file:
+ * allowlisting a file would let any future key name inherit the cover.
+ *
+ * A digest collected from an allowlisted key here is allowed wherever it appears, which is what lets
+ * a run's own prose mention a commitment it already published under a structural key.
+ */
+const KEYED_HASH_SOURCES = ["evidence/receipts", "docs/evidence/artifacts"];
 
 function collectKeyedHexValues(node, out, key = null) {
   if (typeof node === "string") {

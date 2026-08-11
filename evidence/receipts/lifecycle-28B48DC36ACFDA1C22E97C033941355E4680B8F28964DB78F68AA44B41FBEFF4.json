@@ -1,0 +1,51 @@
+{
+  "seam": "composed-lifecycle",
+  "network": "xrpl-testnet",
+  "flareChain": "coston2-fork@33928981",
+  "requestId": "44892968",
+  "agentVault": "0xd5defe2c62d48788bb3889534fbfe7aea0602d64",
+  "authorizationCommitment": "0xa85cfa60ee41a21706e2940d6a1b5e012d4f83fc2075a15f0cb57153d112d9b2",
+  "obligationHash": "0x2471ac8799e2efa0f23a700b8884b41d05b4bf08c2fff5150b8a5e2b073d66a7",
+  "obligationHashOnChain": "0x2471ac8799e2efa0f23a700b8884b41d05b4bf08c2fff5150b8a5e2b073d66a7",
+  "extensionCodeHash": "0xbf72a89dd099181f651046dfe10e770b90bb5f250f4187b277371b1960ad1996",
+  "txHash": "28B48DC36ACFDA1C22E97C033941355E4680B8F28964DB78F68AA44B41FBEFF4",
+  "validatedLedger": 19823767,
+  "engineResult": "tesSUCCESS",
+  "replayEngineResult": "tefPAST_SEQ",
+  "fdcStatus": "VALID",
+  "decisionContext": {
+    "flareChainId": "114",
+    "assetManager": "0xc1Ca88b937d0b528842F95d5731ffB586f4fbDFA",
+    "instructionSender": "0x047450C8c591b5E6Dc0A827378a0aabd9FD041f9",
+    "agentVault": "0xd5defe2c62d48788bb3889534fbfe7aea0602d64",
+    "requestGeneration": 0,
+    "xrplNetworkId": 1,
+    "policyVersion": 1,
+    "extensionId": "1",
+    "extensionCodeHash": "0xbf72a89dd099181f651046dfe10e770b90bb5f250f4187b277371b1960ad1996",
+    "firstUnderlyingBlock": "19823217",
+    "lastUnderlyingBlock": "19824527",
+    "lastUnderlyingTimestamp": "1786464776",
+    "maxFeeDrops": "50000"
+  },
+  "template": {
+    "TransactionType": "Payment",
+    "Account": "rPvarExLQuuqtkMBfDHp3pNnESZ5HByXta",
+    "Destination": "rpa8bBa8GS1Zit6y9PcpQbahkqFahpWMyb",
+    "Amount": "9950000",
+    "Fee": "10",
+    "Flags": 0,
+    "LastLedgerSequence": 19823804,
+    "Memos": [
+      {
+        "Memo": {
+          "MemoData": "4642505266410002000000000000000000000000000000000000000002AD0328"
+        }
+      }
+    ],
+    "Sequence": 19822147
+  },
+  "signedBy": "regular-key",
+  "checksPassed": "59/59",
+  "explorer": "https://testnet.xrpl.org/transactions/28B48DC36ACFDA1C22E97C033941355E4680B8F28964DB78F68AA44B41FBEFF4"
+}

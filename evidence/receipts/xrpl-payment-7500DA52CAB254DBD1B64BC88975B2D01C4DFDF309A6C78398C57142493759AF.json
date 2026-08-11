@@ -26,5 +26,7 @@
     "Sequence": 19822140
   },
   "signedBy": "regular-key",
-  "explorer": "https://testnet.xrpl.org/transactions/7500DA52CAB254DBD1B64BC88975B2D01C4DFDF309A6C78398C57142493759AF"
+  "explorer": "https://testnet.xrpl.org/transactions/7500DA52CAB254DBD1B64BC88975B2D01C4DFDF309A6C78398C57142493759AF",
+  "settles": false,
+  "settlesNote": "This receipt proves the XRPL seam. It borrows a real Coston2 obligation payment reference and pays an amount and destination of its own choosing, so it does not settle that obligation and the verifier must not treat it as if it did."
 }

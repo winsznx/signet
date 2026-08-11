@@ -338,7 +338,7 @@
         "scripts/lifecycle/run.mjs",
         "docs/evidence/phase-09.md",
         "docs/evidence/artifacts/lifecycle-run.json",
-        "evidence/receipts/lifecycle-2EA5DAA5E79E56A746127E74591784BE88D6442629D78324A955443378E25DB9.json"
+        "evidence/receipts/lifecycle-28B48DC36ACFDA1C22E97C033941355E4680B8F28964DB78F68AA44B41FBEFF4.json"
       ],
       "verifiedAt": "2026-08-11T17:05:00Z",
       "limitations": [
@@ -349,6 +349,30 @@
         "Tag mode and ticket mode are covered by fixtures rather than end to end; this obligation used neither.",
         "The coordinator's PostgreSQL layer is not joined into this run.",
         "The 59/59 figure belongs to one run against live testnet state. A rerun picks a fresh head and request id."
+      ]
+    },
+    {
+      "id": "claim-independent-verifier",
+      "wording": "An independent verifier runs from a fresh clone with no credentials and checks a Signet receipt against sources this repository does not control: it asks every XRPL endpoint and requires agreement, reads the obligation from the Coston2 AssetManager over plain eth_call, recomputes the FAssets payment reference and the authorization commitment rather than believing the recorded ones, and reports UNVERIFIABLE with its own exit code for anything it cannot check. Ten deliberately corrupted bundles are each caught.",
+      "status": "verified",
+      "proofLevel": 2,
+      "network": [
+        "xrpl-testnet",
+        "coston2"
+      ],
+      "evidence": [
+        "verifier/src/verify.ts",
+        "verifier/test/corruption.test.ts",
+        "docs/evidence-schema.md",
+        "docs/evidence/phase-11.md",
+        "evidence/receipts/lifecycle-28B48DC36ACFDA1C22E97C033941355E4680B8F28964DB78F68AA44B41FBEFF4.json"
+      ],
+      "verifiedAt": "2026-08-11T17:05:00Z",
+      "limitations": [
+        "The FAssets half of every current receipt is UNVERIFIABLE, because every obligation this run produced was created on a fork. The verifier refusing to claim otherwise is what is proven, not that the comparison works against a public obligation.",
+        "No FDC Merkle proof and no FAssets completion are verified, because neither exists without C2FLR.",
+        "decisionContext is supplied by the receipt, so a receipt that lied about it would produce a self-consistent commitment. Binding it to the registry's on-chain record needs the registry deployed, which is phase 10.",
+        "The evidence bundle is a directory of receipts rather than a signed, content-addressed archive."
       ]
     }
   ]
