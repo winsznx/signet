@@ -1,0 +1,76 @@
+{
+  "seam": "target-chain-lifecycle",
+  "network": "xrpl-testnet",
+  "flareChain": "coston2",
+  "requestId": "44928272",
+  "agentVault": "0x165c62b4531d28e34c68a8b2acbf4d0421e4e028",
+  "authorizationCommitment": "0xd7e027edb38ca586dc34167a704971bd136642bd1064406c3d6a06bb514cbdec",
+  "obligationHash": "0x2cea228b31388fe8b264873c9cb51eed2583e212628dec051e4a2a3f450efedc",
+  "obligationHashOnChain": "0x2cea228b31388fe8b264873c9cb51eed2583e212628dec051e4a2a3f450efedc",
+  "extensionCodeHash": "0x863097a8a8c6f8cfb06423b5f154874d3664804fe7a2d25b1792acac383c15c4",
+  "txHash": "8A1492D15309AEBA34ABDE3D03D2FAD5B735165435A3C90F8C6CAFCB571AB51A",
+  "validatedLedger": 19825042,
+  "engineResult": "tesSUCCESS",
+  "replayEngineResult": "tefPAST_SEQ",
+  "settles": false,
+  "settlesNote": "Signet's payment did not settle this redemption. The agent paid it first from its own underlying address rDYeqGVc8M3Se9wowvRDbURGYGZ5i5VF6r in ledger 19825006 and confirmed it on Coston2, while Signet paid the same obligation again in ledger 19825042. FAssets reported the request as ACTIVE throughout, because confirmation is a separate transaction submitted after the payment validates. See docs/adr/0003-underlying-payment-precheck.md.",
+  "fdc": {
+    "votingRoundId": 1422645,
+    "requestTransaction": "0x5d4cd8edbbc173a2cbc702f42c29f3989191a02d64e0e5b9cc293e7624e1b7ce",
+    "verifiedOnChain": true,
+    "fdcVerification": "0x906507E0B64bcD494Db73bd0459d1C667e14B933"
+  },
+  "signet": {
+    "registry": "0x381bdE5961695914B28B16f405d51E8acB877f6e",
+    "instructionSender": "0xd6cF30B6411DB8465147FfDcF0e0418030B4b9CA",
+    "bindTransaction": "0xc8378ca06533dd2d55b83cc15e864d73f4a948ffa56d2c50d30a44934d6fce71",
+    "actionTransaction": "0x11832586c80fb787c915f5788330752b62c8c69247e1c1b014456954e054b3a5"
+  },
+  "decisionContext": {
+    "flareChainId": "114",
+    "assetManager": "0xc1ca88b937d0b528842f95d5731ffb586f4fbdfa",
+    "instructionSender": "0xd6cF30B6411DB8465147FfDcF0e0418030B4b9CA",
+    "agentVault": "0x165c62b4531d28e34c68a8b2acbf4d0421e4e028",
+    "requestGeneration": 0,
+    "xrplNetworkId": 1,
+    "policyVersion": 1,
+    "extensionId": "1",
+    "extensionCodeHash": "0x863097a8a8c6f8cfb06423b5f154874d3664804fe7a2d25b1792acac383c15c4",
+    "firstUnderlyingBlock": "19824924",
+    "lastUnderlyingBlock": "19825472",
+    "lastUnderlyingTimestamp": "1786468650",
+    "maxFeeDrops": "50000"
+  },
+  "template": {
+    "TransactionType": "Payment",
+    "Account": "rPvarExLQuuqtkMBfDHp3pNnESZ5HByXta",
+    "Destination": "rpa8bBa8GS1Zit6y9PcpQbahkqFahpWMyb",
+    "Amount": "9950000",
+    "Fee": "10",
+    "Flags": 0,
+    "LastLedgerSequence": 19825079,
+    "Memos": [
+      {
+        "Memo": {
+          "MemoData": "4642505266410002000000000000000000000000000000000000000002AD8D10"
+        }
+      }
+    ],
+    "Sequence": 19822149
+  },
+  "signedBy": "regular-key",
+  "checksPassed": "24/24",
+  "explorer": {
+    "payment": "https://testnet.xrpl.org/transactions/8A1492D15309AEBA34ABDE3D03D2FAD5B735165435A3C90F8C6CAFCB571AB51A",
+    "redemption": "https://coston2.testnet.flarescan.com/tx/0x402837d46283117df24e70d6669a04d2c12a336eb1b06065c4785357991a53ee",
+    "action": "https://coston2.testnet.flarescan.com/tx/0x11832586c80fb787c915f5788330752b62c8c69247e1c1b014456954e054b3a5"
+  },
+  "settledBy": {
+    "settledByAgentPayment": "8F304FB4F20D22D6E5B987D36A989A05E03C4900923B1D0FA01244CDD49E85E6",
+    "agentUnderlyingAddress": "rDYeqGVc8M3Se9wowvRDbURGYGZ5i5VF6r",
+    "agentPaymentLedger": 19825006,
+    "signetPaymentLedger": 19825042,
+    "confirmationTransaction": "0xafbce12c6a746c22ff08d3345b17c197d4bfa54fc4265d7f7190be58ce45a36a",
+    "redemptionStatusNow": "SUCCESSFUL"
+  }
+}

@@ -46,6 +46,30 @@ snapshot, which is architecture work, not hardening. It is recorded in the claim
 outside a TEE already has no isolation between the decider and the process that supplies its inputs,
 so closing this in isolation would not buy what it appears to.
 
+## Open: an obligation already paid by someone else
+
+Found by running Phase 10 against the live chain, where it caused a real duplicate payment.
+
+A FAssets status of `ACTIVE` does not mean an obligation is unpaid. It means the underlying payment
+has not yet been confirmed on Flare, and confirmation is a separate transaction submitted after the
+payment validates. In that window FAssets reports the obligation as open while the payment exists.
+
+Signet's three duplicate-payment guards all watch the wrong chain for this. The registry action
+state, the coordinator's unique indexes and the ledger's sequence consumption prevent *Signet*
+paying twice; none can see a payment made by another party.
+
+In the deployment Signet is designed for it is the agent's only signer, so no second payer exists.
+The exposure is an agent running any other payment path alongside Signet, during a migration or a
+fallback, and the consequence is the agent's own funds leaving twice for one obligation.
+
+**Risk rating: high, recorded and mitigated operationally, not closed.**
+[ADR 0003](adr/0003-underlying-payment-precheck.md) proposes the durable fix: a new decision input
+carrying validated underlying payments the signing boundary observed, and a reason code
+`S021_ALREADY_PAID_UNDERLYING`. That changes the canonical encoding and invalidates the frozen
+fixture set, so it is a protocol version bump rather than something to do unreviewed at the end of a
+build run. `scripts/lifecycle/target-chain.mjs` implements the same check one layer out and, replayed
+against the incident, refuses.
+
 ## Accepted medium risks
 
 Each of these is a decision, not an oversight.

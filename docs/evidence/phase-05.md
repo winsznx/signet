@@ -67,3 +67,33 @@ The stop boundary is respected: no full lifecycle has been attempted.
 - The obligation whose payment reference this payment carries belongs to a third-party agent.
 - The nonexistence path, which is what authorizes a replacement after a genuine expiry, is
   selector-verified but unexercised.
+
+
+## Addendum — the on-chain half, once C2FLR arrived
+
+Everything above was a read-only verifier query. That establishes the verifier would answer; it is
+not the same claim as "Flare's consensus attested to this payment". Both now hold.
+
+```text
+request submitted to FdcHub        0xa86d5208bcbb3684fa7f1df34d2603b61443ece78ebf8cd2b4968a7f7b8e288c
+fee                                1000 wei
+voting round                       1422636, finalized under protocol 200
+proof from the DA layer            3 Merkle nodes
+FdcVerification.verifyXRPPayment   true
+```
+
+Two things were wrong in my first attempt and are worth recording.
+
+`FdcVerification` is an EIP-1967 proxy. Probing its address for the verification selectors found
+nothing and I briefly concluded the function did not exist; the entry points are on the
+implementation behind it.
+
+`verifyPayment` and `verifyXRPPayment` are different functions over different structs. Minting
+consumes `IPayment.Proof`; Signet's own evidence uses `IXRPPayment.Proof`, whose response carries a
+memo and a destination tag where the generic type carries a standard reference and a one-to-one
+flag. Both selectors exist, so passing the wrong shape decodes to a different struct rather than
+failing cleanly. `scripts/fdc/prove.mjs` takes the type from its caller and never infers it.
+
+The round id is derived from the request transaction's own block timestamp using
+`FlareSystemsManager`'s published constants. A script that guessed from wall-clock time would be
+right only until it was not.

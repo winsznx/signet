@@ -1,0 +1,46 @@
+{
+  "seam": "fdc-on-chain",
+  "network": "coston2",
+  "attestedPayment": "28B48DC36ACFDA1C22E97C033941355E4680B8F28964DB78F68AA44B41FBEFF4",
+  "proofOwner": "0x88f61BcDC3C0Cfe4E12dc0576960bcF3ECa88F7d",
+  "requestTransaction": "0xa86d5208bcbb3684fa7f1df34d2603b61443ece78ebf8cd2b4968a7f7b8e288c",
+  "requestBlock": 33930414,
+  "requestFeeWei": "1000",
+  "votingRoundId": 1422636,
+  "fdcProtocolId": 200,
+  "merkleNodeCount": 3,
+  "verifiedOnChain": true,
+  "fdcVerification": "0x906507E0B64bcD494Db73bd0459d1C667e14B933",
+  "fdcHub": "0x48aC463d7975828989331F4De43341627b9c5f1D",
+  "response": {
+    "attestationType": "0x5852505061796d656e7400000000000000000000000000000000000000000000",
+    "sourceId": "0x7465737458525000000000000000000000000000000000000000000000000000",
+    "votingRound": 1422636,
+    "lowestUsedTimestamp": 1786464011,
+    "requestBody": {
+      "transactionId": "0x28b48dc36acfda1c22e97c033941355e4680b8f28964db78f68aa44b41fbeff4",
+      "proofOwner": "0x88f61bcdc3c0cfe4e12dc0576960bcf3eca88f7d"
+    },
+    "responseBody": {
+      "blockNumber": 19823767,
+      "blockTimestamp": 1786464011,
+      "sourceAddress": "rPvarExLQuuqtkMBfDHp3pNnESZ5HByXta",
+      "sourceAddressHash": "0x5e6346bfd7d81593bdf1770b7569162fb25e7dedf71ebb74560ab8076d4d2d7e",
+      "receivingAddressHash": "0x02eca6de356614981c07ee65e70ab8fdbffc669253215268a6687473ae533c44",
+      "intendedReceivingAddressHash": "0x02eca6de356614981c07ee65e70ab8fdbffc669253215268a6687473ae533c44",
+      "spentAmount": 9950010,
+      "intendedSpentAmount": 9950010,
+      "receivedAmount": 9950000,
+      "intendedReceivedAmount": 9950000,
+      "hasMemoData": true,
+      "firstMemoData": "0x4642505266410002000000000000000000000000000000000000000002ad0328",
+      "hasDestinationTag": false,
+      "destinationTag": 0,
+      "status": 0
+    }
+  },
+  "explorer": {
+    "request": "https://coston2.testnet.flarescan.com/tx/0xa86d5208bcbb3684fa7f1df34d2603b61443ece78ebf8cd2b4968a7f7b8e288c",
+    "votingRound": "https://coston2-systems-explorer.flare.network/voting-round/1422636?tab=fdc"
+  }
+}

@@ -416,6 +416,91 @@
         "No process-level chaos testing; crash and concurrency behaviour is proven at the database and ledger layers instead.",
         "No external penetration test, no third-party audit, and no screen-reader testing."
       ]
+    },
+    {
+      "id": "claim-coston2-deployment",
+      "wording": "The Signet registry and instruction sender are deployed on Flare Coston2 at 0x381bdE5961695914B28B16f405d51E8acB877f6e and 0xd6cF30B6411DB8465147FfDcF0e0418030B4b9CA, with the instruction sender pinned one-shot, the extension binary's measurement approved as the code hash, and a result signer that is provably not governance.",
+      "status": "verified",
+      "proofLevel": 3,
+      "network": [
+        "coston2"
+      ],
+      "evidence": [
+        "deployments/coston2.json",
+        "scripts/deploy-coston2.mjs",
+        "docs/evidence/phase-10.md"
+      ],
+      "verifiedAt": "2026-08-11T17:00:00Z",
+      "limitations": [
+        "Testnet only, with a testnet-only governance key.",
+        "The approved code hash is keccak256 of a locally built binary. It binds decisions to a specific build and says nothing about where that build executes; there is no TEE."
+      ]
+    },
+    {
+      "id": "claim-fdc-proof-on-chain",
+      "wording": "An XRPL Testnet payment made by Signet was attested by the Flare Data Connector end to end: the request was paid for and submitted to FdcHub, the voting round finalized, the Merkle proof was retrieved from a DA Layer operator, and FdcVerification accepted that proof on Coston2 against the root Flare's validators signed.",
+      "status": "verified",
+      "proofLevel": 3,
+      "network": [
+        "coston2",
+        "xrpl-testnet"
+      ],
+      "evidence": [
+        "scripts/fdc/prove.mjs",
+        "docs/evidence/phase-10.md",
+        "evidence/receipts/fdc-proof-28B48DC36ACFDA1C22E97C033941355E4680B8F28964DB78F68AA44B41FBEFF4.json",
+        "evidence/receipts/target-chain-8A1492D15309AEBA34ABDE3D03D2FAD5B735165435A3C90F8C6CAFCB571AB51A.json"
+      ],
+      "verifiedAt": "2026-08-11T17:15:00Z",
+      "limitations": [
+        "Coston2 and XRPL Testnet only.",
+        "An accepted proof establishes that the payment happened. It does not establish that the payment settled any FAssets obligation.",
+        "The attestation is Flare's, over an XRPL payment. This is not hardware-attested execution: the extension that produced the payment ran as an ordinary local process rather than in a TEE, and no enclave measurement is involved."
+      ]
+    },
+    {
+      "id": "claim-target-chain-lifecycle",
+      "wording": "Against a genuine Coston2 redemption that anyone can read, Signet opened an action on its deployed instruction sender, produced a decision whose obligation hash matches the deployed contract and both independent implementations, signed and persisted a payment before submitting it, reached validated success on XRPL Testnet, was refused by the ledger on replay, and had the payment attested by FDC and accepted on chain. An independent verifier run from a fresh clone with no credentials confirms all of it, including recomputing the authorization commitment.",
+      "status": "verified",
+      "proofLevel": 3,
+      "network": [
+        "coston2",
+        "xrpl-testnet"
+      ],
+      "evidence": [
+        "scripts/lifecycle/target-chain.mjs",
+        "docs/evidence/phase-10.md",
+        "evidence/receipts/target-chain-8A1492D15309AEBA34ABDE3D03D2FAD5B735165435A3C90F8C6CAFCB571AB51A.json"
+      ],
+      "verifiedAt": "2026-08-11T17:30:00Z",
+      "limitations": [
+        "Signet did not settle this redemption. The agent paid it first from its own underlying address and confirmed it; Signet paid the same obligation again 36 ledgers later. See docs/adr/0003-underlying-payment-precheck.md.",
+        "Signet has never settled a FAssets obligation. Settlement requires the payment to come from the agent's own underlying address, which requires the agent whitelist.",
+        "The obligation was created by us acting as a minter, and the agent's vault was bound to our own XRPL account, which is what created a second payer.",
+        "The extension ran as an ordinary process. No TEE and no attestation.",
+        "This is not hardware-attested execution. The extension ran as an ordinary local process rather than in a TEE, and the approved code hash binds the decision to a build without saying where that build ran."
+      ]
+    },
+    {
+      "id": "claim-duplicate-payment-gap",
+      "wording": "A FAssets redemption status of ACTIVE does not mean the obligation is unpaid; it means the underlying payment has not yet been confirmed on Flare. Signet paid a live Coston2 obligation that the agent had already paid 36 ledgers earlier, while FAssets still reported ACTIVE. None of Signet's duplicate-payment guards can see a payment made by another party.",
+      "status": "verified",
+      "proofLevel": 3,
+      "network": [
+        "coston2",
+        "xrpl-testnet"
+      ],
+      "evidence": [
+        "docs/adr/0003-underlying-payment-precheck.md",
+        "docs/evidence/phase-10.md",
+        "evidence/receipts/target-chain-8A1492D15309AEBA34ABDE3D03D2FAD5B735165435A3C90F8C6CAFCB571AB51A.json"
+      ],
+      "verifiedAt": "2026-08-11T17:35:00Z",
+      "limitations": [
+        "This is a recorded defect, not a fixed one. The durable fix is a new decision input and a protocol version bump, proposed in ADR 0003 and deliberately not made during this run.",
+        "An operational mitigation exists in scripts/lifecycle/target-chain.mjs, which scans the destination account for an existing payment carrying the obligation's reference and refuses to sign. It is one layer out from where the check belongs.",
+        "In the deployment Signet is designed for it is the agent's only signer, so the second payer that triggered this should not exist. That narrows the exposure; it does not close it."
+      ]
     }
   ]
 }

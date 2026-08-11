@@ -52,5 +52,32 @@
       "runtimeCodeHash": "0xbe17dcce07109a9722c3795425f528476479c5cb02d2455e7d059dacf27421bd"
     }
   },
-  "signet": {}
+  "signet": {
+    "deployedAt": "2026-08-11T16:48:14Z",
+    "deployedAtBlock": 33930191,
+    "governance": "0x88f61BcDC3C0Cfe4E12dc0576960bcF3ECa88F7d",
+    "registry": "0x381bdE5961695914B28B16f405d51E8acB877f6e",
+    "instructionSender": "0xd6cF30B6411DB8465147FfDcF0e0418030B4b9CA",
+    "assetManager": "0xc1ca88b937d0b528842f95d5731ffb586f4fbdfa",
+    "approvedCodeHash": "0x863097a8a8c6f8cfb06423b5f154874d3664804fe7a2d25b1792acac383c15c4",
+    "extensionId": "1",
+    "policyVersion": "1",
+    "approvedResultSigner": "0xb5607c89085a2f6F05F61703e9C974D2615F44c1",
+    "transactions": {
+      "fundingReceived": "0x7af7658169e0707ea533ca372c73e41913307397b2756690fed0ed5a9f593c76",
+      "registry": "0xacbce0e5b67fef34c25693074bffaae7324c7e1ce3c4bff97432196fabbfc88b",
+      "instructionSender": "0x7814313d1809c9200f2b1059a3829b02fff6ce53517367606cbdd3b5034f0083",
+      "setInstructionSender": "0xb1f581100b01e7f42d574c5d6ed27f6acac523bcfa9d2685932a0d66e1e7a5d9",
+      "approveCodeHash": "0x73ee539135e2374a1ffcedb54c0f2ac8393f3b29197391f436277eaf6a8e691f",
+      "approveSigner": "0x8a564dd905aa2477e58fde66947f9096c03c068bf1c351ef404b07a1887717ea"
+    },
+    "runtimeCodeHash": {
+      "registry": "0x86ba6da942284e6e6933011824599dfb224ad579e194fdc4c9e1c9e391086e8a",
+      "instructionSender": "0x3e80ace7042d60d419f17d4b540f5d55b4e58990b4862c4e2bb33e902f7a08a3"
+    },
+    "explorer": {
+      "registry": "https://coston2.testnet.flarescan.com/address/0x381bdE5961695914B28B16f405d51E8acB877f6e",
+      "instructionSender": "https://coston2.testnet.flarescan.com/address/0xd6cF30B6411DB8465147FfDcF0e0418030B4b9CA"
+    }
+  }
 }
