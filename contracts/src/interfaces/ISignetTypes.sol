@@ -62,6 +62,7 @@ interface ISignetTypes {
         AMOUNT_INVALID,
         DESTINATION_EMPTY,
         TAG_OUT_OF_RANGE,
-        MODE_UNSUPPORTED
+        MODE_UNSUPPORTED,
+        WINDOW_INVALID
     }
 }

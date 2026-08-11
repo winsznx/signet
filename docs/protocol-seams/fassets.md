@@ -104,10 +104,19 @@ recent range and 27 in the earlier one.
 
 ### 1. One transaction can create several obligations
 
-The three most recent `RedemptionRequested` events all came from the same transaction, each for a
-different agent. FAssets fills a redemption from the front of the FIFO queue and emits one event per
-participating agent. The coordinator must therefore treat `(requestId)` as the unit of work, not
-`(transactionHash)`, and must not assume one event per transaction.
+Transaction `0xd4f2f628f1ad1f4fc11d12e1093b1d4be1f83b2241cef1081fb15dd187319b70` emits **four**
+`RedemptionRequested` events, at log indices 0x1c to 0x1f, for four distinct agents:
+
+```text
+0xd5deFe2c62D48788BB3889534FBFe7Aea0602D64  requestId 44850976
+0x5b89514d1F060AdbEA8B7294AFf81ed8dbAa7fC5  requestId 44851150
+0x165c62b4531D28E34c68a8b2aCBF4D0421e4E028  requestId 44851324
+0x55c815260cBE6c45Fe5bFe5FF32E3C7D746f14dC  requestId 44851498
+```
+
+FAssets fills a redemption from the front of the FIFO queue and emits one event per participating
+agent, which `IAssetManagerEvents` documents directly. The coordinator must treat `requestId` as the
+unit of work, never `transactionHash`, and must not assume one event per transaction.
 
 ### 2. A confirmed request reports SUCCESSFUL rather than reverting
 
@@ -147,6 +156,7 @@ theirs.
 | `AMOUNT_INVALID` | the fee consumes the whole value |
 | `TAG_OUT_OF_RANGE` | tag exceeds uint32, or a tag is present on an untagged obligation |
 | `MODE_UNSUPPORTED` | the obligation requires a tag but the deployment cannot confirm tagged payments |
+| `WINDOW_INVALID` | `firstUnderlyingBlock` is after `lastUnderlyingBlock` |
 
 ## Mode support is checked, not assumed
 
@@ -158,9 +168,6 @@ so Signet refuses it rather than paying without the tag (FR-014).
 
 ## Open items
 
-- `firstUnderlyingBlock <= lastUnderlyingBlock` is not asserted by the adapter. Both are constructed
-  by FAssets, so an inversion would be a protocol fault rather than an attack, but the check is
-  cheap and belongs in Phase 06's contract work.
 - No obligation assigned to a Signet-controlled agent exists yet, because agent registration is
   governance-gated. Every case here reads obligations belonging to other agents, which is exactly
   why the `WRONG_AGENT` path is tested against a real one.

@@ -94,6 +94,10 @@
       {
         "value": "0x4642505266410002000000000000000000000000000000000000000000000000",
         "why": "redemption type with zero low bits carries no request id"
+      },
+      {
+        "value": "0x4642505266410001000000000000000000000000000000000000000002ac612a",
+        "why": "minting type carrying the live request id 44851498; well formed, right id, wrong FAssets type"
       }
     ]
   }

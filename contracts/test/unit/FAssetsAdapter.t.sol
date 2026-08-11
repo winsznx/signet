@@ -181,6 +181,23 @@ contract FAssetsAdapterUnitTest is Test {
         assertEq(uint256(r.mode), uint256(ISignetTypes.RedemptionMode.DESTINATION_TAG), "mode carries the distinction");
     }
 
+    // ------------------------------------------------------------------ window
+
+    function test_invertedWindowIsRefused() public {
+        RedemptionRequestInfo.DataExt memory data = _validObligation();
+        data.firstUnderlyingBlock = data.lastUnderlyingBlock + 1;
+        manager.set(data);
+        _expectFailure(ISignetTypes.AdapterFailure.WINDOW_INVALID);
+    }
+
+    function test_singleBlockWindowIsAccepted() public {
+        RedemptionRequestInfo.DataExt memory data = _validObligation();
+        data.firstUnderlyingBlock = data.lastUnderlyingBlock;
+        manager.set(data);
+        (ISignetTypes.AdapterFailure failure,) = _read();
+        assertEq(uint256(failure), uint256(ISignetTypes.AdapterFailure.NONE), "equality is a valid window");
+    }
+
     // ------------------------------------------------------------------ unsupported mode
 
     function test_taggedObligationOnADeploymentThatCannotConfirmItIsRefused() public {

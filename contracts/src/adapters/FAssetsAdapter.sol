@@ -90,6 +90,12 @@ library FAssetsAdapter {
         if (info.feeUBA >= info.valueUBA) {
             return (ISignetTypes.AdapterFailure.AMOUNT_INVALID, redemption);
         }
+        // An inverted window would be a protocol fault rather than an attack, but every downstream
+        // deadline calculation assumes it is forward, and a silent inversion would produce a
+        // LastLedgerSequence that cannot satisfy any margin.
+        if (info.firstUnderlyingBlock > info.lastUnderlyingBlock) {
+            return (ISignetTypes.AdapterFailure.WINDOW_INVALID, redemption);
+        }
 
         ISignetTypes.RedemptionMode mode = info.requiresDestinationTag
             ? ISignetTypes.RedemptionMode.DESTINATION_TAG

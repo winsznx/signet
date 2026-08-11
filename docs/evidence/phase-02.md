@@ -45,10 +45,16 @@ derivation cannot hide.
 
 ### One transaction can create several obligations
 
-The three most recent `RedemptionRequested` events came from a single transaction, each for a
-different agent. FAssets fills a redemption from the front of the FIFO queue and emits one event per
-participating agent. The unit of work is therefore the `requestId`, never the transaction hash. A
-coordinator written on the opposite assumption would silently drop obligations.
+Transaction `0xd4f2f628f1ad1f4fc11d12e1093b1d4be1f83b2241cef1081fb15dd187319b70` emits **four**
+`RedemptionRequested` events, at log indices 0x1c to 0x1f, for four distinct agents, with request ids
+44850976, 44851150, 44851324 and 44851498. FAssets fills a redemption from the front of the FIFO
+queue and emits one event per participating agent. The unit of work is therefore the `requestId`,
+never the transaction hash. A coordinator written on the opposite assumption would silently drop
+obligations.
+
+This count was originally recorded as three. The protocol-seam verifier read the transaction receipt
+directly and found four; the fourth had been missed because only the tail of a sampled log page was
+decoded. Corrected here, and the receipt was re-read to confirm.
 
 ### A confirmed request reports SUCCESSFUL rather than reverting
 
@@ -89,6 +95,7 @@ than against itself.
 
 ```text
 $ COSTON2_RPC_URL=https://coston2-api.flare.network/ext/C/rpc forge test --match-path contracts/test/fork/FAssetsSeam.t.sol
+# run with direct network access; see the environment note in section 8
 [PASS] test_confirmedRedemptionIsNoLongerActive()
 [PASS] test_confirmedRedemptionReturnsSuccessfulRatherThanReverting()
 [PASS] test_deploymentSupportsDestinationTagMode()
@@ -131,8 +138,8 @@ not apply to a normal clone. The fork tests were run with direct network access.
   the `WRONG_AGENT` path is proven against a real one.
 - The completion entry points are selector-verified but not exercised; Phase 05 owns the proof they
   consume.
-- `firstUnderlyingBlock <= lastUnderlyingBlock` is not asserted by the adapter. Recorded as an open
-  item for Phase 06.
+- The seam verifier could not run `forge` itself inside the sandbox, so its confirmation of the fork
+  tests is by independent raw RPC rather than by re-running the suite.
 
 ## 10. Bootstrap reproducibility, proven while this phase was in review
 
@@ -182,12 +189,38 @@ fork tests pass vacuously; and nothing under `contracts/src` imports `forge-std`
 It also confirmed the sandbox TLS failure is an environment artifact, reproducing both the failure
 inside the sandbox and the 12 passes with direct network access.
 
+### Protocol-seam verification, verdict CONDITIONAL PASS
+
+The seam verifier re-derived every numbered claim itself, against the same live endpoint but
+through raw `eth_call` and `eth_getTransactionReceipt` rather than through this repository's
+tooling, with calldata built offline. All eight claims came back CONFIRMED with byte-for-byte
+matches on addresses, selectors, event data and the derived payment reference. It additionally
+confirmed from pinned source that `Redemptions.finishRedemptionRequest` only sets the status and
+never deletes the struct, which is the mechanism behind the SUCCESSFUL-not-revert finding, and it
+identified the revert selector for an unknown id as `InvalidRequestId()` (`0xba0514c0`).
+
+It also verified the pinned fork blocks are exactly right by reading state one block either side:
+at 33,921,674 the request reverts as non-existent, at 33,921,675 it is ACTIVE, at 33,922,434 it is
+SUCCESSFUL.
+
+Three conditions, all closed:
+
+| Condition | Resolution |
+|---|---|
+| The "one transaction, several obligations" finding said three events; the cited transaction actually emits four | Corrected. The receipt was re-read directly: four events at log indices 0x1c to 0x1f for four distinct agents, request ids 44850976, 44851150, 44851324 and 44851498. The fourth had been missed because only the tail of a sampled log page was decoded. The finding itself was right and is documented upstream in `IAssetManagerEvents`; the count was not |
+| `firstUnderlyingBlock <= lastUnderlyingBlock` unasserted | Now checked, returning a new `WINDOW_INVALID` failure. An inverted window would be a protocol fault rather than an attack, but every downstream deadline calculation assumes it is forward. Two unit tests cover the inversion and the single-block boundary |
+| The fork transcript could not be reproduced by `forge` inside a TLS-intercepting sandbox | The transcript in section 6 is from a direct-network run, which is now stated explicitly. The verifier independently reproduced the substance of all 12 assertions by raw RPC |
+
+One immaterial slip in the verifier's own report: it converted the four request ids to decimal
+incorrectly. Its hex values and its count of four are right, and the corrected decimals above were
+taken from the receipt.
+
 ### Test totals after the fixes
 
 ```text
-contracts/test/unit/FAssetsAdapter.t.sol   17 passed
+contracts/test/unit/FAssetsAdapter.t.sol   19 passed
 contracts/test/fork/FAssetsSeam.t.sol      12 passed
-                                           29 passed, 0 failed
+                                           31 passed, 0 failed
 ```
 
 ## 12. Completion gate
