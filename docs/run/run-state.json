@@ -1,15 +1,15 @@
 {
   "product": "Signet",
   "status": "running",
-  "currentPhase": "06",
-  "lastPassingPhase": "04",
+  "currentPhase": "07",
+  "lastPassingPhase": "06",
   "validation": "pending",
   "blocker": {
     "state": "deferred_not_stopped",
     "note": "Phases 03 and 05 are both blocked on C2FLR: every remaining step in each is a state-changing Coston2 transaction. Phase 06 (Signet contracts) is testable locally with forge and needs no gas, so the run continues there rather than stopping.",
     "type": "funding",
     "phaseBlocked": "03 and 05",
-    "phaseInProgress": "06",
+    "phaseInProgress": "07",
     "requirement": "Coston2 testnet gas (C2FLR)",
     "address": "0x88f61BcDC3C0Cfe4E12dc0576960bcF3ECa88F7d",
     "network": "Flare Coston2 (chain id 114)",
@@ -21,5 +21,5 @@
     "safeFallback": "None for Phase 03 itself. The run works around it by proceeding to Phase 04.",
     "detail": "docs/run/FUNDING_REQUEST.md"
   },
-  "updatedAt": "2026-08-11T14:51:12Z"
+  "updatedAt": "2026-08-11T15:02:31Z"
 }
