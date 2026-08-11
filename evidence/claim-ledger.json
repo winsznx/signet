@@ -261,6 +261,27 @@
         "The obligation whose payment reference this payment carries belongs to a third-party agent; no FAssets redemption has been settled.",
         "Proof replay, proof-owner mismatch and the payment-nonexistence path cannot be tested without a proof."
       ]
+    },
+    {
+      "id": "claim-contracts-cannot-authorize-arbitrary-fields",
+      "wording": "Signet's contracts expose no path by which a caller supplies a payment field, and the on-chain obligation hash matches the reference model byte for byte for a real Coston2 obligation.",
+      "status": "verified",
+      "proofLevel": 1,
+      "network": [],
+      "evidence": [
+        "contracts/src/SignetInstructionSender.sol",
+        "contracts/src/SignetRegistry.sol",
+        "contracts/test/unit/SignetRegistry.t.sol",
+        "contracts/test/unit/ObligationHashParity.t.sol",
+        "docs/evidence/phase-06.md"
+      ],
+      "verifiedAt": "2026-08-11T16:40:00Z",
+      "limitations": [
+        "Local execution only. Nothing is deployed; deployment needs C2FLR.",
+        "Result verification is an approved-signer allowlist, not verification of a genuine FCC ActionResult against the on-chain registries, which is phase 03's blocked half.",
+        "recordFinalEvidence is governance-gated as a placeholder rather than gated on deterministic evidence checks, which needs the phase 05 proof path.",
+        "Coverage is example-based; invariant and fuzz campaigns are owned by phase 13."
+      ]
     }
   ]
 }
