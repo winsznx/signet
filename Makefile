@@ -60,7 +60,7 @@ fmt:
 lint:
 	forge fmt --check
 	@if [ -d extension ]; then test -z "$$(gofmt -l extension)" || { gofmt -l extension; exit 1; }; fi
-	@if [ -d extension ]; then go vet ./...; fi
+	@if [ -d extension ]; then cd extension && GOWORK=off go vet ./...; fi
 
 .PHONY: typecheck
 typecheck:
@@ -100,7 +100,11 @@ test-fork:
 
 .PHONY: test-race
 test-race:
-	@if [ -d extension ]; then go test -race ./...; else echo "PENDING test-race: owned by phase 03"; fi
+	@if [ -d extension ]; then cd extension && GOWORK=off go test -race ./...; else echo "PENDING test-race: owned by phase 07"; fi
+
+.PHONY: test-conformance
+test-conformance:
+	cd extension && GOWORK=off go test ./internal/conformance/ -v -run TestGoAgrees 2>&1 | tail -5
 
 .PHONY: test-integration
 test-integration:
@@ -122,7 +126,7 @@ scan:
 # ---------------------------------------------------------------------------- gates
 
 .PHONY: verify
-verify: verify-bootstrap lint typecheck test-unit test-property test-contract test-race test-xrpl-reconcile scan
+verify: verify-bootstrap lint typecheck test-unit test-property test-contract test-race test-conformance test-xrpl-reconcile scan
 	@echo "verify OK"
 
 .PHONY: verify-phase

@@ -264,7 +264,7 @@
     },
     {
       "id": "claim-contracts-cannot-authorize-arbitrary-fields",
-      "wording": "Signet's contracts expose no path by which a caller supplies a payment field, and the on-chain obligation hash matches the reference model byte for byte for a real Coston2 obligation.",
+      "wording": "Signet's contracts expose no path by which a caller supplies a payment field, the instruction sender is pinned so a binding cannot be detached from the FAssets adapter, and the on-chain obligation hash matches the reference model byte for byte for a real Coston2 obligation.",
       "status": "verified",
       "proofLevel": 1,
       "network": [],
@@ -278,9 +278,32 @@
       "verifiedAt": "2026-08-11T16:40:00Z",
       "limitations": [
         "Local execution only. Nothing is deployed; deployment needs C2FLR.",
-        "Result verification is an approved-signer allowlist, not verification of a genuine FCC ActionResult against the on-chain registries, which is phase 03's blocked half.",
+        "Governance can still approve a decision signer it controls. Nothing on chain distinguishes that from an enclave key without attestation-bound registration, which is phase 03's blocked half. Recorded as accepted residual risk and pinned by a passing test.",
+        "Every governance function executes immediately with no timelock. FR-004's multisig and delay are assumed to live in the governance contract, which is outside this repository and not enforced here.",
         "recordFinalEvidence is governance-gated as a placeholder rather than gated on deterministic evidence checks, which needs the phase 05 proof path.",
+        "Ordering across generations of one request is enforced by the decision, not by the contracts.",
         "Coverage is example-based; invariant and fuzz campaigns are owned by phase 13."
+      ]
+    },
+    {
+      "id": "claim-go-matches-reference-model",
+      "wording": "The Go extension policy produces byte-identical decisions to the TypeScript reference model on all 62 frozen fixtures, including the authorization commitment and the transaction template.",
+      "status": "verified",
+      "proofLevel": 1,
+      "network": [],
+      "evidence": [
+        "extension/internal/conformance/fixtures_test.go",
+        "extension/internal/policy/policy.go",
+        "extension/internal/canonical/encoding.go",
+        "reference/test-vectors/decision-fixtures.json",
+        "docs/evidence/phase-07.md"
+      ],
+      "verifiedAt": "2026-08-11T17:10:00Z",
+      "limitations": [
+        "Local execution only. The Go decision has never run inside a TEE, simulated or otherwise.",
+        "Conformance proves the two implementations agree. Both could be wrong together about what FAssets requires; that is tested independently by phases 02 and 05.",
+        "The extension does not yet sign an XRPL transaction, nor serve the FCC HTTP surface. The template is produced and proven identical; signing and serving remain.",
+        "One genuine divergence was found and fixed on the first run: Go clamped a negative request generation where the reference model falls back to an unattributable hash."
       ]
     }
   ]

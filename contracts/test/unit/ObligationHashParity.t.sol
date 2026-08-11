@@ -25,6 +25,9 @@ contract ObligationHashParityTest is Test {
     address internal constant AGENT_LIVE = 0x55c815260cBE6c45Fe5bFe5FF32E3C7D746f14dC;
 
     function _senderFor(address assetManager) internal returns (SignetInstructionSender) {
+        // The registry now refuses to deploy on a chain other than the one it is told about, so the
+        // test environment has to actually be that chain.
+        vm.chainId(CHAIN_ID);
         SignetRegistry registry = new SignetRegistry(address(0x6047), CHAIN_ID);
         return new SignetInstructionSender(address(registry), assetManager);
     }

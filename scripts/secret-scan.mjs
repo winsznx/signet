@@ -37,6 +37,7 @@ const HASH_SOURCES = [
   "evidence/claim-ledger.json",
   "docs/protocol-seams/fassets-access-probe.json",
   "docs/protocol-seams/fassets-seam-evidence.json",
+  "docs/protocol-seams/cross-language-parity.json",
   // The decision fixtures hold commitment hashes, payment references and code hashes. Including
   // them here would normally weaken the rule, because a secret written into an allowlisted file
   // self-allows. It does not here: this file is regenerated from decide() and byte-compared against
@@ -51,6 +52,10 @@ const HASH_SOURCES = [
  */
 const PROTOCOL_CONSTANTS = new Map([
   ["360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc", "EIP-1967 implementation storage slot"],
+  [
+    "7fffffffffffffffffffffffffffffff5d576e7357a4501ddfe92f46681b20a0",
+    "secp256k1 half-order, the EIP-2 low-s bound used to reject signature malleability",
+  ],
 ]);
 
 /**

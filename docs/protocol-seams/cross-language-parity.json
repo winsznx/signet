@@ -1,0 +1,32 @@
+{
+  "note": "Obligation-hash vectors produced by reference/src/encoding.ts and asserted as literals by contracts/test/unit/ObligationHashParity.t.sol and by the Go conformance suite. They are published here so every cross-language expected value lives in a machine-readable artefact rather than only inside a test file.",
+  "domain": "SIGNET_FASSETS_OBLIGATION_V1",
+  "preimageLength": 141,
+  "flareChainId": "114",
+  "vectors": [
+    {
+      "assetManager": "0x00000000000000000000000000000000000000b1",
+      "agentVault": "0x00000000000000000000000000000000000000a1",
+      "requestId": "4242",
+      "requestGeneration": 0,
+      "obligationHash": "0x31e3d860072262eeb11afc5e250c3d7e4c884b9702fc4fbc24c0da966c0e9f75",
+      "why": "synthetic base case"
+    },
+    {
+      "assetManager": "0xc1ca88b937d0b528842f95d5731ffb586f4fbdfa",
+      "agentVault": "0x55c815260cbe6c45fe5bfe5ff32e3c7d746f14dc",
+      "requestId": "44851498",
+      "requestGeneration": 0,
+      "obligationHash": "0x77f552171323c53f688fb2a9edfdde983665c2a740cc50d94f1247cec5c7f957",
+      "why": "the real Coston2 obligation decoded in phase 02"
+    },
+    {
+      "assetManager": "0xc1ca88b937d0b528842f95d5731ffb586f4fbdfa",
+      "agentVault": "0x55c815260cbe6c45fe5bfe5ff32e3c7d746f14dc",
+      "requestId": "44851498",
+      "requestGeneration": 3,
+      "obligationHash": "0x1375aabe90d1342c258043f72dbf53c52d3a718f5d621949fd367ad1e2bc7a55",
+      "why": "same obligation, later generation: a replacement must never share an obligation hash"
+    }
+  ]
+}

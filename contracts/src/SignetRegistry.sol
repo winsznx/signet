@@ -82,6 +82,11 @@ contract SignetRegistry {
     error CodeHashNotApproved();
     error EmptyCommitment();
     error ZeroAddress();
+    error ChainIdMismatch();
+    error InstructionSenderAlreadySet();
+    error InstructionSenderNotAContract();
+    error InstructionSenderNotPinned();
+    error SignerIsGovernance();
 
     // ------------------------------------------------------------------ events
 
@@ -97,6 +102,7 @@ contract SignetRegistry {
     event PolicyVersionActivated(uint256 indexed extensionId, bytes32 codeHash, uint32 policyVersion);
     event SignerApproved(address indexed signer, bool approved);
     event SystemPaused(bool paused);
+    event InstructionSenderPinned(address indexed sender);
 
     // ------------------------------------------------------------------ storage
 
@@ -104,6 +110,9 @@ contract SignetRegistry {
     uint256 public immutable flareChainId;
 
     bool public systemPaused;
+
+    /// @dev The single contract permitted to open actions. Set once, never changed.
+    address public instructionSender;
 
     mapping(bytes32 => AgentBinding) private bindings;
     mapping(bytes32 => Action) private actions;
@@ -126,10 +135,29 @@ contract SignetRegistry {
         _;
     }
 
+    /// @param _flareChainId must equal the chain this is being deployed on. Taking it as a
+    ///        parameter and checking it, rather than reading block.chainid silently, means a
+    ///        deployment script that believes it is on another chain fails at construction instead
+    ///        of producing digests that verify on both.
     constructor(address _governance, uint256 _flareChainId) {
         if (_governance == address(0)) revert ZeroAddress();
+        if (_flareChainId != block.chainid) revert ChainIdMismatch();
         governance = _governance;
         flareChainId = _flareChainId;
+    }
+
+    /// @notice Pins the one contract allowed to open actions. One-shot: governance cannot later
+    ///         point the registry at an address it controls directly.
+    /// @dev Without this, `recordActionRequested`'s only gate is `msg.sender == binding.instructionSender`,
+    ///      and that field was free-form calldata. Governance could bind an EOA and record
+    ///      obligations that FAssets was never asked about. An adversarial review demonstrated
+    ///      exactly that, so the sender is now pinned once and checked on every bind.
+    function setInstructionSender(address _sender) external onlyGovernance {
+        if (_sender == address(0)) revert ZeroAddress();
+        if (instructionSender != address(0)) revert InstructionSenderAlreadySet();
+        if (_sender.code.length == 0) revert InstructionSenderNotAContract();
+        instructionSender = _sender;
+        emit InstructionSenderPinned(_sender);
     }
 
     // ------------------------------------------------------------------ identifiers
@@ -149,7 +177,8 @@ contract SignetRegistry {
 
     function bindAgent(AgentBinding calldata _binding) external onlyGovernance {
         if (_binding.agentVault == address(0) || _binding.assetManager == address(0)) revert ZeroAddress();
-        if (_binding.instructionSender == address(0)) revert ZeroAddress();
+        if (instructionSender == address(0)) revert InstructionSenderNotPinned();
+        // The caller's value is ignored entirely; the pinned sender is authoritative.
         if (!approvedCodeHash[_binding.approvedCodeHash]) revert CodeHashNotApproved();
 
         bytes32 bindingId = bindingIdFor(_binding.assetManager, _binding.agentVault);
@@ -161,7 +190,7 @@ contract SignetRegistry {
         // The binding is pinned to this contract's own chain id, so a binding cannot be replayed
         // from another chain's deployment (I-011).
         stored.flareChainId = flareChainId;
-        stored.instructionSender = _binding.instructionSender;
+        stored.instructionSender = instructionSender;
         stored.xrplNetworkId = _binding.xrplNetworkId;
         stored.extensionId = _binding.extensionId;
         stored.approvedCodeHash = _binding.approvedCodeHash;
@@ -201,8 +230,15 @@ contract SignetRegistry {
         emit PolicyVersionActivated(_extensionId, _codeHash, _policyVersion);
     }
 
+    /// @notice Approves a TEE result signer.
+    /// @dev Blocks the one case that is detectable on chain: governance naming itself. It cannot
+    ///      block governance naming another key it controls, because nothing on chain distinguishes
+    ///      that from a genuine enclave key. Closing that gap needs attestation-bound signer
+    ///      registration, which is phase 03's blocked half. Until then this is accepted residual
+    ///      risk, recorded in docs/evidence/phase-06.md rather than papered over.
     function approveSigner(address _signer, bool _approved) external onlyGovernance {
         if (_signer == address(0)) revert ZeroAddress();
+        if (_signer == governance) revert SignerIsGovernance();
         approvedSigner[_signer] = _approved;
         emit SignerApproved(_signer, _approved);
     }

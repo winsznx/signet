@@ -5,11 +5,14 @@ import {Test} from "forge-std/Test.sol";
 import {SignetRegistry} from "../../src/SignetRegistry.sol";
 
 /// @notice The registry's job is to refuse things. These tests are mostly about what it will not do.
+/// @dev The registry now requires the pinned instruction sender to be a contract.
+contract MockSender {}
+
 contract SignetRegistryTest is Test {
     SignetRegistry internal registry;
 
     address internal constant GOVERNANCE = address(0x6047);
-    address internal constant SENDER = address(0x5e4d);
+    address internal sender;
     address internal constant AGENT = address(0xA1);
     address internal constant ASSET_MANAGER = address(0xB1);
     address internal constant STRANGER = address(0xDEAD);
@@ -24,9 +27,12 @@ contract SignetRegistryTest is Test {
 
     function setUp() public {
         signer = vm.addr(signerKey);
+        vm.chainId(CHAIN_ID);
         registry = new SignetRegistry(GOVERNANCE, CHAIN_ID);
+        sender = address(new MockSender());
 
         vm.startPrank(GOVERNANCE);
+        registry.setInstructionSender(sender);
         registry.approveCodeHash(CODE_HASH, 7, 1, true);
         registry.approveSigner(signer, true);
         registry.bindAgent(_binding());
@@ -35,11 +41,11 @@ contract SignetRegistryTest is Test {
         bindingId = registry.bindingIdFor(ASSET_MANAGER, AGENT);
     }
 
-    function _binding() internal pure returns (SignetRegistry.AgentBinding memory b) {
+    function _binding() internal view returns (SignetRegistry.AgentBinding memory b) {
         b.assetManager = ASSET_MANAGER;
         b.agentVault = AGENT;
         b.flareChainId = CHAIN_ID;
-        b.instructionSender = SENDER;
+        b.instructionSender = sender;
         b.xrplNetworkId = 1;
         b.extensionId = 7;
         b.approvedCodeHash = CODE_HASH;
@@ -48,7 +54,7 @@ contract SignetRegistryTest is Test {
     }
 
     function _request(uint256 requestId, uint32 generation) internal returns (bytes32 actionId) {
-        vm.prank(SENDER);
+        vm.prank(sender);
         actionId = registry.recordActionRequested(bindingId, requestId, generation, keccak256("obligation"));
     }
 
@@ -109,7 +115,7 @@ contract SignetRegistryTest is Test {
 
     function test_oneActionPerRequestGeneration() public {
         _request(42, 0);
-        vm.prank(SENDER);
+        vm.prank(sender);
         vm.expectRevert(SignetRegistry.ActionExists.selector);
         registry.recordActionRequested(bindingId, 42, 0, keccak256("obligation"));
     }
@@ -131,7 +137,7 @@ contract SignetRegistryTest is Test {
     function test_pausePreventsNewInstructions() public {
         vm.prank(GOVERNANCE);
         registry.pauseAgent(bindingId, true);
-        vm.prank(SENDER);
+        vm.prank(sender);
         vm.expectRevert(SignetRegistry.BindingPaused.selector);
         registry.recordActionRequested(bindingId, 42, 0, keccak256("obligation"));
     }
@@ -139,7 +145,7 @@ contract SignetRegistryTest is Test {
     function test_systemPausePreventsNewInstructions() public {
         vm.prank(GOVERNANCE);
         registry.setSystemPaused(true);
-        vm.prank(SENDER);
+        vm.prank(sender);
         vm.expectRevert(SignetRegistry.BindingPaused.selector);
         registry.recordActionRequested(bindingId, 42, 0, keccak256("obligation"));
     }
@@ -157,7 +163,7 @@ contract SignetRegistryTest is Test {
         vm.prank(GOVERNANCE);
         registry.retireBinding(bindingId);
 
-        vm.prank(SENDER);
+        vm.prank(sender);
         vm.expectRevert(SignetRegistry.BindingNotActive.selector);
         registry.recordActionRequested(bindingId, 42, 0, keccak256("obligation"));
 
@@ -332,16 +338,105 @@ contract SignetRegistryTest is Test {
 
     // ------------------------------------------------------------------ no payment authority
 
-    function test_governanceCannotAuthorizeAnything() public {
+    function test_anUnregisteredKeyCannotAuthorizeEvenIfGovernanceSubmitsIt() public {
         bytes32 actionId = _request(42, 0);
-        // Governance has no path to an authorization: recordDecision is signature-gated and
-        // governance is not an approved signer.
         bytes32 commitment = keccak256("commitment");
         bytes32 resultHash = keccak256("result");
         bytes32 digest = registry.decisionDigest(actionId, commitment, resultHash, CODE_HASH);
-        uint256 governanceKey = 0x60;
+        uint256 unregisteredKey = 0x60;
         vm.prank(GOVERNANCE);
         vm.expectRevert(SignetRegistry.SignerNotApproved.selector);
-        registry.recordDecision(actionId, commitment, resultHash, CODE_HASH, _sign(governanceKey, digest));
+        registry.recordDecision(actionId, commitment, resultHash, CODE_HASH, _sign(unregisteredKey, digest));
+    }
+
+    /// @dev This replaces a test that used to be named "governance cannot authorize anything". That
+    ///      name was false: it only showed an *unregistered* key was rejected, and never exercised
+    ///      governance calling approveSigner on itself first. An adversarial review demonstrated
+    ///      the real path. Governance naming itself is now blocked outright.
+    function test_governanceCannotApproveItselfAsASigner() public {
+        vm.prank(GOVERNANCE);
+        vm.expectRevert(SignetRegistry.SignerIsGovernance.selector);
+        registry.approveSigner(GOVERNANCE, true);
+    }
+
+    /// @dev The residual risk, stated as a test so it cannot be forgotten: governance can approve
+    ///      any OTHER key it controls, and nothing on chain distinguishes that from an enclave key.
+    ///      Closing it needs attestation-bound registration, which is phase 03's blocked half.
+    function test_governanceCanStillApproveAnotherKeyItControls_residualRisk() public {
+        uint256 governanceControlledKey = 0xC0FFEE;
+        address governanceControlled = vm.addr(governanceControlledKey);
+
+        vm.prank(GOVERNANCE);
+        registry.approveSigner(governanceControlled, true);
+
+        bytes32 actionId = _request(42, 0);
+        bytes32 commitment = keccak256("commitment");
+        bytes32 resultHash = keccak256("result");
+        bytes32 digest = registry.decisionDigest(actionId, commitment, resultHash, CODE_HASH);
+        registry.recordDecision(actionId, commitment, resultHash, CODE_HASH, _sign(governanceControlledKey, digest));
+
+        assertEq(
+            uint256(registry.actionFor(actionId).state),
+            uint256(SignetRegistry.ActionState.AUTHORIZED),
+            "documented residual risk: a governance-controlled signer is indistinguishable from an enclave key on chain"
+        );
+    }
+
+    // ------------------------------------------------------------------ pinned instruction sender
+
+    function test_theInstructionSenderIsPinnedAndCannotBeChanged() public {
+        address another = address(new MockSender());
+        vm.prank(GOVERNANCE);
+        vm.expectRevert(SignetRegistry.InstructionSenderAlreadySet.selector);
+        registry.setInstructionSender(another);
+    }
+
+    function test_bindingIgnoresACallerSuppliedInstructionSender() public {
+        // An adversarial review showed governance could bind an EOA it controls and then record
+        // obligations FAssets was never asked about. The field is now ignored entirely.
+        SignetRegistry.AgentBinding memory b = _binding();
+        b.agentVault = address(0xA9);
+        b.instructionSender = address(0xBADBAD);
+        vm.prank(GOVERNANCE);
+        registry.bindAgent(b);
+
+        bytes32 id = registry.bindingIdFor(ASSET_MANAGER, address(0xA9));
+        assertEq(registry.binding(id).instructionSender, sender, "the pinned sender must win");
+
+        vm.prank(address(0xBADBAD));
+        vm.expectRevert(SignetRegistry.OnlyInstructionSender.selector);
+        registry.recordActionRequested(id, 7, 0, keccak256("fabricated"));
+    }
+
+    function test_theSenderMustBeAContract() public {
+        vm.chainId(CHAIN_ID);
+        SignetRegistry fresh = new SignetRegistry(GOVERNANCE, CHAIN_ID);
+        vm.prank(GOVERNANCE);
+        vm.expectRevert(SignetRegistry.InstructionSenderNotAContract.selector);
+        fresh.setInstructionSender(address(0xE0A));
+    }
+
+    function test_bindingRequiresThePinnedSender() public {
+        vm.chainId(CHAIN_ID);
+        SignetRegistry fresh = new SignetRegistry(GOVERNANCE, CHAIN_ID);
+        vm.startPrank(GOVERNANCE);
+        fresh.approveCodeHash(CODE_HASH, 7, 1, true);
+        vm.expectRevert(SignetRegistry.InstructionSenderNotPinned.selector);
+        fresh.bindAgent(_binding());
+        vm.stopPrank();
+    }
+
+    // ------------------------------------------------------------------ chain id
+
+    function test_deployingWithTheWrongChainIdReverts() public {
+        vm.chainId(9999);
+        vm.expectRevert(SignetRegistry.ChainIdMismatch.selector);
+        new SignetRegistry(GOVERNANCE, CHAIN_ID);
+    }
+
+    function test_deployingWithTheRightChainIdSucceeds() public {
+        vm.chainId(4242);
+        SignetRegistry fresh = new SignetRegistry(GOVERNANCE, 4242);
+        assertEq(fresh.flareChainId(), 4242);
     }
 }

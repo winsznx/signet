@@ -86,17 +86,64 @@ address does not match, so it is rejected.
 ## 6. Tests
 
 ```text
-contracts/test/unit/SignetRegistry.t.sol        26 passed
+contracts/test/unit/SignetRegistry.t.sol        34 passed
 contracts/test/unit/FAssetsAdapter.t.sol        19 passed
 contracts/test/unit/ObligationHashParity.t.sol   4 passed
 contracts/test/fork/FAssetsSeam.t.sol           12 passed
-                                                61 passed, 0 failed
+                                                69 passed, 0 failed
 ```
 
 Three registry tests initially failed because `vm.expectRevert` was arming against a view call
 inside a helper rather than the state-changing call. The tests were wrong, not the contract; fixing
 them was the right resolution and is worth recording because the opposite reflex is how a real
 defect gets papered over.
+
+## 6a. Security review: two HIGH findings, both reproduced
+
+The review wrote working proof-of-concept exploits for both. Both are fixed.
+
+**The instruction sender was unvalidated.** `AgentBinding.instructionSender` was free-form calldata
+checked only for non-zero, and `recordActionRequested`'s only gate was
+`msg.sender == binding.instructionSender`. Governance could bind an EOA it controlled and record
+arbitrary obligations that FAssets had never been asked about, detaching the registry from the
+adapter entirely. The claim "no calldata can change what gets paid" was true of
+`SignetInstructionSender`'s ABI and false of the registry's actual access-control surface.
+
+Fixed: the registry pins one instruction sender, once, and it must be a contract. `bindAgent` now
+ignores the caller's value entirely rather than validating it, because a field that is ignored
+cannot be got wrong. Three regression tests cover it.
+
+**Governance could self-approve as a decision signer.** `approveSigner` rejected only the zero
+address, so governance could name itself, sign a decision digest and move an action to AUTHORIZED
+with no enclave involved.
+
+Worse, my own test named `test_governanceCannotAuthorizeAnything` did not test that. It signed with
+an unregistered key and showed the unregistered key was rejected, which is a different and much
+weaker claim. The test name asserted something the test never checked. It has been renamed to what
+it actually proves, and two new tests replace it.
+
+Fixed as far as the chain can: governance naming *itself* now reverts. Governance naming another key
+it controls cannot be blocked on chain, because nothing distinguishes that from a genuine enclave
+key without attestation-bound registration, which is Phase 03's blocked half. That residual risk is
+now itself a passing test,
+`test_governanceCanStillApproveAnotherKeyItControls_residualRisk`, so it is recorded rather than
+forgotten, and the claim wording no longer says governance cannot authorize.
+
+**MEDIUM: chain id was never checked against the chain.** `flareChainId` was a constructor argument
+used in every domain-separated digest, with no comparison to `block.chainid`. Two deployments with
+the same argument on different chains would produce byte-identical digests, so a signature for one
+would verify on the other. Now `require(_flareChainId == block.chainid)`, with tests both ways.
+
+**LOW, accepted and recorded:** every `onlyGovernance` function executes immediately with no
+timelock. FR-004 requires multisig and delay for production binding changes. The assumption is that
+`governance` is a multisig plus timelock contract deployed outside this repository. That assumption
+is stated here rather than left implicit, and it is not enforced by these contracts.
+
+**Also recorded, not fixed:** the registry does not enforce ordering across generations of the same
+request. Generation 0 can be requested after generation 5, because each `(binding, requestId,
+generation)` is independently keyed. I-010's ordering is enforced by the decision, in both the
+reference model and the Go extension, which require the prior history to describe generations
+`0..n-1` exactly once each. It is not a contract-level invariant in this phase.
 
 ## 7. Limitations
 
