@@ -1,0 +1,67 @@
+{
+  "seam": "xrpl",
+  "network": "xrpl-testnet",
+  "runAt": "2026-08-11T14:40:35.490Z",
+  "results": [
+    {
+      "name": "fee above the cap is refused before anything is signed",
+      "expectation": "refuse S013_FEE_CAP_EXCEEDED",
+      "observed": "refuse S013_FEE_CAP_EXCEEDED",
+      "pass": true
+    },
+    {
+      "name": "the builder cannot emit a partial-payment flag",
+      "expectation": "Flags === 0 on every authorized template",
+      "observed": "Flags=0",
+      "pass": true
+    },
+    {
+      "name": "the builder cannot emit a template without LastLedgerSequence",
+      "expectation": "LastLedgerSequence always present",
+      "observed": "LastLedgerSequence=19822291",
+      "pass": true
+    },
+    {
+      "name": "a LastLedgerSequence in the past is refused",
+      "expectation": "refuse S008_INSUFFICIENT_SAFETY_MARGIN",
+      "observed": "refuse S008_INSUFFICIENT_SAFETY_MARGIN",
+      "pass": true
+    },
+    {
+      "name": "resubmitting the identical signed blob is idempotent",
+      "expectation": "both submissions accepted, exactly one validated payment",
+      "observed": "first=tesSUCCESS second=tefPAST_SEQ final=VALIDATED_SUCCESS ledger=19822253",
+      "pass": true
+    },
+    {
+      "name": "the record keeps every submission attempt",
+      "expectation": "2 attempts recorded against one hash",
+      "observed": "2 attempts, 1 hash",
+      "pass": true
+    },
+    {
+      "name": "a consumed sequence cannot be reused",
+      "expectation": "engine result tefPAST_SEQ",
+      "observed": "tefPAST_SEQ",
+      "pass": true
+    },
+    {
+      "name": "a transaction past its LastLedgerSequence resolves to a definite absence",
+      "expectation": "EXPIRED_NOT_FOUND with complete ledger coverage",
+      "observed": "EXPIRED_NOT_FOUND coverage=true",
+      "pass": true
+    },
+    {
+      "name": "ledger-coverage parsing distinguishes absent from unknown",
+      "expectation": "in-range true, out-of-range false, empty false",
+      "observed": "all cases correct",
+      "pass": true
+    },
+    {
+      "name": "a pruned window is reported as not covered",
+      "expectation": "ledger 1 is outside every server's complete range",
+      "observed": "complete=false",
+      "pass": true
+    }
+  ]
+}

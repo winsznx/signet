@@ -173,6 +173,69 @@
         "Reproducibility binds a checkout to a pinned commit. It is not an attestation that the upstream commit itself is trustworthy.",
         "Depends on GitHub remaining able to serve those commits."
       ]
+    },
+    {
+      "id": "claim-xrpl-exact-payment-validated",
+      "wording": "A transaction template produced by the Signet reference model was signed by a rotatable RegularKey and reached validated success on XRPL Testnet, unmodified, carrying the FAssets payment reference of a real Coston2 obligation.",
+      "status": "verified",
+      "proofLevel": 3,
+      "network": [
+        "testXRP"
+      ],
+      "evidence": [
+        "evidence/receipts/xrpl-payment-7500DA52CAB254DBD1B64BC88975B2D01C4DFDF309A6C78398C57142493759AF.json",
+        "docs/protocol-seams/xrpl.md",
+        "docs/evidence/phase-04.md"
+      ],
+      "verifiedAt": "2026-08-11T15:50:00Z",
+      "limitations": [
+        "XRPL Testnet only. Test-only key material throughout.",
+        "The payment was not triggered by a real FAssets redemption assigned to a Signet-controlled agent; the obligation fields were taken from a real Coston2 redemption belonging to a third-party agent, and the payment itself is a seam proof rather than a settlement.",
+        "Signing used the xrpl SDK in a local process, not the Go extension inside a TEE. The extension implementation is owned by phase 07 and hardware attestation is out of scope for this run.",
+        "No FDC proof and no FAssets completion accompany this payment; those seams are owned by phase 05 and phase 10."
+      ]
+    },
+    {
+      "id": "claim-xrpl-reliable-submission",
+      "wording": "Signet persists a signed XRPL transaction before first submission, never treats a provisional response as final, and distinguishes a definitively absent transaction from one it cannot observe.",
+      "status": "verified",
+      "proofLevel": 3,
+      "network": [
+        "testXRP"
+      ],
+      "evidence": [
+        "evidence/receipts/xrpl-adversarial.json",
+        "scripts/xrpl/submit.mjs",
+        "docs/protocol-seams/xrpl.md",
+        "docs/evidence/phase-04.md"
+      ],
+      "verifiedAt": "2026-08-11T15:50:00Z",
+      "limitations": [
+        "Ten adversarial cases on XRPL Testnet, including a real expiry allowed to pass its LastLedgerSequence.",
+        "Ledger-gap handling is proven by a pruned-window probe rather than by an actual history gap on a live server, which cannot be induced on demand.",
+        "The reconciler is a script, not the durable coordinator; restart-safety under a real database is owned by phase 08.",
+        "Both endpoints are public infrastructure rather than independently operated providers under Signet's control."
+      ]
+    },
+    {
+      "id": "claim-xrpl-key-lifecycle",
+      "wording": "The agent's XRPL account is controlled by a rotatable RegularKey while the master key stays offline as the recovery path.",
+      "status": "verified",
+      "proofLevel": 3,
+      "network": [
+        "testXRP"
+      ],
+      "evidence": [
+        "docs/protocol-seams/xrpl.md",
+        "docs/evidence/phase-04.md"
+      ],
+      "verifiedAt": "2026-08-11T15:50:00Z",
+      "limitations": [
+        "SetRegularKey validated at ledger 19822182 and the configuration read back from a validated ledger.",
+        "lsfDisableMaster is deliberately not set, so the master key retains authority and must be protected accordingly.",
+        "The master key was used once, locally, on this machine. It has never been inside a TEE, a CI environment or a hosted service, but nor is it in the offline custody a production deployment requires.",
+        "Rotation and emergency revocation are modelled but have not been exercised on chain."
+      ]
     }
   ]
 }

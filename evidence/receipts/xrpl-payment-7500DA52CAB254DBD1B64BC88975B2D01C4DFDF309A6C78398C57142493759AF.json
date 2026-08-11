@@ -1,0 +1,30 @@
+{
+  "seam": "xrpl",
+  "network": "xrpl-testnet",
+  "requestId": "44851498",
+  "authorizationCommitment": "0xbfd579481792c57c7ba0f84f1e2decf9669f87ad533d7528db0645ba2ec14f92",
+  "obligationHash": "0x77f552171323c53f688fb2a9edfdde983665c2a740cc50d94f1247cec5c7f957",
+  "txHash": "7500DA52CAB254DBD1B64BC88975B2D01C4DFDF309A6C78398C57142493759AF",
+  "validatedLedger": 19822204,
+  "engineResult": "tesSUCCESS",
+  "closeTime": null,
+  "template": {
+    "TransactionType": "Payment",
+    "Account": "rPvarExLQuuqtkMBfDHp3pNnESZ5HByXta",
+    "Destination": "rpa8bBa8GS1Zit6y9PcpQbahkqFahpWMyb",
+    "Amount": "1990000",
+    "Fee": "10",
+    "Flags": 0,
+    "LastLedgerSequence": 19822242,
+    "Memos": [
+      {
+        "Memo": {
+          "MemoData": "4642505266410002000000000000000000000000000000000000000002AC612A"
+        }
+      }
+    ],
+    "Sequence": 19822140
+  },
+  "signedBy": "regular-key",
+  "explorer": "https://testnet.xrpl.org/transactions/7500DA52CAB254DBD1B64BC88975B2D01C4DFDF309A6C78398C57142493759AF"
+}
