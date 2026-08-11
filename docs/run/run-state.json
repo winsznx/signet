@@ -1,12 +1,12 @@
 {
   "product": "Signet",
   "status": "running",
-  "currentPhase": "11",
-  "lastPassingPhase": "09",
+  "currentPhase": "12",
+  "lastPassingPhase": "11",
   "validation": "pending",
   "blocker": {
     "kind": "deferred_not_stopped",
-    "phaseInProgress": "11",
+    "phaseInProgress": "12",
     "deferredPhases": [
       "03 (deployment half)",
       "05 (deployment half)",
@@ -18,5 +18,5 @@
     "reattemptResult": "balance still 0; faucet exposes no API endpoint (404/no-route on all three documented paths); whitelisting remains governance-gated",
     "note": "Phase 10 needs C2FLR for every one of its steps, so it is deferred rather than partially done. All unblocked work continues."
   },
-  "updatedAt": "2026-08-11T15:53:13Z"
+  "updatedAt": "2026-08-11T16:04:42Z"
 }
