@@ -180,21 +180,49 @@ These are here because a handoff that lists only successes is not a handoff.
 | Coston2 redemption | request 44928272 |
 | proof page | https://signet-proof.pages.dev/ |
 
-## Blocked on external input
+## No open external blockers
 
-One thing, and it is genuinely governance-gated.
+The whitelist request was answered. Flare declined to approve new agents and directed Signet to test
+the execution layer instead, which is now the acceptance boundary:
+[`docs/evidence/organizer-accepted-proof-boundary.md`](../evidence/organizer-accepted-proof-boundary.md).
 
-**An FAssets agent whitelist entry.** `AgentOwnerRegistry` at
-`0x94e33f519e256149752711245eab2e1abb8c34a4` gates `whitelistAndDescribeAgent` behind
-`onlyGovernanceOrManager`, `productionMode()` is `true`, and Flare's own documentation says agents
-are whitelisted through governance and cannot be registered for a test or a demo. There is no fee,
-no form and no permissionless fallback.
+Own-agent settlement is out of scope by that guidance, not pending access. Cloudflare needed no new
+credentials.
 
-[`docs/requests/fassets-agent-whitelist.md`](../requests/fassets-agent-whitelist.md) has the verified
-gate state and a ready-to-send message with the exact address and agent details Flare needs.
+## The FCC gap, found by the organizer and closed
 
-Cloudflare needed no new credentials: the existing local Wrangler OAuth login already carried
-`pages (write)`, which was confirmed by listing projects before anything was created.
+Quantic asked for the payment to be derived "inside FCC". It was not. The decision ran as a CLI
+reading stdin, which is not FCC in the sense the protocol means, and no amount of the surrounding
+work made up for it.
+
+| | |
+|---|---|
+| `extension/cmd/signet-fcc-extension` | implements the pinned scaffold's extension contract |
+| op-type | `SIGNET_REDEMPTION`, commands `AUTHORIZE_REDEMPTION` and `HEALTH_CHECK` |
+| no wildcard | asserted by test: a wildcard is the shape of an arbitrary signing endpoint |
+| extension id | **66163**, registered on the live Coston2 `FlareTeeManager` |
+| instruction sender | `0x6D49c54D2F75214616a0964Bd52c695384f1b6E2` |
+| TEE machine | **none.** `getActiveTeeMachines(66163)` returns empty |
+| attestation | **none.** The extension runs as a local process; FTDC rejects simulated attestation |
+| positive path | takes the payment it signs **from the FCC ActionResult**, not from the CLI |
+
+## Claims
+
+Public copy is governed by [`docs/submission-claims.md`](../submission-claims.md), which separates
+safe claims, claims that are safe only with a qualifier attached, and prohibited ones.
+
+The hackathon claim:
+
+> Given a valid FAssets redemption obligation, Signet derives the exact required XRP payment through
+> its FCC policy path and will authorize no altered, expired, replayed, stale, already-observed or
+> independently-disagreed payment. An authorized transaction is executed on XRPL Testnet and
+> independently provable through FDC on Coston2. This hackathon deployment demonstrates the execution
+> layer; it does not claim to operate or replace a whitelisted FAssets agent.
+
+The production claim, which is **architecture and not demonstrated**:
+
+> When Signet is installed as the exclusive legitimate signing authority for an agent-controlled
+> underlying account, the same mechanism can enforce the agent-side payment boundary.
 
 ## What I would not sign off on
 

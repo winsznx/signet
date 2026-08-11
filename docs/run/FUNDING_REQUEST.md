@@ -1,3 +1,5 @@
+> **Resolved and historical.** Funding arrived and was spent. No open funding request.
+
 # External input required
 
 **Status: item 1 blocks Phase 03, and the run has moved to Phase 04 rather than stopping.**

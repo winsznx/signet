@@ -79,5 +79,27 @@
       "registry": "https://coston2.testnet.flarescan.com/address/0x381bdE5961695914B28B16f405d51E8acB877f6e",
       "instructionSender": "https://coston2.testnet.flarescan.com/address/0xd6cF30B6411DB8465147FfDcF0e0418030B4b9CA"
     }
+  },
+  "fcc": {
+    "registeredAt": "2026-08-11T22:37:49Z",
+    "flareTeeManager": "0x1a9C4A0f9D76c0b1D91d22E24E573a9b377618aE",
+    "instructionSender": "0x6D49c54D2F75214616a0964Bd52c695384f1b6E2",
+    "extensionId": "66163",
+    "stateVerifier": "0x0000000000000000000000000000000000000000",
+    "opType": "SIGNET_REDEMPTION",
+    "commands": [
+      "AUTHORIZE_REDEMPTION",
+      "HEALTH_CHECK"
+    ],
+    "transactions": {
+      "deploy": "0xe90e55e15f0b64e7d828fe9e490e988c2bfed70d8a12ee0c9be5ec1dabb075ea",
+      "register": "0xf494ac85c7e1088d196a08b56be74eb6a8da2cfb96811c22bb82480b2856ba9c",
+      "setExtensionId": "0x06e56c192b32c90eb26cbad7cc33b32870576a477c19ff49d44f1edf6499f764"
+    },
+    "teeMachineRegistered": false,
+    "teeMachineNote": "No TEE machine is registered. Registration requires a GCP Confidential Space VM: FTDC rejects simulated attestation, so a machine running with MODE=1 cannot be promoted to production. The extension is registered and the instruction sender is bound; the machine half is not.",
+    "explorer": {
+      "instructionSender": "https://coston2.testnet.flarescan.com/address/0x6D49c54D2F75214616a0964Bd52c695384f1b6E2"
+    }
   }
 }

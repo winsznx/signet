@@ -4,7 +4,28 @@ Written after Signet double-paid a live Coston2 redemption. The point of this do
 the guarantee narrowly enough that it is true, because the previous framing was wide enough to be
 false.
 
-## The corrected claim
+## The hackathon claim
+
+> **Given a valid FAssets redemption obligation, Signet derives the exact required XRP payment
+> through its FCC policy path and will authorize no altered, expired, replayed, stale,
+> already-observed or independently-disagreed payment. An authorized transaction is executed on XRPL
+> Testnet and independently provable through FDC on Coston2. This hackathon deployment demonstrates
+> the execution layer; it does not claim to operate or replace a whitelisted FAssets agent.**
+
+That is the claim the deliverable stands behind, and it is scoped to the four steps the Flare team
+asked for. See [`docs/evidence/organizer-accepted-proof-boundary.md`](evidence/organizer-accepted-proof-boundary.md).
+
+## The production claim, which is not demonstrated
+
+> When Signet is installed as the exclusive legitimate signing authority for an agent-controlled
+> underlying account, the same mechanism can enforce the agent-side payment boundary.
+
+**This is production architecture, not hackathon-demonstrated fact.** Signet does not control an
+FAssets agent account. Flare has declined to approve new agents, so the configuration it describes
+has never been instantiated, and nothing in this repository is evidence for it. It is written down so
+the design intent is legible, not so it can be cited.
+
+## The at-most-once claim
 
 > **For an obligation whose only legitimate payment authority is Signet, Signet authorizes at most
 > one payment per request generation, and will not authorize at all unless it has itself observed
@@ -18,6 +39,11 @@ false.
 
 Both paragraphs matter. The first is what the system enforces. The second is what it does not, and
 saying so is the difference between a guarantee and a slogan.
+
+Note the conditional in the first paragraph. "For an obligation whose only legitimate payment
+authority is Signet" is not satisfied by this deployment: Signet is not any agent's signing
+authority. The at-most-once property is therefore stated here as what the mechanism enforces, not as
+something the hackathon deliverable instantiates.
 
 ## What is enforced unconditionally
 
@@ -72,6 +98,9 @@ observations that closes this window.** It is a property of acting on a distribu
 control, not a defect in the implementation.
 
 ## The production model, where the window stops mattering
+
+**Everything in this section is design, not demonstration.** It is the same content as the production
+claim above, spelled out.
 
 The residual risk above assumes an independent actor **can** produce a payment that settles the same
 obligation. In the deployment Signet is designed for, that assumption is false, and it is false for a

@@ -18,5 +18,14 @@ prove stated beside it.
 It still contains no keys or credentials. Deployed addresses are in `deployments/coston2.json` and
 are testnet only.
 
-Start with [`docs/guarantee.md`](docs/guarantee.md), which states narrowly what Signet does and does
-not guarantee, and why the narrow version is the true one.
+Start with two documents:
+
+- [`docs/evidence/organizer-accepted-proof-boundary.md`](docs/evidence/organizer-accepted-proof-boundary.md)
+  — what the Flare team asked for, and exactly which evidence is live Coston2, which is a fork, which
+  is live XRPL, and which is simulated.
+- [`docs/guarantee.md`](docs/guarantee.md) — what Signet does and does not guarantee, and why the
+  narrow version is the true one.
+
+Signet does not operate an FAssets agent and does not claim to. Flare declined to approve new agents,
+and the deliverable is the execution layer: a redemption obligation in, an exact XRP payment derived
+inside FCC, executed on XRPL Testnet, proven back through FDC on Coston2.

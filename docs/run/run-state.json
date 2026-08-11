@@ -1,24 +1,19 @@
 {
   "product": "Signet",
-  "status": "ready_for_review",
+  "status": "ready_for_final_review",
   "currentPhase": "13",
   "lastPassingPhase": "13",
   "validation": "pending",
   "blocker": {
-    "kind": "awaiting_external_input",
-    "phaseInProgress": null,
-    "deferredPhases": [
-      "10 (settlement only)"
-    ],
-    "requirements": [
-      "FAssets agent whitelist entry in AgentOwnerRegistry 0x94e33f519e256149752711245eab2e1abb8c34a4 for management address 0x88f61BcDC3C0Cfe4E12dc0576960bcF3ECa88F7d"
-    ],
+    "kind": "none",
     "resolved": [
-      "C2FLR funding received and spent on deployment, minting and FDC requests",
-      "Cloudflare: existing local Wrangler OAuth login was sufficient; site deployed"
+      "C2FLR funding received and spent on deployment, minting, FDC requests and FCC registration",
+      "Cloudflare: existing local Wrangler OAuth login was sufficient; site deployed",
+      "FAssets agent whitelist: Flare declined to approve new agents on 2026-08-11 and directed Signet to test the execution layer. Closed, not pending."
     ],
-    "note": "Phases 00-13 have run and schema V2 corrects the duplicate-payment defect phase 10 found. Signet's own leg of the target-chain lifecycle was verified on chain at the time it ran; that specific receipt is a V1 receipt and no longer reproduces. Settlement needs the whitelist. See docs/guarantee.md and docs/requests/fassets-agent-whitelist.md."
+    "note": "Acceptance boundary is docs/evidence/organizer-accepted-proof-boundary.md. No open external blockers."
   },
-  "updatedAt": "2026-08-11T21:20:38Z",
-  "schemaVersion": 2
+  "updatedAt": "2026-08-11T22:48:10Z",
+  "schemaVersion": 2,
+  "acceptanceBoundary": "docs/evidence/organizer-accepted-proof-boundary.md"
 }

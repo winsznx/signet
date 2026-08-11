@@ -142,7 +142,18 @@ The script also now reads the FAssets status live at decision time rather than f
 created the obligation. Re-running it today correctly refuses with `S004_INACTIVE_REDEMPTION`,
 because FAssets reports 44928272 as `SUCCESSFUL`.
 
-## 7. Why the completion gate is only partly met
+## 7. Superseded: the completion gate moved
+
+Flare declined to approve new FAssets agents on 2026-08-11 and directed Signet to test the execution
+layer instead. The settlement step below is therefore not a gap awaiting access; it is out of scope
+by organizer guidance, and the acceptance boundary is now the four steps in
+[`organizer-accepted-proof-boundary.md`](organizer-accepted-proof-boundary.md).
+
+What this phase established stands and is used: the live Coston2 obligation, the minting cycle, the
+deployed contracts, and the on-chain FDC proof. What it found, the duplicate payment, is corrected in
+schema V2 and preserved as the permanent regression.
+
+## 8. Why the original completion gate was only partly met
 
 The gate asks for a minimum complete live transaction that is independently inspectable.
 
@@ -180,3 +191,14 @@ other numbers moved.
 
 The duplicate payment this phase found is corrected in schema V2. See
 [ADR 0003](../adr/0003-underlying-payment-precheck.md) and [`docs/guarantee.md`](../guarantee.md).
+
+## 9. Addendum: the FCC gap this phase did not notice
+
+This phase reported that Signet's leg ran on the deployed chain, and it did. What it did not say,
+because nobody asked until an organizer did, is that the decision ran as a CLI reading stdin. That is
+not FCC in the sense the protocol means.
+
+`extension/cmd/signet-fcc-extension` now implements the FCC extension contract, extension id `66163`
+is registered on the live Coston2 `FlareTeeManager`, and the composed lifecycle takes the payment it
+signs from the FCC ActionResult. No TEE machine is registered: FTDC rejects simulated attestation and
+`getActiveTeeMachines(66163)` returns empty.

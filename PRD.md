@@ -10,6 +10,22 @@ Implementation workflow: Claude Code with phased, evidence-gated execution
 Owner: Win SZN  
 Product name: Signet
 
+## Acceptance boundary (superseding, 2026-08-11)
+
+Flare declined to approve new FAssets agents and directed Signet to test the execution layer. The
+acceptance criteria for this deliverable are the four steps in
+[`docs/evidence/organizer-accepted-proof-boundary.md`](docs/evidence/organizer-accepted-proof-boundary.md):
+
+1. taking a valid FAssets redemption obligation
+2. deriving the required XRPL payment inside FCC
+3. signing and executing that exact payment
+4. proving the resulting payment back through FDC
+
+Own-agent settlement is **out of scope**, not pending. Any acceptance criterion below that requires
+Signet to hold an FAssets agent's signing authority is superseded by this section and describes
+production architecture rather than a deliverable. Claims are governed by
+[`docs/submission-claims.md`](docs/submission-claims.md).
+
 ## 1. Executive summary
 
 Signet is an attested external execution layer for FAssets agents.

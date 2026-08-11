@@ -208,6 +208,39 @@ const proofBody = `
   <div class="grid">${ledger.claims.map(claimCard).join("")}</div>
 </section>
 
+<section aria-labelledby="scope-h">
+  <h2 id="scope-h">What this deployment is</h2>
+  <p class="section-note">Flare declined to approve new FAssets agents and asked Signet to test the
+  execution layer instead. That is what this is. Signet does not operate an FAssets agent and does
+  not claim to.</p>
+  <div class="grid">
+    <article class="card">
+      <h3>The four steps</h3>
+      <ol class="limits">
+        <li>take a valid FAssets redemption obligation &mdash; <strong>live Coston2</strong> for the
+        obligation evidence, <strong>Coston2 fork on deployed FAssets bytecode</strong> for the
+        positive path</li>
+        <li>derive the required XRPL payment inside FCC &mdash; extension <code>66163</code>
+        <strong>registered on live Coston2</strong>, extension <strong>executed as a local
+        process</strong></li>
+        <li>sign and execute that exact payment &mdash; <strong>live XRPL Testnet</strong></li>
+        <li>prove the payment back through FDC &mdash; <strong>live Coston2</strong>,
+        <code>verifyXRPPayment</code> accepted on chain</li>
+      </ol>
+    </article>
+    <article class="card">
+      <h3>What is not here</h3>
+      <ul class="limits">
+        <li>no TEE. <code>getActiveTeeMachines(66163)</code> returns empty, nothing is
+        hardware-attested, and no on-chain FCC instruction round trip exists</li>
+        <li>no settled FAssets redemption. Settlement needs an agent's own underlying signing
+        authority, which Signet does not hold</li>
+        <li>no exactly-once guarantee against an independent racer</li>
+      </ul>
+    </article>
+  </div>
+</section>
+
 <section aria-labelledby="guarantee-h">
   <h2 id="guarantee-h">What this does and does not guarantee</h2>
   <p class="section-note">Stated narrowly because the previous framing was wide enough to be false.

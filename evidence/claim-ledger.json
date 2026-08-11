@@ -18,7 +18,8 @@
       "evidence": [],
       "verifiedAt": null,
       "limitations": [
-        "Phase 10 executed. The redemption completed via the agent's own payment, not Signet's; Signet's was a duplicate, which is what schema V2 corrects. This claim remains unavailable pending the FAssets agent whitelist."
+        "Phase 10 executed. The redemption completed via the agent's own payment, not Signet's; Signet's was a duplicate, which is what schema V2 corrects. This claim remains unavailable pending the FAssets agent whitelist.",
+        "Flare has declined to approve new FAssets agents (2026-08-11). This claim is not pending access; it is out of scope for this deliverable by organizer guidance. See docs/evidence/organizer-accepted-proof-boundary.md."
       ],
       "network": [
         "coston2",
@@ -33,7 +34,8 @@
       "evidence": [],
       "verifiedAt": null,
       "limitations": [
-        "Phase 07 and phase 10 executed and the refusal paths are demonstrated locally and on the deployed contracts. This claim remains unavailable because Signet has never held signing authority for a whitelisted FAssets agent."
+        "Phase 07 and phase 10 executed and the refusal paths are demonstrated locally and on the deployed contracts. This claim remains unavailable because Signet has never held signing authority for a whitelisted FAssets agent.",
+        "Flare has declined to approve new FAssets agents (2026-08-11). This claim is not pending access; it is out of scope for this deliverable by organizer guidance. See docs/evidence/organizer-accepted-proof-boundary.md."
       ],
       "network": [
         "coston2",
@@ -108,7 +110,8 @@
       "verifiedAt": null,
       "limitations": [
         "V0 runs a simulated TEE. Simulated execution is not hardware attestation and must be labelled as simulated wherever it is shown.",
-        "Requires a real GCP Confidential Space deployment, which is out of scope for this run."
+        "Requires a real GCP Confidential Space deployment, which is out of scope for this run.",
+        "Extension 66163 is registered on live Coston2, but no TEE machine is registered for it: FTDC rejects simulated attestation and no Confidential Space VM was available. The extension ran as an ordinary local process."
       ],
       "network": []
     },
@@ -552,6 +555,46 @@
         "The V1 encoder itself is not retained, so the verifier cannot recompute a V1 commitment and reports pre-V2 receipts as UNVERIFIABLE rather than checking them.",
         "One V1 fixture, refuse-unknown-schema, used version 2 as its unknown value; version 2 is now real, so that case is excluded from the preservation test and the exclusion is asserted."
       ]
+    },
+    {
+      "id": "claim-execution-layer",
+      "wording": "Given a valid FAssets redemption obligation, Signet derives the exact required XRP payment through its FCC policy path and will authorize no altered, expired, replayed, stale, already-observed or independently-disagreed payment. An authorized transaction is executed on XRPL Testnet and independently provable through FDC on Coston2. This hackathon deployment demonstrates the execution layer; it does not claim to operate or replace a whitelisted FAssets agent.",
+      "status": "verified",
+      "proofLevel": 3,
+      "network": [
+        "coston2",
+        "xrpl-testnet"
+      ],
+      "evidence": [
+        "docs/evidence/organizer-accepted-proof-boundary.md",
+        "scripts/fcc/extension.test.mjs",
+        "extension/cmd/signet-fcc-extension/main.go",
+        "scripts/lifecycle/run.mjs",
+        "scripts/lifecycle/incident-44928272.test.mjs",
+        "deployments/coston2.json",
+        "evidence/receipts/lifecycle-A2E16620E86423A4E835B8AB6E9BF43C6B81123E977F5BD42F6EEDD2495C605C.json"
+      ],
+      "verifiedAt": "2026-08-11T23:30:00Z",
+      "limitations": [
+        "The FCC extension ran as a local process, not in a GCP Confidential Space VM. This is not hardware-attested execution: no TEE machine is registered for extension 66163 and getActiveTeeMachines returns empty, so no on-chain FCC instruction round trip exists.",
+        "The obligation in the positive path was created on a Coston2 fork running deployed FAssets bytecode and state, not on live Coston2. The live Coston2 obligation evidence is request 44928272, which is the double-payment incident and is deliberately not used as the successful demonstration.",
+        "Signet has never settled a FAssets redemption and does not claim to. Settlement requires the agent's own underlying signing authority, and Flare has declined to approve new agents.",
+        "The residual race window between observing the ledger and the payment validating is not closed and cannot be."
+      ]
+    },
+    {
+      "id": "claim-production-exclusive-authority",
+      "wording": "When Signet is installed as the exclusive legitimate signing authority for an agent-controlled underlying account, the same mechanism can enforce the agent-side payment boundary.",
+      "status": "unavailable",
+      "proofLevel": 0,
+      "network": [],
+      "evidence": [],
+      "limitations": [
+        "PRODUCTION ARCHITECTURE, NOT HACKATHON-DEMONSTRATED FACT. Signet does not control an FAssets agent account and Flare has declined to approve new agents, so the configuration this describes has never been instantiated.",
+        "It rests on an XRPL configuration that has not been performed: the agent's RegularKey set to a Signet-held key with the master key disabled and no other signer list entries.",
+        "Nothing in this repository should be read as evidence for this claim. It is recorded so the design intent is legible, not so it can be cited."
+      ],
+      "verifiedAt": null
     }
   ]
 }

@@ -21,8 +21,16 @@ medium risk, and an honest claim ledger. This is the accounting.
 | An unapproved build signs | Registry approves a code hash; a revoked hash refuses `S015`. |
 | Governance authorizes itself as a signer | `approveSigner` rejects governance. |
 | Signature malleability | Low-s and v bounds enforced in `_recover`. |
+| An arbitrary command reaches the FCC extension | The extension registers one op-type and two commands, with no wildcard. An unregistered op-type or command is 501, never a decision. `scripts/fcc/extension.test.mjs`. |
 | Malformed input crashes the decider | `Decide` is total. 4.6M fuzz executions, no panic, no untyped refusal. |
 | Two implementations disagree | 62 frozen fixtures, plus malformed-input agreement. A review found the two parsers diverging on unknown fields; fixed in phase 09. |
+
+## Scope note
+
+Flare declined to approve new FAssets agents on 2026-08-11 and directed Signet to test the execution
+layer instead. Threats below that concern Signet acting as an agent's signing authority describe
+production architecture and are not instantiated by this deliverable. See
+[`docs/evidence/organizer-accepted-proof-boundary.md`](evidence/organizer-accepted-proof-boundary.md).
 
 ## Open: the coordinator can obtain a signature for a destination it chooses
 

@@ -81,6 +81,66 @@ function runDecider(command, args, inputJson) {
   }
 }
 
+const FCC_EXT = join(OUT, "signet-fcc-extension");
+const FCC_PORT = Number(process.env.SIGNET_FCC_PORT ?? 8097);
+
+const fccDeployment = (() => {
+  try {
+    return JSON.parse(readFileSync(join(REPO_ROOT, "deployments", "coston2.json"), "utf8")).fcc ?? null;
+  } catch {
+    return null;
+  }
+})();
+
+const toBytes32Utf8 = (text) => `0x${Buffer.from(text, "utf8").toString("hex").padEnd(64, "0")}`;
+
+/**
+ * Starts the Signet FCC extension, sends one AUTHORIZE_REDEMPTION action, and returns the decision
+ * the extension derived along with the ActionResult a tee-node would sign.
+ *
+ * The extension runs as a local process here. That is the honest limit: FTDC rejects simulated
+ * attestation, so no machine running this way can be registered on Coston2, and nothing below
+ * claims otherwise. What it does establish is that the payment was derived by the FCC extension
+ * through the FCC action contract, rather than by a CLI that FCC has never seen.
+ */
+async function decideThroughFcc(input) {
+  const server = spawn(FCC_EXT, ["-port", String(FCC_PORT)], { stdio: "ignore" });
+  try {
+    for (let attempt = 0; attempt < 40; attempt += 1) {
+      await new Promise((r) => setTimeout(r, 250));
+      try {
+        const probe = await fetch(`http://127.0.0.1:${FCC_PORT}/state`, { signal: AbortSignal.timeout(2_000) });
+        if (probe.ok) break;
+      } catch {
+        // still starting
+      }
+    }
+
+    const fixed = {
+      opType: toBytes32Utf8("SIGNET_REDEMPTION"),
+      opCommand: toBytes32Utf8("AUTHORIZE_REDEMPTION"),
+      originalMessage: `0x${Buffer.from(canonical(input), "utf8").toString("hex")}`,
+    };
+    const response = await fetch(`http://127.0.0.1:${FCC_PORT}/action`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        data: {
+          id: `0x${"11".repeat(32)}`,
+          submissionTag: `0x${"00".repeat(32)}`,
+          message: `0x${Buffer.from(JSON.stringify(fixed), "utf8").toString("hex")}`,
+        },
+      }),
+      signal: AbortSignal.timeout(30_000),
+    });
+    const actionResult = await response.json();
+    const decoded = JSON.parse(Buffer.from(actionResult.data.replace(/^0x/, ""), "hex").toString("utf8"));
+    return { ...decoded, actionResult };
+  } finally {
+    server.kill();
+  }
+}
+
 const goDecide = (json) => runDecider(join(OUT, "signet-extension"), [], json);
 const refDecide = (json) =>
   runDecider("node", ["--experimental-strip-types", join(REPO_ROOT, "reference", "src", "cli-decide.ts")], json);
@@ -148,11 +208,13 @@ step("fork started", { ok: true, note: `coston2 @ ${FORK_BLOCK}` });
 rmSync(OUT, { recursive: true, force: true });
 mkdirSync(OUT, { recursive: true });
 
-execFileSync(GO, ["build", "-trimpath", "-o", join(OUT, "signet-extension"), "./cmd/signet-extension"], {
-  cwd: join(REPO_ROOT, "extension"),
-  env: { ...process.env, GOWORK: "off" },
-  stdio: "inherit",
-});
+for (const command of ["signet-extension", "signet-fcc-extension"]) {
+  execFileSync(GO, ["build", "-trimpath", "-o", join(OUT, command), `./cmd/${command}`], {
+    cwd: join(REPO_ROOT, "extension"),
+    env: { ...process.env, GOWORK: "off" },
+    stdio: "inherit",
+  });
+}
 
 // The code hash the registry approves is the measurement of the binary that will actually decide.
 // A hash of the source, or a constant, would let a different binary run under an approved identity.
@@ -343,6 +405,32 @@ for (const field of ["firstUnderlyingBlock", "lastUnderlyingBlock", "lastUnderly
 }
 
 const decision = decideBoth("valid lifecycle", baseInput);
+
+/**
+ * The same decision, derived inside the FCC extension.
+ *
+ * An organizer asked for the XRPL payment to be derived "inside FCC", and until the FCC extension
+ * existed the honest answer was that it was not: the decision ran as a CLI reading stdin. The
+ * payment this lifecycle goes on to sign is now taken from the FCC ActionResult, not from the CLI,
+ * so "derived inside FCC" is a statement about what happened rather than about what could happen.
+ *
+ * The CLI decision is still computed, and the two are required to match. That is the check that
+ * keeps the 76 frozen fixtures meaningful: they cover one decision reachable through two transports,
+ * not two decisions that happen to agree today.
+ */
+const fcc = await decideThroughFcc(baseInput);
+check(
+  "the decision derived inside the FCC extension matches the audited decision",
+  fcc.kind === decision.kind &&
+    fcc.obligationHash === decision.obligationHash &&
+    (fcc.authorizationCommitment ?? "") === (decision.authorizationCommitment ?? ""),
+  `${fcc.kind} via op-type SIGNET_REDEMPTION / AUTHORIZE_REDEMPTION`,
+);
+check(
+  "the FCC ActionResult is a successful handler run carrying a decision",
+  fcc.actionResult.status === 1 && fcc.actionResult.log === "ok",
+  `status=${fcc.actionResult.status}`,
+);
 check("valid lifecycle authorizes", decision.kind === "authorize", decision.reason ?? "");
 
 // Three implementations, written from the same ADR in three languages, must name the same
@@ -570,7 +658,9 @@ check("an unbound agent cannot open an action", unboundError !== null, unboundEr
 // The transaction submitted is the decision's own payment object. Nothing is added, corrected or
 // re-derived here, which is the only way the commitment can mean anything: a builder that "fixed
 // up" a field would produce a payment no commitment covers.
-const tx = { ...decision.payment };
+// The payment comes from the FCC ActionResult. This is the line that makes "derived inside FCC"
+// true of this run rather than merely available to it.
+const tx = { ...fcc.payment };
 const regularKey = JSON.parse(
   readFileSync(join(REPO_ROOT, ".runtime", "secrets", "xrpl-signet-regular-key.json"), "utf8"),
 );
@@ -698,6 +788,18 @@ writeFileSync(
     {
       seam: "composed-lifecycle",
       schemaVersion: 2,
+      fcc: {
+        derivedInsideFccExtension: true,
+        opType: "SIGNET_REDEMPTION",
+        opCommand: "AUTHORIZE_REDEMPTION",
+        actionResultStatus: fcc.actionResult.status,
+        actionResultLog: fcc.actionResult.log,
+        extensionVersion: fcc.actionResult.version,
+        registeredExtensionId: fccDeployment?.extensionId ?? null,
+        registeredInstructionSender: fccDeployment?.instructionSender ?? null,
+        teeMachineRegistered: false,
+        attestation: "none: the extension ran as a local process, not in a Confidential Space VM",
+      },
       network: "xrpl-testnet",
       flareChain: `coston2-fork@${FORK_BLOCK}`,
       requestId: obligation.requestId.toString(),

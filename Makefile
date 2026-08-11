@@ -158,7 +158,7 @@ scan:
 # ---------------------------------------------------------------------------- gates
 
 .PHONY: verify
-verify: verify-bootstrap lint typecheck test-unit test-property test-contract test-race test-conformance test-verifier test-observer test-incident test-checkpoint web test-xrpl-reconcile scan
+verify: verify-bootstrap lint typecheck test-unit test-property test-contract test-race test-conformance test-verifier test-observer test-incident test-checkpoint test-fcc web test-xrpl-reconcile scan
 
 # The XRPL observer, and the incident it exists because of. Both run offline against stubs.
 .PHONY: test-observer
@@ -171,6 +171,17 @@ test-incident:
 		mkdir -p .runtime/lifecycle && cd extension && GOWORK=off go build -trimpath -o ../.runtime/lifecycle/signet-extension ./cmd/signet-extension; \
 	fi
 	node scripts/lifecycle/incident-44928272.test.mjs
+
+# The FCC extension against its contract, and against the audited decision.
+.PHONY: test-fcc
+test-fcc:
+	@if [ ! -x .runtime/lifecycle/signet-fcc-extension ]; then \
+		mkdir -p .runtime/lifecycle && cd extension && GOWORK=off go build -trimpath -o ../.runtime/lifecycle/signet-fcc-extension ./cmd/signet-fcc-extension; \
+	fi
+	@if [ ! -x .runtime/lifecycle/signet-extension ]; then \
+		cd extension && GOWORK=off go build -trimpath -o ../.runtime/lifecycle/signet-extension ./cmd/signet-extension; \
+	fi
+	node scripts/fcc/extension.test.mjs
 
 .PHONY: test-checkpoint
 test-checkpoint:

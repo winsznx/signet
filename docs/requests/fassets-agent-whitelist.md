@@ -1,5 +1,10 @@
 # FAssets agent whitelist request
 
+
+> **Superseded, 2026-08-11.** Flare declined to approve new FAssets agents and directed Signet to
+> test the execution layer instead. The whitelist is not a pending blocker; it is closed, and own-agent
+> settlement is out of scope by organizer guidance. See
+> [`docs/evidence/organizer-accepted-proof-boundary.md`](../evidence/organizer-accepted-proof-boundary.md).
 The one thing Signet still cannot do is settle a FAssets redemption, and this is why.
 
 ## The gate, verified on chain
