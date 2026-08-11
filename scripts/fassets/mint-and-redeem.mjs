@@ -37,9 +37,6 @@ const RPC = process.env.COSTON2_RPC_URL ?? lock.networks.coston2.rpc[0];
 const ASSET_MANAGER = lock.contracts.find((c) => c.id === "asset-manager-fxrp").address;
 const STATE_PATH = join(REPO_ROOT, ".runtime", "fassets-mint.json");
 
-/** keccak256("CollateralReserved(address,address,uint256,uint256,uint256,uint256,uint256,uint256,string,bytes32,address,uint256)") */
-const COLLATERAL_RESERVED = "0xd6b6b1ce0b7c1e8d3f2d0e4c5a9b8f7e6d5c4b3a291807f6e5d4c3b2a1908070";
-
 const SECRET_PATH = join(REPO_ROOT, ".runtime", "secrets", "coston2-deployer.json");
 function loadKey() {
   if (!existsSync(SECRET_PATH)) throw new Error(`no deployer key at ${SECRET_PATH.replace(REPO_ROOT, ".")}`);

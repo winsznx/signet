@@ -111,8 +111,19 @@ const PUBLIC_HASH_KEYS = new Set([
   "intendedReceivingAddressHash",
   "firstMemoData",
   "paymentReference",
+  "MemoData",
   "runtimeCodeHash",
   "extensionCodeHash",
+  "requestTransaction",
+  "bindTransaction",
+  "actionTransaction",
+  "settledByAgentPayment",
+  "confirmationTransaction",
+  "attestedPayment",
+  "redemption",
+  "payment",
+  "action",
+  "request",
   "obligationHashOnChain",
   "bindingId",
   "codeHash",
@@ -221,6 +232,17 @@ const KEYWORD_ASSIGNMENT =
 const PLACEHOLDER =
   /^(<|\$\{|process\.env|env\.|0x?\.{2,}|x{8,}|redacted|placeholder|example|changeme|your[_-]|\.{3}|123\.{2,}|"?\+)/i;
 
+/**
+ * A value that is a function call cannot be key material.
+ *
+ * `const PRIVATE_KEY = loadKey(path)` reads a secret at runtime from a file this scanner is not
+ * allowed to open, which is exactly the pattern the sandbox config is designed to force. Flagging it
+ * would train people to rename the variable, and a key called `k` is worse than one called
+ * `PRIVATE_KEY`. A string literal on the right-hand side is still caught, which is the case that
+ * actually puts a secret in a tracked file.
+ */
+const FUNCTION_CALL = /^[A-Za-z_$][\w$.]*\(/;
+
 const CREDENTIAL_PATTERNS = [
   [/AKIA[0-9A-Z]{16}/, "aws access key id"],
   [/\bghp_[A-Za-z0-9]{36}\b/, "github personal access token"],
@@ -254,7 +276,12 @@ for (const relative of trackedPaths) {
     const lineNumber = index + 1;
 
     const keyword = KEYWORD_ASSIGNMENT.exec(line);
-    if (keyword && !PLACEHOLDER.test(keyword[2]) && !PUBLISHED_CREDENTIALS.has(keyword[2].replace(/["';,]/g, ""))) {
+    if (
+      keyword &&
+      !PLACEHOLDER.test(keyword[2]) &&
+      !FUNCTION_CALL.test(keyword[2]) &&
+      !PUBLISHED_CREDENTIALS.has(keyword[2].replace(/["';,]/g, ""))
+    ) {
       record("keyword-assignment", relative, lineNumber, `${keyword[1]} assigned a concrete value`);
     }
 

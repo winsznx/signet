@@ -159,8 +159,8 @@ function page({ title, description, current, body }) {
   <h1>${escape(title)}</h1>
   <p class="lede">${escape(description)}</p>
   <nav class="pages" aria-label="Pages">
-    <a href="./index.html"${current === "proof" ? ' aria-current="page"' : ""}>Proof</a>
-    <a href="./operator.html"${current === "operator" ? ' aria-current="page"' : ""}>Operator</a>
+    <a href="/"${current === "proof" ? ' aria-current="page"' : ""}>Proof</a>
+    <a href="/operator"${current === "operator" ? ' aria-current="page"' : ""}>Operator</a>
   </nav>
 </header>
 ${body}

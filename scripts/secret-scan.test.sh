@@ -92,6 +92,15 @@ expect_clean "placeholder assignment" "env.example" \
 
 cleanup
 
+# A secret keyword assigned from a function call reads the value at runtime and puts nothing in the
+# file. A string literal does. The rule has to tell the two apart, or it teaches people to rename the
+# variable, and a key called `k` is worse than one called PRIVATE_KEY.
+expect_clean "private key read from a file at runtime" "runtime-load.mjs" \
+  'const PRIVATE_KEY = loadDeployerKey(SECRET_PATH);'
+
+expect_detected "private key assigned a literal" "literal-key.mjs" \
+  'const PRIVATE_KEY = "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d";'
+
 if [ "$FAILED" -ne 0 ]; then
   echo
   echo "secret-scan regression FAILED"

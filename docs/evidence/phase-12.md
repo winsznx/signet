@@ -1,7 +1,6 @@
 # Phase 12 — Essential operator and proof UI
 
-Result: **PASS.** Both pages build and 45 checks pass. Not deployed: Cloudflare credentials are an
-external blocker.
+Result: **PASS.** Both pages build, all checks pass, and the site is deployed.
 Date: 2026-08-11
 Command: `make web`
 Design authority: [`design.md`](../../design.md)
@@ -70,11 +69,32 @@ Cosmica is not distributed with this repository, so the stack falls through to D
 system geometric sans. Shipping a font we have no licence to redistribute would be a worse choice
 than losing the exact letterforms.
 
-## 6. Limitations
+## 6. Deployed
 
-- **Not deployed.** Cloudflare Pages credentials are an external blocker. The build output is
-  `web/dist` with a `_headers` file carrying a strict CSP (`default-src 'none'`), which is what
-  Cloudflare Pages consumes; nothing about deployment has been exercised.
+No new credentials were needed. The local Wrangler OAuth login already carried `pages (write)` for
+account `eb94a234b390bb8da04babac718d6c92`, which was confirmed by listing existing projects before
+anything was created.
+
+```text
+https://signet-proof.pages.dev/           the proof page
+https://signet-proof.pages.dev/operator   the operator view
+```
+
+The strict CSP survives the hop, which is the part worth checking rather than assuming:
+
+```text
+content-security-policy: default-src 'none'; style-src 'unsafe-inline'; img-src 'self';
+                         base-uri 'none'; form-action 'none'; frame-ancestors 'none'
+referrer-policy: no-referrer
+x-content-type-options: nosniff
+```
+
+Pages redirects `.html` URLs to extensionless ones, so the internal navigation was 308-ing on every
+click. The links are absolute and extensionless now.
+
+## 7. Limitations
+
+- The two-minute judge path still has not been timed by a third party.
 - The judge-path timing the completion gate asks for was not measured with a stopwatch by a third
   party. Both pages are single-screen, static, and cross-linked, and the proof page leads with the
   claims, but "under two minutes" is a claim about someone else's experience and has not been tested

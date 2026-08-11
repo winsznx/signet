@@ -51,7 +51,9 @@ If you read one thing and disagree with one thing, let it be this.
 | real | XRPL Testnet payments: signed, persisted before submission, validated, reconciled across independent endpoints, refused on replay by the ledger |
 | real | FDC XRPPayment attestation requests, answered `VALID` by the testnet verifier |
 | real | 12 fork tests against live Coston2 at pinned blocks |
-| local | the Flare chain the lifecycle runs on. A fork, because Coston2 deployment needs C2FLR |
+| real | the Signet contracts, deployed on Coston2 and exercised through their real entry points |
+| real | a Coston2 FAssets redemption we created as a minter, and a full minting cycle to get there |
+| real | FDC end to end: request paid to FdcHub, round finalized, Merkle proof, `verifyXRPPayment` accepted on chain |
 | local | the extension's execution environment. A process. **No TEE, no attestation, nothing hardware-backed, and nothing claims otherwise.** |
 
 ## Phase status
@@ -61,17 +63,41 @@ If you read one thing and disagree with one thing, let it be this.
 | 00 Foundations and access probe | PASS |
 | 01 Reference model | PASS |
 | 02 Protocol seams | PASS |
-| 03 FCC extension scaffold | PARTIAL, deployment half needs C2FLR |
+| 03 FCC extension scaffold | PASS |
 | 04 XRPL seam | PASS |
-| 05 FDC seam | PARTIAL, on-chain half needs C2FLR |
+| 05 FDC seam | PASS, proof accepted on chain |
 | 06 Signet contracts | PASS |
-| 07 Go extension | PARTIAL, deployment half needs C2FLR |
+| 07 Go extension | PASS |
 | 08 Durable coordinator | PARTIAL, durability proven; observer loops need deployed contracts |
 | 09 Composed lifecycle | PASS, 59/59 |
-| 10 Target-chain lifecycle | **DEFERRED**, every step needs C2FLR |
+| 10 Target-chain lifecycle | PARTIAL, Signet's leg verified on chain; settlement needs the whitelist |
 | 11 Independent verifier | PASS |
-| 12 Operator and proof UI | PASS, not deployed |
+| 12 Operator and proof UI | PASS, deployed |
 | 13 Hardening | PASS, one high risk open and accepted |
+
+## The most important thing this run found
+
+**Signet double-paid a live Coston2 redemption.**
+
+On request 44928272 the assigned agent paid from its own underlying address at XRPL ledger 19825006.
+Signet paid the same obligation again at ledger 19825042, 36 ledgers later. Coston2 reported the
+request as `ACTIVE` the whole time.
+
+Signet's status check was correct at the moment it ran. `ACTIVE` does not mean unpaid: it means not
+yet confirmed on Flare, and confirmation is a separate transaction the agent submits after its
+payment validates and after it obtains an FDC proof. Every one of Signet's three duplicate-payment
+guards watches the wrong chain for this. The registry action state, the coordinator's unique indexes
+and the ledger's sequence consumption all stop Signet paying twice; none can see a payment made by
+somebody else.
+
+No third party lost funds, which is luck about the test setup rather than a property of the system.
+
+[ADR 0003](../adr/0003-underlying-payment-precheck.md) has the analysis and proposes the fix: a new
+decision input carrying validated underlying payments the signing boundary observed, plus a reason
+code. It is proposed and not done, because changing the decision inputs changes the canonical
+encoding and invalidates the 62 frozen fixtures, and that is a protocol version bump rather than
+something to do unreviewed at the end of a run. The operational mitigation is implemented one layer
+out and, replayed against the incident, refuses to sign.
 
 ## Things reviews caught, and what happened
 
@@ -93,7 +119,14 @@ These are here because a handoff that lists only successes is not a handoff.
    True: it borrowed a real obligation's reference to exercise the XRPL path. The claim ledger
    already recorded that; the receipt did not. Seam receipts now carry `settles: false`, and silence
    means a receipt claims settlement.
-5. **design.md's Fog fails contrast on Paper** at 4.40:1. Section notes use Steel instead, and the
+5. **The verifier caught the receipt describing a payment that was never made.** A resumed
+   target-chain run recomputed its decision instead of reading the one it had checkpointed, so the
+   receipt recorded a template with a fresh account sequence while naming the transaction hash of
+   the payment actually signed. Only an independent check noticed. The run now checkpoints the
+   decision with the payment.
+6. **The deploy script tried to approve governance as a result signer** and the contract rejected it
+   with `SignerIsGovernance`. The contract was right.
+7. **design.md's Fog fails contrast on Paper** at 4.40:1. Section notes use Steel instead, and the
    failing ratio is asserted as a known fact so a future edit cannot quietly undo it.
 
 ## Where to look
@@ -108,20 +141,34 @@ These are here because a handoff that lists only successes is not a handoff.
 | per-phase evidence | `docs/evidence/phase-NN.md` |
 | the proof pages | `make web`, then open `web/dist/index.html` |
 
+## Deployed and live
+
+| | |
+|---|---|
+| SignetRegistry | [`0x381bdE5961695914B28B16f405d51E8acB877f6e`](https://coston2.testnet.flarescan.com/address/0x381bdE5961695914B28B16f405d51E8acB877f6e) |
+| SignetInstructionSender | [`0xd6cF30B6411DB8465147FfDcF0e0418030B4b9CA`](https://coston2.testnet.flarescan.com/address/0xd6cF30B6411DB8465147FfDcF0e0418030B4b9CA) |
+| Coston2 redemption | request 44928272 |
+| proof page | https://signet-proof.pages.dev/ |
+
 ## Blocked on external input
 
-Everything below was attempted through the documented self-service route and failed there. Details,
-including what was tried and when, are in the request at the end of the run log.
+One thing, and it is genuinely governance-gated.
 
-1. **C2FLR for `0x88f61BcDC3C0Cfe4E12dc0576960bcF3ECa88F7d` on Coston2.** Balance is zero. The
-   faucet is captcha-gated and exposes no API on any documented path. This blocks Phase 10 entirely
-   and the deployment halves of 03, 05 and 07.
-2. **An FAssets agent whitelist entry.** `AgentOwnerRegistry` is governance-gated, `manager()` is the
-   zero address and `productionMode()` is true, so it cannot be self-served.
-3. **Cloudflare credentials.** Phase 12 builds and checks but is not deployed.
+**An FAssets agent whitelist entry.** `AgentOwnerRegistry` at
+`0x94e33f519e256149752711245eab2e1abb8c34a4` gates `whitelistAndDescribeAgent` behind
+`onlyGovernanceOrManager`, `productionMode()` is `true`, and Flare's own documentation says agents
+are whitelisted through governance and cannot be registered for a test or a demo. There is no fee,
+no form and no permissionless fallback.
+
+[`docs/requests/fassets-agent-whitelist.md`](../requests/fassets-agent-whitelist.md) has the verified
+gate state and a ready-to-send message with the exact address and agent details Flare needs.
+
+Cloudflare needed no new credentials: the existing local Wrangler OAuth login already carried
+`pages (write)`, which was confirmed by listing projects before anything was created.
 
 ## What I would not sign off on
 
 - Any claim that this is TEE-attested. It is not, anywhere.
-- Any claim that a FAssets redemption has been settled. None has.
+- Any claim that Signet has settled a FAssets redemption. One redemption it participated in did
+  complete, but the agent's payment settled it and Signet's was a duplicate.
 - Any claim that the coordinator cannot obtain an arbitrary signature. It can.

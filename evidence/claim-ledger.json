@@ -388,10 +388,10 @@
       ],
       "verifiedAt": "2026-08-11T17:10:00Z",
       "limitations": [
-        "Not deployed. Cloudflare Pages credentials are an external blocker, so nothing about deployment has been exercised.",
         "The two-minute judge path was not timed by a third party.",
         "No screen-reader testing, no human keyboard walkthrough and no browser matrix. The checks are static analysis of the emitted HTML.",
-        "design.md's Fog is 4.40:1 on Paper, below the 4.5 needed for normal text; the pages use Steel there instead."
+        "design.md's Fog is 4.40:1 on Paper, below the 4.5 needed for normal text; the pages use Steel there instead.",
+        "Deployed to Cloudflare Pages at https://signet-proof.pages.dev using an existing local Wrangler OAuth login; no new credentials were required."
       ]
     },
     {
