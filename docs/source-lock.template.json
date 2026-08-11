@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "verifiedAt": "2026-08-04T00:00:00Z",
+  "entries": [
+    {
+      "id": "fcc-scaffold",
+      "owner": "flare-foundation",
+      "repository": "https://github.com/flare-foundation/fce-extension-scaffold",
+      "commit": "<PIN_COMMIT_SHA>",
+      "paths": ["<RELEVANT_PATHS>"],
+      "license": "<VERIFY>",
+      "checksum": "<VERIFY>",
+      "notes": "Current official FCC scaffold. Do not modify framework directories without an ADR."
+    },
+    {
+      "id": "flare-periphery",
+      "repository": "https://github.com/flare-foundation/flare-foundry-periphery-package",
+      "commit": "<PIN_COMMIT_SHA>",
+      "packageVersion": "<PIN_LOCKFILE_VERSION>",
+      "network": "coston2",
+      "resolvedContracts": [],
+      "notes": "Resolve addresses at bootstrap and verify code plus selectors."
+    }
+  ]
+}

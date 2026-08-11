@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": null,
+  "claims": [
+    {
+      "id": "claim-core-lifecycle",
+      "wording": "One Coston2 FAssets redemption was paid on XRPL Testnet and completed with FDC evidence.",
+      "status": "unavailable",
+      "proofLevel": 0,
+      "networks": ["coston2", "testXRP"],
+      "evidence": [],
+      "verifiedAt": null,
+      "limitations": ["Not executed yet"]
+    },
+    {
+      "id": "claim-unauthorized-refused",
+      "wording": "An arbitrary XRP payment request received no signature.",
+      "status": "unavailable",
+      "proofLevel": 0,
+      "networks": ["coston2", "testXRP"],
+      "evidence": [],
+      "verifiedAt": null,
+      "limitations": ["Not executed yet"]
+    }
+  ]
+}

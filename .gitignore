@@ -1,0 +1,39 @@
+# Secrets — never commit. Mirrors the deny list in .claude/settings.json.
+.env
+.env.*
+!.env.example
+secrets/
+wallets/
+*.pem
+*.key
+*_seed*
+*.keystore
+
+# Local Claude Code overrides
+.claude/settings.local.json
+
+# Autonomous-run scratch. Testnet-only key material lives here and never leaves the machine.
+.runtime/*
+!.runtime/.gitkeep
+
+# Node / pnpm
+node_modules/
+.pnpm-store/
+dist/
+.next/
+coverage/
+*.tsbuildinfo
+
+# Foundry
+out/
+cache/
+broadcast/
+!broadcast/**/dry-run/
+
+# Go
+extension/bin/
+*.test
+
+# Tooling noise
+.DS_Store
+*.log

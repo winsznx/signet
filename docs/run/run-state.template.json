@@ -1,0 +1,9 @@
+{
+  "product": "Signet",
+  "status": "running",
+  "currentPhase": 0,
+  "lastPassingPhase": null,
+  "validation": "pending",
+  "blocker": null,
+  "updatedAt": "REPLACE_WITH_ISO_8601"
+}
