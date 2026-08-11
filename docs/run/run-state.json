@@ -1,22 +1,24 @@
 {
   "product": "Signet",
-  "status": "running",
+  "status": "ready_for_review",
   "currentPhase": "13",
-  "lastPassingPhase": "12",
+  "lastPassingPhase": "13",
   "validation": "pending",
   "blocker": {
-    "kind": "deferred_not_stopped",
-    "phaseInProgress": "13",
+    "kind": "awaiting_external_input",
+    "phaseInProgress": null,
     "deferredPhases": [
       "03 (deployment half)",
-      "05 (deployment half)",
+      "05 (on-chain half)",
       "07 (deployment half)",
       "10"
     ],
-    "requirement": "C2FLR on Coston2 for 0x88f61BcDC3C0Cfe4E12dc0576960bcF3ECa88F7d, and an FAssets agent whitelist",
-    "reattemptedAt": "2026-08-11T15:53:13Z",
-    "reattemptResult": "balance still 0; faucet exposes no API endpoint (404/no-route on all three documented paths); whitelisting remains governance-gated",
-    "note": "Phase 10 needs C2FLR for every one of its steps, so it is deferred rather than partially done. All unblocked work continues."
+    "requirements": [
+      "C2FLR on Coston2 for 0x88f61BcDC3C0Cfe4E12dc0576960bcF3ECa88F7d",
+      "FAssets agent whitelist entry in AgentOwnerRegistry",
+      "Cloudflare Pages credentials for phase 12 deployment"
+    ],
+    "note": "Phases 00-13 have run. Phase 14 and 15 were out of scope and were not executed. See docs/run/FINAL_REVIEW_HANDOFF.md."
   },
-  "updatedAt": "2026-08-11T16:09:10Z"
+  "updatedAt": "2026-08-11T16:19:02Z"
 }

@@ -393,6 +393,29 @@
         "No screen-reader testing, no human keyboard walkthrough and no browser matrix. The checks are static analysis of the emitted HTML.",
         "design.md's Fog is 4.40:1 on Paper, below the 4.5 needed for normal text; the pages use Steel there instead."
       ]
+    },
+    {
+      "id": "claim-hardening",
+      "wording": "The dependency scan is clean, the decision boundary survives 6.2 million fuzz executions without a panic or an untyped refusal, thirteen threats are closed with the mechanism and proof for each, five medium risks are accepted with stated reasons, and the whole suite passes from a fresh clone built only from the lockfile.",
+      "status": "verified",
+      "proofLevel": 1,
+      "network": [
+        "coston2"
+      ],
+      "evidence": [
+        "docs/threat-model.md",
+        "docs/runbooks/recovery.md",
+        "docs/evidence/phase-13.md",
+        "extension/internal/policy/fuzz_test.go",
+        "extension/internal/wire/fuzz_test.go"
+      ],
+      "verifiedAt": "2026-08-11T17:20:00Z",
+      "limitations": [
+        "One threat is open and rated high: a coordinator can obtain a signature for a destination it chooses. PRD 22.3's mitigation is not implemented; what exists is detection after the fact.",
+        "No container scan, because nothing is containerised.",
+        "No process-level chaos testing; crash and concurrency behaviour is proven at the database and ledger layers instead.",
+        "No external penetration test, no third-party audit, and no screen-reader testing."
+      ]
     }
   ]
 }
