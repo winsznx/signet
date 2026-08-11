@@ -18,7 +18,7 @@
       "evidence": [],
       "verifiedAt": null,
       "limitations": [
-        "Phase 10 executed. The redemption completed via the agent's own payment, not Signet's; Signet's was a duplicate, which is what schema V2 corrects. This claim remains unavailable pending the FAssets agent whitelist.",
+        "Phase 10 executed. The redemption completed via the agent's own payment, not Signet's; Signet's was a duplicate, which is what schema V2 corrects. This claim remains unavailable: Flare declined to approve new FAssets agents, so own-agent settlement is out of scope rather than pending.",
         "Flare has declined to approve new FAssets agents (2026-08-11). This claim is not pending access; it is out of scope for this deliverable by organizer guidance. See docs/evidence/organizer-accepted-proof-boundary.md."
       ],
       "network": [
@@ -34,7 +34,7 @@
       "evidence": [],
       "verifiedAt": null,
       "limitations": [
-        "Phase 07 and phase 10 executed and the refusal paths are demonstrated locally and on the deployed contracts. This claim remains unavailable because Signet has never held signing authority for a whitelisted FAssets agent.",
+        "Phase 07 and phase 10 executed and the refusal paths are demonstrated locally and on the deployed contracts. This claim remains unavailable: Signet has never held signing authority for a whitelisted FAssets agent, and Flare declined to approve new agents.",
         "Flare has declined to approve new FAssets agents (2026-08-11). This claim is not pending access; it is out of scope for this deliverable by organizer guidance. See docs/evidence/organizer-accepted-proof-boundary.md."
       ],
       "network": [

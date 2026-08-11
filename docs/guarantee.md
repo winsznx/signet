@@ -137,7 +137,8 @@ all of them at the cost of two RPC calls.
 ### What this build has not done
 
 The key-configuration steps above are stated, not performed. Signet does not control an FAssets agent
-account, because agent registration is governance-gated and the whitelist request is pending. The
+account. Flare declined to approve new agents on 2026-08-11, so this is not a configuration awaiting
+access; it is out of scope for the deliverable by organizer guidance. The
 XRPL account this build signs for is Signet-controlled but is not an agent's underlying address, so
 disabling its master key would prove nothing about the model that matters.
 
