@@ -90,14 +90,16 @@ await reset().then((id) => insertAction(id, { actionId: "b1", requestId: 77 }));
 {
   await sql`
     INSERT INTO signed_transactions (tx_hash, action_id, authorization_commitment, signed_blob, source_account,
-      sequence_mode, sequence_or_ticket, last_ledger_sequence, fee_drops)
-    VALUES ('TX1', 'b1', '0xc0', '00', 'rSource', 'SEQUENCE', 91, 19822242, 10)`;
+      sequence_mode, sequence_or_ticket, last_ledger_sequence, fee_drops,
+      observed_at_ledger, observed_source_count, observation_root)
+    VALUES ('TX1', 'b1', '0xc0', '00', 'rSource', 'SEQUENCE', 91, 19822242, 10, 19822200, 2, '0xabababababababababababababababababababababababababababababababab')`;
   let rejected = false;
   try {
     await sql`
       INSERT INTO signed_transactions (tx_hash, action_id, authorization_commitment, signed_blob, source_account,
-        sequence_mode, sequence_or_ticket, last_ledger_sequence, fee_drops)
-      VALUES ('TX2', 'b1', '0xc0', '01', 'rSource', 'SEQUENCE', 92, 19822242, 10)`;
+        sequence_mode, sequence_or_ticket, last_ledger_sequence, fee_drops,
+        observed_at_ledger, observed_source_count, observation_root)
+      VALUES ('TX2', 'b1', '0xc0', '01', 'rSource', 'SEQUENCE', 92, 19822242, 10, 19822200, 2, '0xabababababababababababababababababababababababababababababababab')`;
   } catch (error) {
     rejected = /unique/i.test(error.message);
   }
@@ -113,8 +115,9 @@ await reset().then((id) => insertAction(id, { actionId: "b1", requestId: 77 }));
     try {
       await sql`
         INSERT INTO signed_transactions (tx_hash, action_id, authorization_commitment, signed_blob, source_account,
-          sequence_mode, sequence_or_ticket, last_ledger_sequence, fee_drops)
-        VALUES ('TX3', 'b2', '0xc1', '02', 'rSource', 'SEQUENCE', 91, 19822250, 10)`;
+          sequence_mode, sequence_or_ticket, last_ledger_sequence, fee_drops,
+          observed_at_ledger, observed_source_count, observation_root)
+        VALUES ('TX3', 'b2', '0xc1', '02', 'rSource', 'SEQUENCE', 91, 19822250, 10, 19822200, 2, '0xabababababababababababababababababababababababababababababababab')`;
     } catch (error) {
       rejected = /unique/i.test(error.message);
     }
@@ -228,6 +231,51 @@ await reset().then((id) => insertAction(id, { actionId: "b1", requestId: 77 }));
     `winners=${won} rows=${count}`,
     won === 1 && count === 1,
   );
+}
+
+// ---------------------------------------------------------------- the V2 observation, enforced by the schema
+//
+// Signet paid Coston2 request 44928272 twice because nothing could see a payment made by somebody
+// else. V2 makes the decision require an XRP ledger observation; these make the coordinator require
+// it too. A signed transaction that exists without a recorded observation is a signature nobody can
+// explain afterwards, and a column that is merely usually filled in is filled in by whichever code
+// path remembered to, which is the property the incident showed cannot be relied on.
+{
+  const bindingForObservation = await reset();
+  await insertAction(bindingForObservation, { actionId: "obs1", requestId: 91 });
+  const ROOT = `0x${"ab".repeat(32)}`;
+  const attempt = (columns, values) =>
+    sql.unsafe(
+      `INSERT INTO signed_transactions (tx_hash, action_id, authorization_commitment, signed_blob, source_account,
+        sequence_mode, sequence_or_ticket, last_ledger_sequence, fee_drops${columns})
+       VALUES ${values}`,
+    );
+  const FULL = ", observed_at_ledger, observed_source_count, observation_root";
+
+  const mustReject = [
+    ["a signed transaction cannot exist without an observation", "", "('OBS1', 'obs1', '0xc0', '00', 'rS', 'SEQUENCE', 501, 19822300, 10)"],
+    ["an observation from fewer than two sources is rejected", FULL, `('OBS2', 'obs1', '0xc0', '00', 'rS', 'SEQUENCE', 502, 19822300, 10, 19822200, 1, '${ROOT}')`],
+    ["an observation root that is not a 32-byte hash is rejected", FULL, "('OBS3', 'obs1', '0xc0', '00', 'rS', 'SEQUENCE', 503, 19822300, 10, 19822200, 2, 'not-a-hash')"],
+    ["an observation of a ledger after the transaction expires is rejected", FULL, `('OBS4', 'obs1', '0xc0', '00', 'rS', 'SEQUENCE', 504, 19822300, 10, 19822400, 2, '${ROOT}')`],
+  ];
+  for (const [name, columns, values] of mustReject) {
+    let rejected = false;
+    try {
+      await attempt(columns, values);
+    } catch {
+      rejected = true;
+    }
+    check(name, "rejected", `rejected=${rejected}`, rejected);
+  }
+
+  let accepted = false;
+  try {
+    await attempt(FULL, `('OBS5', 'obs1', '0xc0', '00', 'rS', 'SEQUENCE', 505, 19822300, 10, 19822200, 2, '${ROOT}')`);
+    accepted = true;
+  } catch {
+    accepted = false;
+  }
+  check("a well-formed observation is accepted", "accepted", `accepted=${accepted}`, accepted);
 }
 
 await sql.end();

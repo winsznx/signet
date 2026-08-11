@@ -101,6 +101,15 @@ expect_clean "private key read from a file at runtime" "runtime-load.mjs" \
 expect_detected "private key assigned a literal" "literal-key.mjs" \
   'const PRIVATE_KEY = "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d";'
 
+# A repeated two-character pair is a placeholder, not a digest, and test fixtures reach for them
+# constantly. A real 32-byte hash that happens to be one repeated pair does not exist.
+expect_clean "repeated-pair placeholder hash" "placeholder-hash.mjs" \
+  'const ROOT = "0xabababababababababababababababababababababababababababababababab";'
+
+# But a real-looking digest still has to come from an allowlisted source.
+expect_detected "arbitrary 64-hex under an unrelated name" "arbitrary-digest.mjs" \
+  'const value = "0x9f2c41ba7e05d38c6a1f7b904e2d5c83af60193e7c2b84d05f1a6e39cb7d2408";'
+
 if [ "$FAILED" -ne 0 ]; then
   echo
   echo "secret-scan regression FAILED"

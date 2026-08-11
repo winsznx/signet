@@ -43,7 +43,11 @@ const HASH_SOURCES = [
   // self-allows. It does not here: this file is regenerated from decide() and byte-compared against
   // a fresh build on every gate run, so a hand-inserted value fails `make fixtures-check` before it
   // can reach this scanner. Reproducibility is what makes it safe to trust.
-  "reference/test-vectors/decision-fixtures.json",
+  "reference/test-vectors/decision-fixtures-v2.json",
+  // The V1 set is frozen historical evidence: never regenerated, byte-compared against the hash the
+  // phase 01 gate recorded. It is trustworthy here for the opposite reason to the V2 set, because it
+  // cannot change at all rather than because it is rebuilt.
+  "reference/test-vectors/decision-fixtures-v1-historical.json",
 ];
 
 /**
@@ -292,7 +296,9 @@ for (const relative of trackedPaths) {
     for (const match of line.matchAll(HEX64)) {
       const digest = match[1].toLowerCase();
       // A word of a single repeated nibble (zero words, padding) carries no entropy and no secret.
-      const isDegenerate = /^(.)\1{63}$/.test(digest);
+      // A single repeated character, or a repeated two-character pair, is a placeholder rather than
+      // a digest. Test fixtures reach for these constantly and no real hash looks like one.
+      const isDegenerate = /^(.)\1{63}$/.test(digest) || /^(..)\1{31}$/.test(digest);
       if (!isDegenerate && !PROTOCOL_CONSTANTS.has(digest) && !allowedDigests.has(digest)) {
         record(
           "unallowlisted-64-hex",
