@@ -108,7 +108,22 @@ test-conformance:
 
 .PHONY: test-integration
 test-integration:
-	@echo "PENDING test-integration: owned by phase 08"
+	@if docker exec signet-postgres pg_isready -U signet >/dev/null 2>&1; then \
+		node coordinator/test/durability.test.mjs; \
+	else \
+		echo "SKIPPED test-integration: start postgres with 'make db-up' first"; \
+	fi
+
+.PHONY: db-up
+db-up:
+	docker run -d --name signet-postgres -e POSTGRES_PASSWORD=signet -e POSTGRES_USER=signet \
+		-e POSTGRES_DB=signet -p 5433:5432 postgres:17-alpine
+	sleep 10
+	docker exec -i signet-postgres psql -U signet -d signet < coordinator/migrations/0001_initial.sql
+
+.PHONY: db-down
+db-down:
+	docker rm -f signet-postgres
 
 .PHONY: test-e2e
 test-e2e:

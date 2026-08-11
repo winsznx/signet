@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "@noble/hashes": "1.8.0",
+    "postgres": "3.4.7",
     "viem": "2.38.0",
     "xrpl": "5.0.0"
   }
