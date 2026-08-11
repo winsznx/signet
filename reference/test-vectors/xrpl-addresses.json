@@ -1,0 +1,23 @@
+{
+  "note": "Real classic addresses observed in a validated XRPL Testnet ledger on 2026-08-11 via https://testnet.xrpl-labs.com/, plus the published XRPL genesis address. They exist so the base58check decoder is checked against addresses this repository did not construct: a wrong alphabet, prefix or checksum would fail to decode them at all. Tests using this file stay offline.",
+  "source": "XRPL Testnet validated ledger, `ledger` method with expanded transactions",
+  "collectedAt": "2026-08-11T14:20:00Z",
+  "validClassicAddresses": [
+    "r3ymjALibVQ6D7Rdy84NJovACu7TzBJjMX",
+    "rGA4xH5vc185At863xPbR4u6CMR3Cr5f71",
+    "rJjHYTCPpNA3qAM8ZpCDtip3a8xg7B8PFo",
+    "rLvm2sMyvqHbnBG21m5YXx3VSmZqfE2Do5",
+    "rPYnVhtg47Eu8RWd3tw6LXaa5vJ8JbgTGP",
+    "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh"
+  ],
+  "invalidAddresses": [
+    { "value": "", "why": "empty" },
+    { "value": "r", "why": "too short to carry a payload" },
+    { "value": "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyT", "why": "truncated, checksum cannot match" },
+    { "value": "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTz", "why": "final character altered, checksum mismatch" },
+    { "value": "0Hb9CJAWyB4rj91VRWn96DkukG4bwdtyTh", "why": "leading 0 is not in the XRPL base58 alphabet" },
+    { "value": "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyThh", "why": "one character too long" },
+    { "value": "rHb9CJAWyB4rj9lVRWn96DkukG4bwdtyTh", "why": "lowercase l substituted for digit 1, not in the alphabet" },
+    { "value": "  rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh  ", "why": "surrounding whitespace is never trimmed" }
+  ]
+}

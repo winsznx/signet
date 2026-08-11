@@ -64,17 +64,21 @@ lint:
 
 .PHONY: typecheck
 typecheck:
-	@if [ -f reference/package.json ]; then pnpm -r exec tsc --noEmit; else echo "PENDING typecheck: owned by phase 01"; fi
+	@if [ -f reference/package.json ]; then pnpm --filter @signet/reference exec tsc --noEmit; else echo "PENDING typecheck: owned by phase 01"; fi
 
 # ---------------------------------------------------------------------------- tests
 
 .PHONY: test-unit
 test-unit:
-	@if [ -f reference/package.json ]; then pnpm vitest run; else echo "PENDING test-unit: owned by phase 01"; fi
+	@if [ -f reference/package.json ]; then pnpm vitest run reference; else echo "PENDING test-unit: owned by phase 01"; fi
 
 .PHONY: test-property
 test-property:
 	@if [ -d reference/test/property ]; then pnpm vitest run reference/test/property; else echo "PENDING test-property: owned by phase 01"; fi
+
+.PHONY: fixtures-check
+fixtures-check:
+	pnpm vitest run reference/test/fixtures.test.ts
 
 .PHONY: test-contract
 test-contract:

@@ -20,12 +20,12 @@ import {IPaymentVerification} from "@flare-periphery/coston2/IPaymentVerificatio
 import {IXRPPayment} from "@flare-periphery/coston2/IXRPPayment.sol";
 import {IXRPPaymentVerification} from "@flare-periphery/coston2/IXRPPaymentVerification.sol";
 import {IXRPPaymentNonexistence} from "@flare-periphery/coston2/IXRPPaymentNonexistence.sol";
-import {IXRPPaymentNonexistenceVerification} from
-    "@flare-periphery/coston2/IXRPPaymentNonexistenceVerification.sol";
+import {IXRPPaymentNonexistenceVerification} from "@flare-periphery/coston2/IXRPPaymentNonexistenceVerification.sol";
 import {IRedeemExtended} from "@flare-periphery/coston2/IRedeemExtended.sol";
 import {IReferencedPaymentNonexistence} from "@flare-periphery/coston2/IReferencedPaymentNonexistence.sol";
-import {IReferencedPaymentNonexistenceVerification} from
-    "@flare-periphery/coston2/IReferencedPaymentNonexistenceVerification.sol";
+import {
+    IReferencedPaymentNonexistenceVerification
+} from "@flare-periphery/coston2/IReferencedPaymentNonexistenceVerification.sol";
 import {IConfirmedBlockHeightExists} from "@flare-periphery/coston2/IConfirmedBlockHeightExists.sol";
 import {IRelay} from "@flare-periphery/coston2/IRelay.sol";
 import {IFlareContractRegistry} from "@flare-periphery/coston2/IFlareContractRegistry.sol";

@@ -31,6 +31,7 @@ case "$PHASE" in
     run make typecheck
     run make test-unit
     run make test-property
+    run make fixtures-check
     run bash scripts/secret-scan.test.sh
     run bash scripts/secret-scan.sh
     run node scripts/verify-claim-ledger.mjs

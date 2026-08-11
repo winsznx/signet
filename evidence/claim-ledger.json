@@ -111,6 +111,26 @@
         "Requires a real GCP Confidential Space deployment, which is out of scope for this run."
       ],
       "network": []
+    },
+    {
+      "id": "claim-reference-model-frozen",
+      "wording": "Signet's authorization decision is specified by a network-free executable model whose canonical commitment encoding and decision fixtures are frozen and machine-checked on every build.",
+      "status": "verified",
+      "proofLevel": 1,
+      "network": [],
+      "evidence": [
+        "reference/src/decide.ts",
+        "reference/test-vectors/decision-fixtures.json",
+        "docs/adr/0001-canonical-encoding.md",
+        "docs/adr/0002-policy-semantics.md",
+        "docs/evidence/phase-01.md"
+      ],
+      "verifiedAt": "2026-08-11T14:30:00Z",
+      "limitations": [
+        "Local execution only. The model is a specification, not evidence that any deployed component implements it.",
+        "The Go extension and the Solidity contracts do not yet consume the fixtures; that agreement is owned by phases 06 and 07.",
+        "Rules were derived from FAssets source pinned at commit 6d5c103e4342f0fc7d3683a433a90349d544f774 and are only as current as that pin."
+      ]
     }
   ]
 }
