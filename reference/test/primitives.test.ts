@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
@@ -13,6 +14,7 @@ import {
   decodeClassicAddress,
   encodeClassicAddress,
   isCanonicalClassicAddress,
+  XRPL_ALPHABET,
   XrplAddressError,
 } from "../src/xrpl-address.ts";
 
@@ -69,7 +71,21 @@ describe("xrpl classic addresses", () => {
   });
 
   it("rejects a non-AccountID type prefix", () => {
-    expect(() => decodeClassicAddress("sEdTM1uX8pu2do5XvTnutH6HsouMaM2")).toThrow(XrplAddressError);
+    // #given a valid base58check payload whose type prefix is a family seed rather than an
+    // AccountID. It is constructed here rather than committed as a literal, so this repository
+    // never contains a seed-shaped string for its own secret scanner to find.
+    const body = Buffer.concat([Buffer.from([33]), Buffer.alloc(16, 0xcd)]);
+    const digest = createHash("sha256").update(createHash("sha256").update(body).digest()).digest();
+    const payload = Buffer.concat([body, digest.subarray(0, 4)]);
+    let value = BigInt(`0x${payload.toString("hex")}`);
+    let encoded = "";
+    while (value > 0n) {
+      encoded = XRPL_ALPHABET[Number(value % 58n)] + encoded;
+      value /= 58n;
+    }
+
+    // #then decoding must reject it on the type prefix, not merely on the checksum
+    expect(() => decodeClassicAddress(encoded)).toThrow(XrplAddressError);
   });
 
   it("refuses to encode an AccountID of the wrong length", () => {

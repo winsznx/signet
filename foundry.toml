@@ -3,7 +3,7 @@ src = "contracts/src"
 test = "contracts/test"
 script = "contracts/script"
 out = "contracts/out"
-libs = ["contracts/lib", "upstream"]
+libs = ["upstream"]
 solc_version = "0.8.28"
 evm_version = "cancun"
 optimizer = true
@@ -17,6 +17,7 @@ remappings = [
   "@flare-periphery/=upstream/flare-foundry-periphery-package/src/",
   "@fcc-scaffold/=upstream/fce-extension-scaffold/contracts/",
   "@openzeppelin/contracts/=upstream/openzeppelin-contracts/contracts/",
+  "forge-std/=upstream/forge-std/src/",
 ]
 
 [fmt]
@@ -24,6 +25,9 @@ line_length = 120
 tab_width = 4
 bracket_spacing = false
 int_types = "long"
+
+[rpc_endpoints]
+coston2 = "${COSTON2_RPC_URL}"
 
 [profile.coston2]
 eth_rpc_url = "https://coston2-api.flare.network/ext/C/rpc"

@@ -80,9 +80,19 @@ test-property:
 fixtures-check:
 	pnpm vitest run reference/test/fixtures.test.ts
 
+# Fork tests read live Coston2 state at pinned blocks. The endpoint comes from the source lock
+# unless overridden, so a fresh clone needs no configuration.
+COSTON2_RPC_URL ?= $(shell node -e "process.stdout.write(require('./docs/source-lock.json').networks.coston2.rpc[0])" 2>/dev/null)
+export COSTON2_RPC_URL
+
 .PHONY: test-contract
 test-contract:
 	@if [ -n "$$(find contracts/test -name '*.t.sol' 2>/dev/null)" ]; then forge test -vv; else echo "PENDING test-contract: owned by phase 02"; fi
+
+.PHONY: test-fork
+test-fork:
+	@test -n "$(COSTON2_RPC_URL)" || { echo "COSTON2_RPC_URL is required for fork tests"; exit 1; }
+	forge test --match-path "contracts/test/fork/*.t.sol" -vv
 
 .PHONY: test-race
 test-race:

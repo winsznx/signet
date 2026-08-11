@@ -131,6 +131,48 @@
         "The Go extension and the Solidity contracts do not yet consume the fixtures; that agreement is owned by phases 06 and 07.",
         "Rules were derived from FAssets source pinned at commit 6d5c103e4342f0fc7d3683a433a90349d544f774 and are only as current as that pin."
       ]
+    },
+    {
+      "id": "claim-fassets-seam-proven",
+      "wording": "Signet reads a real Coston2 FAssets redemption in both memo and destination-tag mode and reproduces its payment reference independently in TypeScript and Solidity, matching what the chain recorded.",
+      "status": "verified",
+      "proofLevel": 2,
+      "network": [
+        "coston2"
+      ],
+      "evidence": [
+        "docs/protocol-seams/fassets.md",
+        "docs/protocol-seams/fassets-seam-evidence.json",
+        "contracts/test/fork/FAssetsSeam.t.sol",
+        "contracts/src/adapters/FAssetsAdapter.sol",
+        "docs/evidence/phase-02.md"
+      ],
+      "verifiedAt": "2026-08-11T15:05:00Z",
+      "limitations": [
+        "Read-only verification against live Coston2 at pinned blocks. No transaction was sent and nothing was deployed.",
+        "Every obligation read belongs to a third-party agent, because Signet is not a whitelisted FAssets agent on Coston2.",
+        "The completion entry points are selector-verified but not exercised; the proof they consume is owned by phase 05.",
+        "Behaviour is only as current as the pinned block and the pinned FAssets commit."
+      ]
+    },
+    {
+      "id": "claim-upstream-reproducible",
+      "wording": "Every pinned upstream source reproduces byte-identically from an empty checkout, verified by content hash on every build.",
+      "status": "verified",
+      "proofLevel": 1,
+      "network": [],
+      "evidence": [
+        "docs/source-lock.json",
+        "scripts/fetch-upstream.mjs",
+        "scripts/verify-source-lock.mjs",
+        "docs/evidence/phase-02.md"
+      ],
+      "verifiedAt": "2026-08-11T15:35:00Z",
+      "limitations": [
+        "Proven by deleting upstream/ entirely and re-running make bootstrap: 11 sources, all content hashes matched, 40 seconds.",
+        "Reproducibility binds a checkout to a pinned commit. It is not an attestation that the upstream commit itself is trustworthy.",
+        "Depends on GitHub remaining able to serve those commits."
+      ]
     }
   ]
 }

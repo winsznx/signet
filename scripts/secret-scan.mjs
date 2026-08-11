@@ -36,6 +36,13 @@ const HASH_SOURCES = [
   "deployments/coston2.json",
   "evidence/claim-ledger.json",
   "docs/protocol-seams/fassets-access-probe.json",
+  "docs/protocol-seams/fassets-seam-evidence.json",
+  // The decision fixtures hold commitment hashes, payment references and code hashes. Including
+  // them here would normally weaken the rule, because a secret written into an allowlisted file
+  // self-allows. It does not here: this file is regenerated from decide() and byte-compared against
+  // a fresh build on every gate run, so a hand-inserted value fails `make fixtures-check` before it
+  // can reach this scanner. Reproducibility is what makes it safe to trust.
+  "reference/test-vectors/decision-fixtures.json",
 ];
 
 /**

@@ -1,0 +1,100 @@
+{
+  "seam": "fassets",
+  "network": "coston2",
+  "verifiedAt": "2026-08-11T15:05:00Z",
+  "pinnedSources": {
+    "fassets": "6d5c103e4342f0fc7d3683a433a90349d544f774",
+    "flare-foundry-periphery-package": "ca264d6a31ddfb53d1bef7cb7bd1942aa89d323a"
+  },
+  "assetManager": {
+    "address": "0xc1Ca88b937d0b528842F95d5731ffB586f4fbDFA",
+    "resolvedFrom": "FlareContractRegistry.getContractAddressByName(\"AssetManagerFXRP\")",
+    "assetMintingDecimals": 6,
+    "redeemWithTagSupported": true
+  },
+  "observedRedemptions": [
+    {
+      "mode": "STANDARD_MEMO",
+      "transactionHash": "0xd4f2f628f1ad1f4fc11d12e1093b1d4be1f83b2241cef1081fb15dd187319b70",
+      "blockNumber": 33921675,
+      "requestId": "44851498",
+      "agentVault": "0x55c815260cBE6c45Fe5bFe5FF32E3C7D746f14dC",
+      "paymentAddress": "r9oQTGAD1Wnuy5t8sPHA9LWTSdsho4AQ72",
+      "paymentReference": "0x4642505266410002000000000000000000000000000000000000000002ac612a",
+      "valueUBA": "3060000000",
+      "feeUBA": "15300000",
+      "payableDrops": "3044700000",
+      "firstUnderlyingBlock": "19820484",
+      "lastUnderlyingBlock": "19821048",
+      "lastUnderlyingTimestamp": "1786454583",
+      "requiresDestinationTag": false,
+      "destinationTag": "0"
+    },
+    {
+      "mode": "DESTINATION_TAG",
+      "transactionHash": "0xcb49c8d8332759516b24f3bcb5934a436db114683cccdc023cdcb3efbc918f6f",
+      "blockNumber": 33913301,
+      "requestId": "44745040",
+      "agentVault": "0x5b89514d1F060AdbEA8B7294AFf81ed8dbAa7fC5",
+      "paymentAddress": "rLoaiwEpbBAQKZcgdEG5kbNTM98VuzECy2",
+      "paymentReference": "0x4642505266410002000000000000000000000000000000000000000002aac150",
+      "valueUBA": "10000000",
+      "feeUBA": "50000",
+      "payableDrops": "9950000",
+      "firstUnderlyingBlock": "19815965",
+      "lastUnderlyingBlock": "19816494",
+      "lastUnderlyingTimestamp": "1786440330",
+      "requiresDestinationTag": true,
+      "destinationTag": "412913618",
+      "executor": "0x103b384064ae85577127097A7cCadfd6fb13f437"
+    }
+  ],
+  "eventCounts": {
+    "RedemptionRequested": 248,
+    "RedemptionWithTagRequested": 175,
+    "sampledRange": "blocks 32000000-33922434 via Blockscout getLogs"
+  },
+  "findings": [
+    "One transaction can emit several RedemptionRequested events, one per participating agent, so the unit of work is the requestId and not the transaction hash.",
+    "A confirmed request returns status SUCCESSFUL from redemptionRequestInfoExt rather than reverting, contradicting the pinned interface's doc comment. All 40 sampled recent requests returned status 2.",
+    "The observed payment window of 564 blocks exceeds settings.underlyingBlocksForPayment of 500 because of the redemption time extension, so the window must be read from the obligation and never computed from settings.",
+    "An unknown request id reverts rather than returning a zeroed struct."
+  ],
+  "crossLanguageAgreement": {
+    "paymentReferenceDerivation": {
+      "requestId": "44851498",
+      "typescriptReference": "0x4642505266410002000000000000000000000000000000000000000002ac612a",
+      "solidityAdapter": "0x4642505266410002000000000000000000000000000000000000000002ac612a",
+      "onChain": "0x4642505266410002000000000000000000000000000000000000000002ac612a"
+    },
+    "addressDecoder": "All four live Coston2 agent underlying addresses and both observed destinations decode and re-encode identically through reference/src/xrpl-address.ts."
+  },
+  "paymentReferenceVectors": {
+    "note": "Derivation vectors asserted by reference/test/primitives.test.ts and contracts/test/fork/FAssetsSeam.t.sol. They are literal expected values on purpose: asserting against a reimplementation would prove only that two copies of the same mistake agree.",
+    "formula": "redemption(id) = bytes32(id | (0x4642505266410002 << 192))",
+    "vectors": [
+      {
+        "requestId": "1",
+        "reference": "0x4642505266410002000000000000000000000000000000000000000000000001"
+      },
+      {
+        "requestId": "4242",
+        "reference": "0x4642505266410002000000000000000000000000000000000000000000001092"
+      },
+      {
+        "requestId": "44851498",
+        "reference": "0x4642505266410002000000000000000000000000000000000000000002ac612a"
+      }
+    ],
+    "negativeVectors": [
+      {
+        "value": "0x4642505266410001000000000000000000000000000000000000000000001092",
+        "why": "minting type, not redemption"
+      },
+      {
+        "value": "0x4642505266410002000000000000000000000000000000000000000000000000",
+        "why": "redemption type with zero low bits carries no request id"
+      }
+    ]
+  }
+}

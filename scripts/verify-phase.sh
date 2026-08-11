@@ -36,7 +36,19 @@ case "$PHASE" in
     run bash scripts/secret-scan.sh
     run node scripts/verify-claim-ledger.mjs
     ;;
-  02|03|04|05|06|07|08|09|10|11|12|13)
+  02)
+    run make verify-bootstrap
+    run make lint
+    run make typecheck
+    run make test-unit
+    run make test-property
+    run make fixtures-check
+    run make test-contract
+    run bash scripts/secret-scan.test.sh
+    run bash scripts/secret-scan.sh
+    run node scripts/verify-claim-ledger.mjs
+    ;;
+  03|04|05|06|07|08|09|10|11|12|13)
     echo "phase ${PHASE} gate is defined when the phase is implemented" >&2
     exit 1
     ;;
