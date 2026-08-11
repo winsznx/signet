@@ -1,8 +1,13 @@
 # External input required
 
-Two items. Both are testnet-only. Neither is urgent before Phase 02 — the run continues on
-Phases 00, 01 and 02 without them and only stalls when Phase 03 needs to send a Coston2
-transaction.
+**Status: item 1 blocks Phase 03, and the run has moved to Phase 04 rather than stopping.**
+Phases 00, 01 and 02 are complete and committed. Phase 03 has taken every step that does not need
+gas, including proving that the FCC indexer credentials Flare's own docs tell you to request are not
+needed at all. What remains in Phase 03 is entirely state-changing Coston2 transactions, and there
+is no gasless path to those, so Phase 03 is parked and Phase 04 (XRPL Testnet, self-service faucet)
+is running instead. Phase 03 resumes the moment the address below is funded.
+
+Two items. Both are testnet-only.
 
 ---
 
@@ -48,9 +53,14 @@ whitelisting, the run proceeds on the fallback and the claim ledger records the 
 
 ## What is not blocked
 
-- XRPL Testnet accounts and funding: the faucet is self-service and reachable.
-- FCC C-chain indexer credentials: not requested. Signet will run the public
-  `flare-system-c-chain-indexer` against the public Coston2 RPC instead.
+- XRPL Testnet accounts and funding: the faucet is self-service and reachable. Phase 04 can proceed
+  independently of item 1, and will be attempted next if you would rather the run continue than wait.
+- **FCC C-chain indexer credentials: resolved, not requested.** This was recorded in Phase 00 as a
+  self-service path and has now been executed. The public `flare-system-c-chain-indexer` was built
+  and run against the public Coston2 RPC with no credential of any kind; it resolved all 14 FSP
+  event filters by contract name through `ContractRegistry` and populated the MySQL schema the
+  extension proxy expects. Evidence in `docs/protocol-seams/fcc.md`. The one constraint discovered:
+  `log_range` must be 30, because the public endpoint caps `eth_getLogs` at 30 blocks.
 - Public reachability for the extension proxy: the scaffold's Cloudflare tunnel needs no account.
 - Real hardware attestation: not required for V0, and simulated execution is labelled everywhere.
 - Supabase and Cloudflare credentials: not required yet. Phase 08 decides whether durable
