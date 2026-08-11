@@ -14,7 +14,7 @@ Access gates: `docs/run/ACCESS_STATUS.md`.
 
 | Phase | Title | Result | Evidence | Summary | Commit |
 |---|---|---|---|---|---|
-| 00 | Source lock and environment | PASS | [phase-00.md](../evidence/phase-00.md) | [phase-00-summary.md](phase-00-summary.md) | `6c41986` |
+| 00 | Source lock and environment | PASS | [phase-00.md](../evidence/phase-00.md) | [phase-00-summary.md](phase-00-summary.md) | `a3a986a` |
 | 01 | Executable reference model | pending | | | |
 | 02 | FAssets protocol seam | pending | | | |
 | 03 | FCC scaffold seam | pending | | | |

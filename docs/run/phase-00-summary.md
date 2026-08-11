@@ -3,7 +3,7 @@
 Result: **PASS**
 Date: 2026-08-11
 Branch: `build/signet-autonomous`
-Commit: `6c41986157e7bdffd39fca9b626dd988235b6ac9`
+Commit: `a3a986a181aa87fdcc917cd4114546014c067a85`
 
 ## Phase objective
 
