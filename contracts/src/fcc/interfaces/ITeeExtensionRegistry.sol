@@ -14,13 +14,12 @@ interface ITeeExtensionRegistry {
         address claimBackAddress;
     }
 
-    function sendInstructions(
-        address[] calldata _teeIds,
-        TeeInstructionParams calldata _instructionParams
-    ) external payable returns (bytes32 _instructionId);
+    function sendInstructions(address[] calldata _teeIds, TeeInstructionParams calldata _instructionParams)
+        external
+        payable
+        returns (bytes32 _instructionId);
 
     function nextPublicExtensionId() external view returns (uint256);
 
-    function getTeeExtensionInstructionsSender(uint256 _extensionId)
-        external view returns (address);
+    function getTeeExtensionInstructionsSender(uint256 _extensionId) external view returns (address);
 }
