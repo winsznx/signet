@@ -67,9 +67,9 @@ it stays that way: see the bottom of this document.
 
 | | |
 |---|---|
-| **Extension registration** | **live Coston2** — extension id `66163` on the real `FlareTeeManager` |
+| **Extension registration** | **live Coston2** — extension id `66164` on the real `FlareTeeManager` |
 | **Extension execution** | **simulated FCC** — the extension ran as a local process, not in a Confidential Space VM |
-| **TEE machine** | **not registered.** `getActiveTeeMachines(66163)` returns `[]` |
+| **TEE machine** | **not registered.** `getActiveTeeMachines(66164)` returns `[]` |
 
 This is the part that was genuinely missing until now, and the organizer named it precisely. Before
 this work Signet's decision ran as a CLI reading stdin, which is not FCC in any sense the protocol
@@ -86,6 +86,26 @@ means. What exists now:
   decision, two transports; the composed lifecycle asserts the FCC and CLI answers match.
 - The composed lifecycle now **takes the payment it signs from the FCC ActionResult**, not from the
   CLI. "Derived inside FCC" is a statement about what happened in that run.
+
+#### A superseded first registration
+
+Extension **66163** was registered first and is retired. Its instruction sender took the decision
+input alone and relayed it unmodified, which a security review correctly called an unauthenticated
+signing-decision relay: any caller could name an obligation that did not exist and, once a TEE
+machine existed, receive a signature for it. The contract also carried a comment claiming the
+opposite, which was worse than the code.
+
+Extension **66164** replaces it. `authorizeRedemption` now takes the obligation identity as
+parameters and checks it against `SignetRegistry`, where an action can only exist if the pinned
+`SignetInstructionSender` opened it after reading FAssets. Verified live by `eth_call`: a fabricated
+obligation reverts `NoSuchAction` (`0x4a45b124`) before any TEE lookup, while real obligation
+44928272 passes the binding and stops only at the absent machine (`0xd65ac61e`).
+
+No instruction was ever executed through 66163: it never carried a live TEE machine.
+
+What this does **not** fix is the rest of the snapshot. Destination, amount and window still arrive
+from whoever built the decision input, and `decide()` checks their internal consistency rather than
+their truth. That is recorded in `docs/threat-model.md` and is not closed.
 
 ### 3. Signing and executing that exact payment
 
@@ -141,7 +161,7 @@ no credentials.
 | FAssets obligation 44928272, minting cycle, `redeem` | live Coston2 |
 | FAssets obligation 44993990 (positive path) | Coston2 fork, deployed FAssets bytecode and state |
 | `SignetRegistry`, `SignetInstructionSender` | live Coston2 |
-| FCC extension registration, id 66163, instruction sender | live Coston2 |
+| FCC extension registration, id 66164, instruction sender | live Coston2 |
 | FCC extension execution | **simulated FCC**: local process, no attestation |
 | FCC TEE machine registration, on-chain instruction round trip | **absent** |
 | XRPL payment, signing, submission, reconciliation, replay refusal | live XRPL Testnet |

@@ -43,10 +43,11 @@ const send = (to, sig, args, value) =>
   JSON.parse(cast(["send", to, sig, ...args.map(String), ...(value ? ["--value", value] : []), "--private-key", KEY, "--json"]));
 
 const record = JSON.parse(readFileSync(RECORD, "utf8"));
-if (record.fcc?.extensionId) {
+if (record.fcc?.extensionId && !process.env.SIGNET_FCC_REREGISTER) {
   console.log(`already registered: extension ${record.fcc.extensionId}`);
   process.exit(0);
 }
+if (!record.signet?.registry) throw new Error("Signet registry must be deployed before the FCC sender can bind to it");
 
 console.log(`FlareTeeManager ${TEE_MANAGER}`);
 console.log(`nextPublicExtensionId before: ${cast(["call", TEE_MANAGER, "nextPublicExtensionId()(uint256)"]).split(" ")[0]}`);
@@ -56,7 +57,7 @@ const out = execFileSync(
   "forge",
   ["create", "contracts/src/fcc/SignetFccInstructionSender.sol:SignetFccInstructionSender",
    "--rpc-url", RPC, "--private-key", KEY, "--broadcast",
-   "--constructor-args", TEE_MANAGER, TEE_MANAGER],
+   "--constructor-args", TEE_MANAGER, TEE_MANAGER, record.signet.registry, record.signet.assetManager],
   { encoding: "utf8", env, maxBuffer: 64 * 1024 * 1024 },
 );
 const sender = out.match(/Deployed to: (0x[0-9a-fA-F]{40})/)?.[1];
@@ -75,12 +76,24 @@ if (bindTx.status !== "0x1") throw new Error("setExtensionId reverted");
 const extensionId = cast(["call", sender, "extensionId()(uint256)"]).split(" ")[0];
 console.log(`extension id ${extensionId}`);
 
+const superseded = record.fcc ? [...(record.fcc.superseded ?? []), {
+  extensionId: record.fcc.extensionId,
+  instructionSender: record.fcc.instructionSender,
+  retiredAt: new Date().toISOString().replace(/\.\d+Z$/, "Z"),
+  reason:
+    "Its authorizeRedemption took the decision input alone and relayed it unmodified, which a security review correctly called an unauthenticated signing-decision relay: any caller could name an obligation that did not exist. Superseded by a sender that checks the obligation against SignetRegistry. It never carried a live TEE machine, so no instruction was ever executed through it.",
+}] : [];
+
 record.fcc = {
+  superseded,
   registeredAt: new Date().toISOString().replace(/\.\d+Z$/, "Z"),
   flareTeeManager: TEE_MANAGER,
   instructionSender: sender,
   extensionId,
   stateVerifier: "0x0000000000000000000000000000000000000000",
+  signetRegistry: record.signet.registry,
+  assetManager: record.signet.assetManager,
+  obligationBoundOnChain: true,
   opType: "SIGNET_REDEMPTION",
   commands: ["AUTHORIZE_REDEMPTION", "HEALTH_CHECK"],
   transactions: { deploy: out.match(/Transaction hash: (0x[0-9a-f]{64})/)?.[1] ?? null, register: registerTx.transactionHash, setExtensionId: bindTx.transactionHash },

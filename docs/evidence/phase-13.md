@@ -82,6 +82,10 @@ fuzzer sustaining 4.6M executions in 30 seconds.
 
 ## 6. Fresh-clone verification
 
+> **Counts below predate schema V2.** They were true when this phase ran. The current figures are 174
+> reference tests and 76 V2 conformance fixtures; see `docs/evidence/organizer-accepted-proof-boundary.md`.
+
+
 The branch was cloned to a clean directory and built from nothing but the lockfile and
 `scripts/install-go.sh`.
 

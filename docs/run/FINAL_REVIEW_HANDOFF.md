@@ -70,7 +70,7 @@ If you read one thing and disagree with one thing, let it be this.
 | 07 Go extension | PASS |
 | 08 Durable coordinator | PARTIAL, durability proven; observer loops need deployed contracts |
 | 09 Composed lifecycle | PASS, 59/59 |
-| 10 Target-chain lifecycle | PARTIAL, Signet's leg verified on chain; settlement needs the whitelist |
+| 10 Target-chain lifecycle | PARTIAL, Signet's leg verified on chain; own-agent settlement out of scope by organizer guidance, not pending |
 | 11 Independent verifier | PASS |
 | 12 Operator and proof UI | PASS, deployed |
 | 13 Hardening | PASS, one high risk open and accepted |
@@ -200,9 +200,9 @@ work made up for it.
 | `extension/cmd/signet-fcc-extension` | implements the pinned scaffold's extension contract |
 | op-type | `SIGNET_REDEMPTION`, commands `AUTHORIZE_REDEMPTION` and `HEALTH_CHECK` |
 | no wildcard | asserted by test: a wildcard is the shape of an arbitrary signing endpoint |
-| extension id | **66163**, registered on the live Coston2 `FlareTeeManager` |
-| instruction sender | `0x6D49c54D2F75214616a0964Bd52c695384f1b6E2` |
-| TEE machine | **none.** `getActiveTeeMachines(66163)` returns empty |
+| extension id | **66164**, registered on the live Coston2 `FlareTeeManager` |
+| instruction sender | `0xDd8aA7A4f43f01258A426a30d02032821De9bc6e` |
+| TEE machine | **none.** `getActiveTeeMachines(66164)` returns empty |
 | attestation | **none.** The extension runs as a local process; FTDC rejects simulated attestation |
 | positive path | takes the payment it signs **from the FCC ActionResult**, not from the CLI |
 

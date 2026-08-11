@@ -516,7 +516,7 @@
     },
     {
       "id": "claim-v2-underlying-observation",
-      "wording": "Signet's decision schema V2 refuses to authorize a redemption payment unless the signing boundary has itself observed the XRP ledger across at least two separately hosted public XRPL Testnet endpoints that agreed, no more than the policy's ledger budget ago, and seen no validated payment already carrying that obligation's reference to that destination. The observation is bound into the authorization commitment, so an independent verifier recomputes it from public data. Go and TypeScript agree on all 73 V2 fixtures, and V1 inputs are refused rather than interpreted.",
+      "wording": "Signet's decision schema V2 refuses to authorize a redemption payment unless the signing boundary has itself observed the XRP ledger across at least two separately hosted public XRPL Testnet endpoints that agreed, no more than the policy's ledger budget ago, and seen no validated payment already carrying that obligation's reference to that destination. The observation is bound into the authorization commitment, so an independent verifier recomputes it from public data. Go and TypeScript agree on all 76 V2 fixtures, and V1 inputs are refused rather than interpreted.",
       "status": "verified",
       "proofLevel": 2,
       "network": [
@@ -577,6 +577,7 @@
       "verifiedAt": "2026-08-11T23:30:00Z",
       "limitations": [
         "The FCC extension ran as a local process, not in a GCP Confidential Space VM. This is not hardware-attested execution: no TEE machine is registered for extension 66163 and getActiveTeeMachines returns empty, so no on-chain FCC instruction round trip exists.",
+        "A coordinator, or anyone able to supply the decision input, can report a genuine active obligation while naming a destination or amount of its own choosing and receive a real signature. decide() is a pure function and checks the input's internal consistency, not whether it reflects FAssets or the ledger. PRD 22.3's 'coordinator cannot obtain arbitrary signature' is NOT satisfied. What exists is attributability: the commitment covers every payment field and the independent verifier recomputes it and re-observes the ledger.",
         "The obligation in the positive path was created on a Coston2 fork running deployed FAssets bytecode and state, not on live Coston2. The live Coston2 obligation evidence is request 44928272, which is the double-payment incident and is deliberately not used as the successful demonstration.",
         "Signet has never settled a FAssets redemption and does not claim to. Settlement requires the agent's own underlying signing authority, and Flare has declined to approve new agents.",
         "The residual race window between observing the ledger and the payment validating is not closed and cannot be."

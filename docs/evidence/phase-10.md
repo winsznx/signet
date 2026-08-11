@@ -198,7 +198,7 @@ This phase reported that Signet's leg ran on the deployed chain, and it did. Wha
 because nobody asked until an organizer did, is that the decision ran as a CLI reading stdin. That is
 not FCC in the sense the protocol means.
 
-`extension/cmd/signet-fcc-extension` now implements the FCC extension contract, extension id `66163`
+`extension/cmd/signet-fcc-extension` now implements the FCC extension contract, extension id `66164`
 is registered on the live Coston2 `FlareTeeManager`, and the composed lifecycle takes the payment it
 signs from the FCC ActionResult. No TEE machine is registered: FTDC rejects simulated attestation and
-`getActiveTeeMachines(66163)` returns empty.
+`getActiveTeeMachines(66164)` returns empty.

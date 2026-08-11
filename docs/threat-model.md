@@ -21,6 +21,7 @@ medium risk, and an honest claim ledger. This is the accounting.
 | An unapproved build signs | Registry approves a code hash; a revoked hash refuses `S015`. |
 | Governance authorizes itself as a signer | `approveSigner` rejects governance. |
 | Signature malleability | Low-s and v bounds enforced in `_recover`. |
+| A caller names an obligation that does not exist | `SignetFccInstructionSender.authorizeRedemption` checks the obligation against `SignetRegistry` and reverts `NoSuchAction`. Verified live on Coston2. The first deployed sender did not do this and is retired. |
 | An arbitrary command reaches the FCC extension | The extension registers one op-type and two commands, with no wildcard. An unregistered op-type or command is 501, never a decision. `scripts/fcc/extension.test.mjs`. |
 | Malformed input crashes the decider | `Decide` is total. 4.6M fuzz executions, no panic, no untyped refusal. |
 | Two implementations disagree | 62 frozen fixtures, plus malformed-input agreement. A review found the two parsers diverging on unknown fields; fixed in phase 09. |

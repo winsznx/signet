@@ -12,12 +12,11 @@ either false or unproven.
   independently-disagreed payment.
 - An authorized transaction is executed on XRPL Testnet and independently provable through FDC on
   Coston2.
-- Signet's extension is registered on live Coston2 with extension id `66163`.
+- Signet's extension is registered on live Coston2 with extension id `66164`.
 - The Signet registry and instruction sender are deployed on live Coston2.
 - A Coston2 FAssets redemption obligation was created through the ordinary minter path and read back
   through `redemptionRequestInfoExt`.
 - An FDC attestation of a Signet payment was verified on chain by `FdcVerification`.
-- Payment fields are derived from the FAssets obligation and cannot be supplied by the caller.
 - An independent verifier, run from a fresh clone with no credentials, recomputes the authorization
   commitment and re-observes the XRP ledger.
 - Signet found a real duplicate-payment defect in its own design, corrected it at the protocol layer
@@ -30,6 +29,7 @@ either false or unproven.
 | "derived inside FCC" | the extension ran as a local process; no TEE machine is registered and nothing is hardware-attested |
 | "at most one payment per obligation" | for an obligation whose only legitimate payment authority is Signet, which this deployment does not instantiate |
 | "the positive path uses a real FAssets obligation" | created on a Coston2 fork running deployed FAssets bytecode and state; the live Coston2 obligation is the incident, not the demo |
+| "payment fields come from the FAssets obligation" | true of the derivation: the decision computes destination, amount, reference and window from the obligation it is given, and no command accepts a payment field. It is **not** true that the obligation snapshot itself cannot be supplied by the caller. Say "derived from the obligation, not from payment parameters", never "cannot be supplied by the caller" |
 | "exactly once" | never say this unqualified. Signet enforces at-most-once by itself; an independent racer is not excluded |
 
 ## Prohibited
@@ -40,7 +40,7 @@ either false or unproven.
 - **Any claim of hardware attestation, TEE-protected keys, Confidential Space execution, or a
   measured/attested runtime.** There is no TEE in this deployment.
 - **Any claim that a TEE machine is registered, or that an on-chain FCC instruction round trip has
-  completed.** `getActiveTeeMachines(66163)` returns empty.
+  completed.** `getActiveTeeMachines(66164)` returns empty.
 - **Any claim of exactly-once payment against an independent actor.**
 - **Any presentation of request 44928272 as a successful demonstration.** It is the double-payment
   incident.
@@ -48,4 +48,7 @@ either false or unproven.
   access.** It is closed by organizer decision.
 - **Any claim that the production exclusive-signing-authority model has been demonstrated.** It is
   architecture, and it is unproven here.
+- **Any claim that payment fields cannot be supplied by the caller.** The decision derives them from
+  the obligation it is handed, and whoever hands it the obligation snapshot chooses that snapshot.
+  This is recorded in `docs/threat-model.md` and is not closed.
 - Mainnet, production-readiness, audited, or user claims of any kind. Test wallets are not users.

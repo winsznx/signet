@@ -81,25 +81,36 @@
     }
   },
   "fcc": {
-    "registeredAt": "2026-08-11T22:37:49Z",
+    "superseded": [
+      {
+        "extensionId": "66163",
+        "instructionSender": "0x6D49c54D2F75214616a0964Bd52c695384f1b6E2",
+        "retiredAt": "2026-08-11T23:11:16Z",
+        "reason": "Its authorizeRedemption took the decision input alone and relayed it unmodified, which a security review correctly called an unauthenticated signing-decision relay: any caller could name an obligation that did not exist. Superseded by a sender that checks the obligation against SignetRegistry. It never carried a live TEE machine, so no instruction was ever executed through it."
+      }
+    ],
+    "registeredAt": "2026-08-11T23:11:16Z",
     "flareTeeManager": "0x1a9C4A0f9D76c0b1D91d22E24E573a9b377618aE",
-    "instructionSender": "0x6D49c54D2F75214616a0964Bd52c695384f1b6E2",
-    "extensionId": "66163",
+    "instructionSender": "0xDd8aA7A4f43f01258A426a30d02032821De9bc6e",
+    "extensionId": "66164",
     "stateVerifier": "0x0000000000000000000000000000000000000000",
+    "signetRegistry": "0x381bdE5961695914B28B16f405d51E8acB877f6e",
+    "assetManager": "0xc1ca88b937d0b528842f95d5731ffb586f4fbdfa",
+    "obligationBoundOnChain": true,
     "opType": "SIGNET_REDEMPTION",
     "commands": [
       "AUTHORIZE_REDEMPTION",
       "HEALTH_CHECK"
     ],
     "transactions": {
-      "deploy": "0xe90e55e15f0b64e7d828fe9e490e988c2bfed70d8a12ee0c9be5ec1dabb075ea",
-      "register": "0xf494ac85c7e1088d196a08b56be74eb6a8da2cfb96811c22bb82480b2856ba9c",
-      "setExtensionId": "0x06e56c192b32c90eb26cbad7cc33b32870576a477c19ff49d44f1edf6499f764"
+      "deploy": "0xc22e7e5aad61e4c0b17fd81ebd9e7aeda72277bb87bff6d8ee274e45b0311d6a",
+      "register": "0x377cb32be953bc93c81cb4bb2551953dc50d38bac7087a05b0993ff041117e43",
+      "setExtensionId": "0x21ccf5051228b80e4b29f49ba71161922fc6748b6fdcf4bdbd1e53a22b41bf5b"
     },
     "teeMachineRegistered": false,
     "teeMachineNote": "No TEE machine is registered. Registration requires a GCP Confidential Space VM: FTDC rejects simulated attestation, so a machine running with MODE=1 cannot be promoted to production. The extension is registered and the instruction sender is bound; the machine half is not.",
     "explorer": {
-      "instructionSender": "https://coston2.testnet.flarescan.com/address/0x6D49c54D2F75214616a0964Bd52c695384f1b6E2"
+      "instructionSender": "https://coston2.testnet.flarescan.com/address/0xDd8aA7A4f43f01258A426a30d02032821De9bc6e"
     }
   }
 }

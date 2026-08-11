@@ -18,7 +18,6 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -27,6 +26,7 @@ import (
 	"sync"
 
 	"github.com/flare-foundation/go-flare-common/pkg/tee/instruction"
+	"github.com/flare-foundation/tee-node/pkg/processorutils"
 	teetypes "github.com/flare-foundation/tee-node/pkg/types"
 	teeutils "github.com/flare-foundation/tee-node/pkg/utils"
 
@@ -128,7 +128,13 @@ func (e *extension) actionHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (e *extension) processAction(action teetypes.Action) (int, []byte) {
-	dataFixed, err := parseFixed(action.Data.Message)
+	// The pinned helper, not a hand-rolled one. An earlier version of this file hex-decoded the
+	// message first, on the strength of a comment claiming the contract double-encodes it. That was
+	// wrong: `Data.Message` is `hexutil.Bytes` and the JSON decoder has already unhexed it by the
+	// time this runs, so the extra step could never fire and its fallback silently did what the
+	// pinned helper does correctly. Using the real one also restores the size bound the hand-rolled
+	// version dropped.
+	dataFixed, err := processorutils.Parse[instruction.DataFixed](action.Data.Message)
 	if err != nil {
 		return http.StatusBadRequest, []byte(fmt.Sprintf("decoding fixed data: %v", err))
 	}
@@ -212,22 +218,6 @@ func (e *extension) healthCheck(action teetypes.Action, df *instruction.DataFixe
 	e.mu.RUnlock()
 	data, _ := json.Marshal(snapshot)
 	return buildResult(action, df, data, 1, nil)
-}
-
-// parseFixed hex-decodes the message and parses the result as a DataFixed. The double encoding is
-// the contract's, not ours, and the scaffold documents it as a thing implementations get wrong.
-func parseFixed(message []byte) (*instruction.DataFixed, error) {
-	raw := bytes.TrimPrefix(message, []byte("0x"))
-	decoded := make([]byte, len(raw)/2)
-	if _, err := fmt.Sscanf(string(raw), "%x", &decoded); err != nil {
-		// Some transports deliver the message already decoded.
-		decoded = message
-	}
-	var fixed instruction.DataFixed
-	if err := json.Unmarshal(decoded, &fixed); err != nil {
-		return nil, err
-	}
-	return &fixed, nil
 }
 
 // buildResult mirrors the scaffold's own helper. The log strings are wire contract, not prose.
