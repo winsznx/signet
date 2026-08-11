@@ -163,6 +163,12 @@ verify: verify-bootstrap lint typecheck test-unit test-property test-contract te
 .PHONY: test-verifier
 test-verifier:
 	cd verifier && npx vitest run
+
+# Fuzzing is time-boxed so it can live in the gate. A longer run belongs in a nightly job.
+.PHONY: test-fuzz
+test-fuzz:
+	cd extension && GOWORK=off go test ./internal/wire/ -run xxx -fuzz FuzzDecodeNeverPanics -fuzztime 20s
+	cd extension && GOWORK=off go test ./internal/policy/ -run xxx -fuzz FuzzDecideIsTotal -fuzztime 20s
 	@echo "verify OK"
 
 .PHONY: verify-phase
