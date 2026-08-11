@@ -226,6 +226,7 @@
         "testXRP"
       ],
       "evidence": [
+        "evidence/receipts/xrpl-set-regular-key-03445ECA6C42EA46BDF2AA0CBAA348C0A889529334798126602BDC9477E3C82F.json",
         "docs/protocol-seams/xrpl.md",
         "docs/evidence/phase-04.md"
       ],
@@ -235,6 +236,28 @@
         "lsfDisableMaster is deliberately not set, so the master key retains authority and must be protected accordingly.",
         "The master key was used once, locally, on this machine. It has never been inside a TEE, a CI environment or a hosted service, but nor is it in the offline custody a production deployment requires.",
         "Rotation and emergency revocation are modelled but have not been exercised on chain."
+      ]
+    },
+    {
+      "id": "claim-fdc-request-and-response-proven",
+      "wording": "The FDC verifier confirms Signet's XRPL Testnet payment and reports source, destination, amount and memo that satisfy every rule FAssets applies when confirming a redemption.",
+      "status": "verified",
+      "proofLevel": 2,
+      "network": [
+        "testXRP",
+        "coston2"
+      ],
+      "evidence": [
+        "evidence/receipts/fdc-request-7500DA52CAB254DBD1B64BC88975B2D01C4DFDF309A6C78398C57142493759AF.json",
+        "docs/protocol-seams/fdc.md",
+        "docs/evidence/phase-05.md"
+      ],
+      "verifiedAt": "2026-08-11T16:05:00Z",
+      "limitations": [
+        "Read-only verifier query. No attestation request has been submitted to FdcHub, which is payable and needs C2FLR, so no Merkle proof exists and nothing has been verified on chain.",
+        "The ten cross-checks compare FDC's response against the FAssets confirmation rules read from pinned source. They are not a substitute for FAssets actually accepting a proof.",
+        "The obligation whose payment reference this payment carries belongs to a third-party agent; no FAssets redemption has been settled.",
+        "Proof replay, proof-owner mismatch and the payment-nonexistence path cannot be tested without a proof."
       ]
     }
   ]

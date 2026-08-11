@@ -70,6 +70,52 @@ const trackedPaths = git(["ls-files", "-z"]).split("\0").filter(Boolean);
 
 // ---------------------------------------------------------------- allowlisted digests
 
+/**
+ * Keys whose 64-hex values are public protocol identifiers by construction: ledger transaction
+ * hashes, commitments, and standard address hashes. Evidence receipts exist to be published, so
+ * their contents are public - but allowlisting a whole receipt file would let any future key name
+ * inherit that cover, so the allowlist is per key rather than per file.
+ */
+const PUBLIC_HASH_KEYS = new Set([
+  "txHash",
+  "transactionId",
+  "transactionHash",
+  "authorizationCommitment",
+  "obligationHash",
+  "fixtureSetHash",
+  "messageIntegrityCode",
+  "attestationType",
+  "sourceId",
+  "sourceAddressHash",
+  "receivingAddressHash",
+  "intendedReceivingAddressHash",
+  "firstMemoData",
+  "paymentReference",
+  "runtimeCodeHash",
+  "proxyImplementationCodeHash",
+  "contentSha256",
+  "expected",
+  "observed",
+  "value",
+  "reference",
+  "chainId",
+]);
+
+/** Receipts are machine-generated evidence; only their public-identifier keys are trusted. */
+const KEYED_HASH_SOURCES = ["evidence/receipts"];
+
+function collectKeyedHexValues(node, out, key = null) {
+  if (typeof node === "string") {
+    if (key !== null && PUBLIC_HASH_KEYS.has(key)) {
+      for (const match of node.matchAll(/(?:0x)?([0-9a-fA-F]{64})/g)) out.add(match[1].toLowerCase());
+    }
+  } else if (Array.isArray(node)) {
+    for (const item of node) collectKeyedHexValues(item, out, key);
+  } else if (node && typeof node === "object") {
+    for (const [childKey, value] of Object.entries(node)) collectKeyedHexValues(value, out, childKey);
+  }
+}
+
 function collectHexValues(node, out) {
   if (typeof node === "string") {
     // Must match the same shape the scanner looks for, including the 0x prefix: \b does not
@@ -88,6 +134,17 @@ for (const relative of HASH_SOURCES) {
     collectHexValues(JSON.parse(readFileSync(join(REPO_ROOT, relative), "utf8")), allowedDigests);
   } catch {
     // A missing artefact is not an error here; the source-lock gate owns that check.
+  }
+}
+
+for (const dir of KEYED_HASH_SOURCES) {
+  for (const relative of trackedPaths) {
+    if (!relative.startsWith(`${dir}/`) || !relative.endsWith(".json")) continue;
+    try {
+      collectKeyedHexValues(JSON.parse(readFileSync(join(REPO_ROOT, relative), "utf8")), allowedDigests);
+    } catch {
+      // Unparseable evidence is caught by the gate that produced it.
+    }
   }
 }
 

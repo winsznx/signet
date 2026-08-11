@@ -1,0 +1,93 @@
+{
+  "seam": "fdc",
+  "network": "coston2 / testXRP",
+  "preparedAt": "2026-08-11T14:48:03.485Z",
+  "attestationType": "0x5852505061796d656e7400000000000000000000000000000000000000000000",
+  "attestationTypeName": "XRPPayment",
+  "sourceId": "0x7465737458525000000000000000000000000000000000000000000000000000",
+  "sourceIdName": "testXRP",
+  "transactionId": "0x7500da52cab254dbd1b64bc88975b2d01c4dfdf309a6c78398c57142493759af",
+  "proofOwner": "0x88f61BcDC3C0Cfe4E12dc0576960bcF3ECa88F7d",
+  "abiEncodedRequest": "0x5852505061796d656e74000000000000000000000000000000000000000000007465737458525000000000000000000000000000000000000000000000000000dc482b4e998d90f29da13c09ebf0a41ee69d5410b5afc30235c3faf07cd554507500da52cab254dbd1b64bc88975b2d01c4dfdf309a6c78398c57142493759af00000000000000000000000088f61bcdc3c0cfe4e12dc0576960bcf3eca88f7d",
+  "messageIntegrityCode": "0xdc482b4e998d90f29da13c09ebf0a41ee69d5410b5afc30235c3faf07cd55450",
+  "fdcResponseBody": {
+    "blockNumber": "19822204",
+    "blockTimestamp": "1786459041",
+    "sourceAddress": "rPvarExLQuuqtkMBfDHp3pNnESZ5HByXta",
+    "sourceAddressHash": "0x5e6346bfd7d81593bdf1770b7569162fb25e7dedf71ebb74560ab8076d4d2d7e",
+    "receivingAddressHash": "0x02eca6de356614981c07ee65e70ab8fdbffc669253215268a6687473ae533c44",
+    "intendedReceivingAddressHash": "0x02eca6de356614981c07ee65e70ab8fdbffc669253215268a6687473ae533c44",
+    "spentAmount": "1990010",
+    "intendedSpentAmount": "1990010",
+    "receivedAmount": "1990000",
+    "intendedReceivedAmount": "1990000",
+    "hasMemoData": true,
+    "firstMemoData": "0x4642505266410002000000000000000000000000000000000000000002ac612a",
+    "hasDestinationTag": false,
+    "destinationTag": "0",
+    "status": "0"
+  },
+  "fassetsCrossChecks": [
+    {
+      "name": "FDC found the payment in a validated ledger",
+      "expected": "blockNumber 19822204",
+      "observed": "blockNumber 19822204",
+      "pass": true
+    },
+    {
+      "name": "transaction status is success",
+      "expected": "status 0",
+      "observed": "status 0",
+      "pass": true
+    },
+    {
+      "name": "source is the bound agent account (FAssets: sourceAddressHash == agent.underlyingAddressHash)",
+      "expected": "0x5e6346bfd7d81593bdf1770b7569162fb25e7dedf71ebb74560ab8076d4d2d7e",
+      "observed": "0x5e6346bfd7d81593bdf1770b7569162fb25e7dedf71ebb74560ab8076d4d2d7e",
+      "pass": true
+    },
+    {
+      "name": "destination is the obligation destination (FAssets: intendedReceivingAddressHash == redeemerUnderlyingAddressHash)",
+      "expected": "0x02eca6de356614981c07ee65e70ab8fdbffc669253215268a6687473ae533c44",
+      "observed": "0x02eca6de356614981c07ee65e70ab8fdbffc669253215268a6687473ae533c44",
+      "pass": true
+    },
+    {
+      "name": "memo carries exactly the FAssets payment reference",
+      "expected": "0x4642505266410002000000000000000000000000000000000000000002ac612a",
+      "observed": "0x4642505266410002000000000000000000000000000000000000000002ac612a",
+      "pass": true
+    },
+    {
+      "name": "received amount satisfies the FAssets floor (intendedReceivedAmount >= valueUBA - feeUBA)",
+      "expected": ">= 1990000",
+      "observed": "1990000",
+      "pass": true
+    },
+    {
+      "name": "received amount is exact, not merely sufficient",
+      "expected": "1990000",
+      "observed": "1990000",
+      "pass": true
+    },
+    {
+      "name": "spent amount is the payment plus its fee and nothing else",
+      "expected": "1990010",
+      "observed": "1990010",
+      "pass": true
+    },
+    {
+      "name": "no destination tag on a memo-mode obligation",
+      "expected": "hasDestinationTag false",
+      "observed": "hasDestinationTag false",
+      "pass": true
+    },
+    {
+      "name": "the encoded request commits to this transaction and this proof owner",
+      "expected": "7500da52cab254dbd1b64bc88975b2d01c4dfdf309a6c78398c57142493759af + 88f61bcdc3c0cfe4e12dc0576960bcf3eca88f7d",
+      "observed": "present in abiEncodedRequest",
+      "pass": true
+    }
+  ],
+  "notSubmitted": "FdcHub.requestAttestation is payable and needs C2FLR; no request has been submitted and no Merkle proof retrieved"
+}

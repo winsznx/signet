@@ -1,0 +1,14 @@
+{
+  "seam": "xrpl",
+  "purpose": "SetRegularKey",
+  "network": "xrpl-testnet",
+  "account": "rPvarExLQuuqtkMBfDHp3pNnESZ5HByXta",
+  "regularKey": "r39Wfn26tTY6JA3vACnRwucLSeQ2v5JcXU",
+  "txHash": "03445ECA6C42EA46BDF2AA0CBAA348C0A889529334798126602BDC9477E3C82F",
+  "validatedLedger": 19822182,
+  "engineResult": "tesSUCCESS",
+  "state": "VALIDATED_SUCCESS",
+  "masterKeyDisabled": false,
+  "note": "lsfDisableMaster deliberately not set: the master key stays offline as the recovery path (FR-070, G4). This is the only use of the master key in the system.",
+  "explorer": "https://testnet.xrpl.org/transactions/03445ECA6C42EA46BDF2AA0CBAA348C0A889529334798126602BDC9477E3C82F"
+}
