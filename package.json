@@ -1,0 +1,25 @@
+{
+  "name": "signet",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.21.0",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "upstream:fetch": "node scripts/fetch-upstream.mjs",
+    "upstream:verify": "node scripts/fetch-upstream.mjs",
+    "sourcelock:check": "node scripts/verify-source-lock.mjs",
+    "coston2:resolve": "node scripts/resolve-coston2.mjs",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "24.3.0",
+    "typescript": "5.9.2",
+    "vitest": "3.2.4"
+  },
+  "dependencies": {
+    "@noble/hashes": "1.8.0",
+    "viem": "2.38.0"
+  }
+}

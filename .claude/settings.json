@@ -5,8 +5,12 @@
     "failIfUnavailable": true,
     "autoAllowBashIfSandboxed": true,
     "filesystem": {
-      "allowWrite": ["./"],
+      "allowWrite": [
+        "./"
+      ],
       "denyRead": [
+        "./.runtime/secrets/**",
+        "./.runtime/secrets",
         "./.env",
         "./.env.*",
         "./secrets",
@@ -40,6 +44,7 @@
   },
   "permissions": {
     "deny": [
+      "Read(./.runtime/secrets/**)",
       "Read(./.env)",
       "Read(./.env.*)",
       "Read(./secrets/**)",

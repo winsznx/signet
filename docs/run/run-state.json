@@ -1,0 +1,9 @@
+{
+  "product": "Signet",
+  "status": "running",
+  "currentPhase": "01",
+  "lastPassingPhase": "00",
+  "validation": "pending",
+  "blocker": null,
+  "updatedAt": "2026-08-11T13:13:36Z"
+}

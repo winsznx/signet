@@ -1,0 +1,10 @@
+packages:
+  - "reference"
+  - "coordinator"
+  - "verifier"
+  - "web"
+
+# esbuild ships a prebuilt binary that vitest needs at install time.
+# Every other package is install-script free; keep it that way for supply-chain reasons.
+allowBuilds:
+  esbuild: true

@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-08-11T12:20:56Z",
+  "host": {
+    "platform": "darwin",
+    "arch": "arm64",
+    "note": "Recorded on the build host. CI and reviewers must match major/minor versions; patch drift is reported, not fatal, except for solc."
+  },
+  "tools": {
+    "node": {
+      "required": "24.19.0",
+      "match": "exact-minor",
+      "observed": "v24.19.0",
+      "check": "node -v"
+    },
+    "pnpm": {
+      "required": "11.21.0",
+      "match": "exact-minor",
+      "observed": "11.21.0",
+      "check": "pnpm -v",
+      "lockfile": "pnpm-lock.yaml"
+    },
+    "go": {
+      "required": "1.26.5",
+      "match": "exact-minor",
+      "observed": "go1.26.5 darwin/arm64",
+      "check": "go version",
+      "install": "scripts/install-go.sh",
+      "archive": {
+        "url": "https://go.dev/dl/go1.26.5.darwin-arm64.tar.gz",
+        "sha256": "efb87ff28af9a188d0536ef5d42e63dd52ba8263cd7344a993cc48dd11dedb6a",
+        "source": "https://go.dev/dl/?mode=json"
+      },
+      "localInstallPath": ".runtime/toolchain/go"
+    },
+    "forge": {
+      "required": "1.7.1",
+      "match": "exact-minor",
+      "observed": "forge Version: 1.7.1",
+      "commit": "4072e48705af9d93e3c0f6e29e93b5e9a40caed8",
+      "check": "forge --version"
+    },
+    "solc": {
+      "required": "0.8.28",
+      "match": "exact",
+      "longVersion": "0.8.28+commit.7893614a",
+      "binarySha256Darwin": "81515b0e53deaa266d549545ccaac0a5a96e6d4e8201c77f673b2c710976d9ea",
+      "note": "Pinned in foundry.toml. Contract bytecode identity depends on this exact compiler, so a mismatch is fatal.",
+      "check": "grep solc_version foundry.toml"
+    },
+    "docker": {
+      "required": "29.6.2",
+      "match": "major",
+      "observed": "Docker version 29.6.2, build dfc4efb",
+      "check": "docker --version",
+      "usedBy": "FCC scaffold node/proxy/extension images from phase 03 onward"
+    },
+    "python3": {
+      "required": "3.11.7",
+      "match": "major",
+      "observed": "Python 3.11.7",
+      "check": "python3 -V",
+      "usedBy": "stop hook and small build utilities only; not part of any signing path"
+    }
+  }
+}

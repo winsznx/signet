@@ -24,8 +24,13 @@ dist/
 coverage/
 *.tsbuildinfo
 
+# Pinned upstream checkouts. Reproduced by `make bootstrap` from docs/source-lock.json and
+# verified against the recorded contentSha256, so the bytes never need to live in this history.
+upstream/
+
 # Foundry
 out/
+contracts/out/
 cache/
 broadcast/
 !broadcast/**/dry-run/

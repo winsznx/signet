@@ -1,0 +1,116 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-11T13:06:49Z",
+  "generatedByPhase": "00",
+  "proofLevels": {
+    "0": "not executed",
+    "1": "executed locally against pinned source or fixtures",
+    "2": "read-only verification against a live target network",
+    "3": "state-changing execution on a live target network",
+    "4": "composed lifecycle on live target networks, independently reproducible"
+  },
+  "claims": [
+    {
+      "id": "claim-core-lifecycle",
+      "wording": "One Coston2 FAssets redemption was paid on XRPL Testnet and completed with FDC evidence.",
+      "status": "unavailable",
+      "proofLevel": 0,
+      "evidence": [],
+      "verifiedAt": null,
+      "limitations": [
+        "Not executed yet. Owned by phase 10."
+      ],
+      "network": [
+        "coston2",
+        "testXRP"
+      ]
+    },
+    {
+      "id": "claim-unauthorized-refused",
+      "wording": "An arbitrary XRP payment request received no signature.",
+      "status": "unavailable",
+      "proofLevel": 0,
+      "evidence": [],
+      "verifiedAt": null,
+      "limitations": [
+        "Not executed yet. Owned by phase 07 locally and phase 10 on the target chain."
+      ],
+      "network": [
+        "coston2",
+        "testXRP"
+      ]
+    },
+    {
+      "id": "claim-source-lock",
+      "wording": "Every external protocol dependency Signet uses is pinned to a specific upstream commit and verified by content hash on every build.",
+      "status": "verified",
+      "proofLevel": 1,
+      "evidence": [
+        "docs/source-lock.json",
+        "scripts/fetch-upstream.mjs",
+        "scripts/verify-source-lock.mjs",
+        "docs/evidence/phase-00.md"
+      ],
+      "verifiedAt": "2026-08-11T13:06:49Z",
+      "limitations": [
+        "Content hashes bind the checked-out tree to the pinned commit. They do not attest that the upstream commit itself is honest.",
+        "Six of the nine pinned repositories declare no license file; recorded as UNDECLARED_IN_REPO rather than guessed."
+      ],
+      "network": []
+    },
+    {
+      "id": "claim-coston2-addresses-verified",
+      "wording": "Every Coston2 address Signet depends on was resolved from an authoritative source and proven by RPC, cross-checked against a second independent endpoint, to hold code that exposes the exact function selectors Signet depends on.",
+      "status": "verified",
+      "proofLevel": 2,
+      "evidence": [
+        "docs/source-lock.json#contracts",
+        "deployments/coston2.json",
+        "scripts/resolve-coston2.mjs",
+        "docs/evidence/phase-00.md"
+      ],
+      "verifiedAt": "2026-08-11T13:06:49Z",
+      "limitations": [
+        "Read-only verification. No transaction was sent.",
+        "Selectors are proven reachable through the live dispatcher, diamond loupe or EIP-1967 implementation. That proves the entry point exists, not that its behaviour matches the pinned interface. Behaviour is owned by phases 02 to 05.",
+        "FCC addresses come from the pinned scaffold manifest, not from ContractRegistry. One live facet, the one serving getRandomTeeIds, is not named in that manifest.",
+        "Runtime code hashes are cross-checked against two independent RPC operators; a disagreement halts resolution."
+      ],
+      "network": [
+        "coston2"
+      ]
+    },
+    {
+      "id": "claim-fassets-fxrp-live",
+      "wording": "The Coston2 FXRP AssetManager is live, exposes both memo-mode and destination-tag redemption entry points, and has agents with free collateral.",
+      "status": "verified",
+      "proofLevel": 2,
+      "evidence": [
+        "docs/protocol-seams/fassets-access-probe.json",
+        "docs/source-lock.json#contracts",
+        "docs/evidence/phase-00.md"
+      ],
+      "verifiedAt": "2026-08-11T13:06:49Z",
+      "limitations": [
+        "Read-only. No redemption has been created.",
+        "Signet is not a whitelisted FAssets agent on Coston2, so it cannot yet be the agent assigned to a redemption."
+      ],
+      "network": [
+        "coston2"
+      ]
+    },
+    {
+      "id": "claim-tee-hardware-attested",
+      "wording": "Signet's signing key was protected from the host by hardware attestation.",
+      "status": "unavailable",
+      "proofLevel": 0,
+      "evidence": [],
+      "verifiedAt": null,
+      "limitations": [
+        "V0 runs a simulated TEE. Simulated execution is not hardware attestation and must be labelled as simulated wherever it is shown.",
+        "Requires a real GCP Confidential Space deployment, which is out of scope for this run."
+      ],
+      "network": []
+    }
+  ]
+}

@@ -1,0 +1,61 @@
+{
+  "probedAt": "2026-08-11T12:59:51Z",
+  "network": "coston2",
+  "rpc": "https://coston2-api.flare.network/ext/C/rpc",
+  "assetManager": "0xc1Ca88b937d0b528842F95d5731ffB586f4fbDFA",
+  "assetManagerController": "0x1C772F700308aF4c13897cc7b9c41EFfB82c50C0",
+  "fAsset": "0x0b6A3645c240605887a5532109323A3E12273dc7",
+  "agentOwnerRegistry": "0xAF21eE9C49030e2dE9e8c2Ab7618082cc3d70b42",
+  "redemptionRelevantSettings": {
+    "lotSizeAMG": "10000000",
+    "assetMintingDecimals": 6,
+    "assetMintingGranularityUBA": "1",
+    "lotSizeAMGRaw": "10000000",
+    "underlyingBlocksForPayment": 500,
+    "underlyingSecondsForPayment": 900,
+    "redemptionFeeBIPS": 50,
+    "confirmationByOthersAfterSeconds": 7200,
+    "attestationWindowSeconds": 86400,
+    "averageBlockTimeMS": 2000,
+    "chainId": "0x7465737458525000000000000000000000000000000000000000000000000000",
+    "maxRedeemedTickets": 20
+  },
+  "availableAgents": {
+    "count": 4,
+    "sample": [
+      {
+        "agentVault": "0x55c815260cBE6c45Fe5bFe5FF32E3C7D746f14dC",
+        "ownerManagementAddress": "0x00fA41C694eD77ad59c4bC4FfE9ec32ed37E566f",
+        "freeCollateralLots": "531",
+        "feeBIPS": 25,
+        "status": 0
+      },
+      {
+        "agentVault": "0xd5dEFe2c62D48788BB3889534FBFe7Aea0602D64",
+        "ownerManagementAddress": "0xEB2Ba0d019130c86BBa517B69A4d23366dB82173",
+        "freeCollateralLots": "971",
+        "feeBIPS": 25,
+        "status": 0
+      },
+      {
+        "agentVault": "0x5b89514d1F060AdbEA8B7294AFf81ed8dbAa7fC5",
+        "ownerManagementAddress": "0xD05aCb22a3C49563D8CE2C096b4AFe25Df678105",
+        "freeCollateralLots": "143",
+        "feeBIPS": 25,
+        "status": 0
+      },
+      {
+        "agentVault": "0x165c62b4531D28E34c68a8b2aCBF4D0421e4E028",
+        "ownerManagementAddress": "0x18Aad7eE6CDC41050b2650045E8F12a7D0679540",
+        "freeCollateralLots": "61",
+        "feeBIPS": 25,
+        "status": 0
+      }
+    ],
+    "totalFreeCollateralLots": "1706"
+  },
+  "agentOwnerWhitelist": {
+    "callable": true,
+    "zeroAddressWhitelisted": false
+  }
+}

@@ -1,0 +1,29 @@
+[profile.default]
+src = "contracts/src"
+test = "contracts/test"
+script = "contracts/script"
+out = "contracts/out"
+libs = ["contracts/lib", "upstream"]
+solc_version = "0.8.28"
+evm_version = "cancun"
+optimizer = true
+optimizer_runs = 200
+via_ir = false
+bytecode_hash = "none"
+cbor_metadata = false
+fs_permissions = [{ access = "read", path = "./upstream" }, { access = "read", path = "./deployments" }, { access = "read", path = "./reference" }]
+
+remappings = [
+  "@flare-periphery/=upstream/flare-foundry-periphery-package/src/",
+  "@fcc-scaffold/=upstream/fce-extension-scaffold/contracts/",
+  "@openzeppelin/contracts/=upstream/openzeppelin-contracts/contracts/",
+]
+
+[fmt]
+line_length = 120
+tab_width = 4
+bracket_spacing = false
+int_types = "long"
+
+[profile.coston2]
+eth_rpc_url = "https://coston2-api.flare.network/ext/C/rpc"

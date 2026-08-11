@@ -1,0 +1,56 @@
+{
+  "network": "coston2",
+  "chainId": 114,
+  "rpc": "https://coston2-api.flare.network/ext/C/rpc",
+  "resolvedAt": "2026-08-11T13:06:49Z",
+  "resolvedAtBlock": 33921549,
+  "contractRegistry": "0xaD67FE66660Fb8dFE9d6b1b4240d8650e30F6019",
+  "crossCheckRpcs": [
+    "https://rpc.ankr.com/flare_coston2",
+    "https://coston2.enosys.global/ext/C/rpc"
+  ],
+  "registryEntryCount": 69,
+  "protocol": {
+    "flare-contract-registry": {
+      "name": "FlareContractRegistry",
+      "address": "0xaD67FE66660Fb8dFE9d6b1b4240d8650e30F6019",
+      "runtimeCodeHash": "0xb20be170789869938c02e41d0957f3aefacfee35eb2972cd82c6deb18f020a93"
+    },
+    "asset-manager-fxrp": {
+      "name": "AssetManagerFXRP",
+      "address": "0xc1ca88b937d0b528842f95d5731ffb586f4fbdfa",
+      "runtimeCodeHash": "0xcd0ef623a8b5532c9c783e756038e492abce5fda7c3ee6597b4ddddcbfbb46ba"
+    },
+    "asset-manager-controller": {
+      "name": "AssetManagerController",
+      "address": "0x1c772f700308af4c13897cc7b9c41effb82c50c0",
+      "runtimeCodeHash": "0x3357d68702eb62a0d10e9aeea7e7005d84da953bcfe3fd709c3e027e0536ca7d"
+    },
+    "fdc-hub": {
+      "name": "FdcHub",
+      "address": "0x48ac463d7975828989331f4de43341627b9c5f1d",
+      "runtimeCodeHash": "0x74fc61644a34b578dbc0ff68b46429936caa71b15e6dd426b69aa9e086a57846"
+    },
+    "fdc-verification": {
+      "name": "FdcVerification",
+      "address": "0x906507e0b64bcd494db73bd0459d1c667e14b933",
+      "runtimeCodeHash": "0x7c06493b280a1db17d370109655710ba13010e3317740255d3464390311ba82a"
+    },
+    "fdc-request-fee-configurations": {
+      "name": "FdcRequestFeeConfigurations",
+      "address": "0x191a1282ac700ede65c5b0aaf313bacc3ea7fc7e",
+      "runtimeCodeHash": "0xb245e38a1650cf57c5647f87c58863df50c9f2fd8808ab6390022510b5e36ac2"
+    },
+    "relay": {
+      "name": "Relay",
+      "address": "0xa10b672d1c62e5457b17af63d4302add6a99d7de",
+      "runtimeCodeHash": "0x503ef284f0f7abfee85136fa976c2b15daa629cbb96f43bc0e512245fcd4e6ee"
+    },
+    "fcc-flare-tee-manager": {
+      "name": "FlareTeeManager",
+      "address": "0x1a9C4A0f9D76c0b1D91d22E24E573a9b377618aE",
+      "runtimeCodeHash": "0xbe17dcce07109a9722c3795425f528476479c5cb02d2455e7d059dacf27421bd"
+    }
+  },
+  "signet": {}
+}
