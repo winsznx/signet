@@ -142,8 +142,21 @@ export async function lookupOnEveryEndpoint(
   return { agreed: first, answers: answers.length, disagreement: null };
 }
 
+export interface DecisionContext {
+  readonly underlying?: {
+    readonly available: boolean;
+    readonly agreed: boolean;
+    readonly sourceCount: number;
+    readonly observedAtLedger: number;
+    readonly observedAtTime: string;
+    readonly payments: readonly { readonly transactionHash: string; readonly amountDrops: string }[];
+  };
+  readonly [key: string]: unknown;
+}
+
 export interface Receipt {
   readonly seam?: string;
+  readonly decisionContext?: DecisionContext;
   /** 2 for receipts produced after the underlying-observation correction. Absent means V1. */
   readonly schemaVersion?: number;
   /** Absent means the receipt claims to settle its obligation. Only an explicit false relaxes that. */
@@ -173,9 +186,26 @@ export interface ObligationSource {
   }>;
 }
 
+/**
+ * Independently re-observes the XRP ledger for payments carrying an obligation's reference.
+ *
+ * This is what turns "the receipt's numbers are self-consistent" into "the receipt's numbers match
+ * the ledger". Without it the commitment recomputation only catches arithmetic mistakes: a
+ * coordinator that fabricated `payments: []` and hashed it correctly would pass every check, which
+ * is exactly the incident-44928272 scenario the whole V2 correction exists to stop.
+ */
+export interface UnderlyingSource {
+  observe(args: {
+    destination: string;
+    reference: string;
+    currentValidatedLedger: number;
+  }): Promise<null | { available: boolean; payments: readonly { transactionHash: string; validated: boolean }[] }>;
+}
+
 export interface VerifyOptions {
   readonly xrplEndpoints: readonly string[];
   readonly obligations: ObligationSource;
+  readonly underlying?: UnderlyingSource;
   readonly recomputeCommitment?: (receipt: Receipt, tx: XrplTransaction) => string | null;
   readonly fetchImpl?: typeof fetch;
 }
@@ -323,6 +353,63 @@ export async function verifyReceipt(
         ? pass("the authorization commitment matches the payment", recomputed)
         : fail("the authorization commitment matches the payment", recomputed, receipt.authorizationCommitment ?? "absent"),
     );
+  }
+
+  // ---- the observation the receipt claims, checked against the ledger itself
+
+  const claimed = receipt.decisionContext?.underlying;
+
+  if (!claimed) {
+    findings.push(
+      unverifiable(
+        "the receipt's underlying observation matches the ledger",
+        "this receipt records no observation, so there is nothing to check it against. Receipts written before the V2 correction are in this state",
+      ),
+    );
+  } else if (!options.underlying) {
+    findings.push(
+      unverifiable(
+        "the receipt's underlying observation matches the ledger",
+        "no independent observer was supplied to this verification run",
+      ),
+    );
+  } else {
+    const seen = await options.underlying.observe({
+      destination: agreed.Destination,
+      reference: expectedReference,
+      currentValidatedLedger: claimed.observedAtLedger,
+    });
+    if (!seen || !seen.available) {
+      findings.push(
+        unverifiable(
+          "the receipt's underlying observation matches the ledger",
+          "no endpoint retains enough history to re-observe the window this receipt claims to have looked at",
+        ),
+      );
+    } else {
+      // Only payments the receipt should have seen count: anything that validated after the ledger
+      // it observed is outside the window it claimed, and holding a receipt to that would be
+      // holding it to knowledge it could not have had.
+      // Hashes arrive 0x-prefixed from the observer and bare from receipts, so both are normalised
+      // rather than one convention being assumed. A prefix mismatch here would silently make every
+      // payment look unreported, which fails in the safe direction but for the wrong reason.
+      const bare = (hash: string) => hash.toLowerCase().replace(/^0x/, "");
+      const claimedHashes = new Set(claimed.payments.map((p) => bare(p.transactionHash)));
+      const own = receipt.txHash ? bare(receipt.txHash) : null;
+      const missed = seen.payments
+        .filter((p) => p.validated)
+        .filter((p) => bare(p.transactionHash) !== own)
+        .filter((p) => !claimedHashes.has(bare(p.transactionHash)));
+      findings.push(
+        missed.length === 0
+          ? pass("the receipt's underlying observation matches the ledger", `${seen.payments.length} payment(s) in the window`)
+          : fail(
+              "the receipt's underlying observation matches the ledger",
+              `${missed.length} more payment(s) carrying this reference`,
+              `the receipt reports ${claimed.payments.length} and the ledger holds ${missed[0]!.transactionHash}`,
+            ),
+      );
+    }
   }
 
   return { receipt: name, findings, verdict: verdictOf(findings) };

@@ -10,6 +10,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { coston2Obligations } from "./fassets.ts";
 import { commitmentFromReceipt } from "./commitment.ts";
+import { observeUnderlying, XRPL_ENDPOINTS as OBSERVER_ENDPOINTS } from "../../scripts/xrpl/observe.mjs";
 import { verifyReceipt, type Receipt } from "./verify.ts";
 
 const REPO_ROOT = fileURLToPath(new URL("../..", import.meta.url));
@@ -62,6 +63,13 @@ const result = await verifyReceipt(name, receipt, {
   xrplEndpoints: XRPL_ENDPOINTS,
   obligations: coston2Obligations(COSTON2_ENDPOINTS, ASSET_MANAGER),
   recomputeCommitment: commitmentFromReceipt,
+  // The verifier does its own looking. Recomputing a commitment from the receipt's own numbers only
+  // catches arithmetic; asking the ledger catches a fabricated observation.
+  underlying: {
+    async observe({ destination, reference, currentValidatedLedger }) {
+      return observeUnderlying({ destination, reference, currentValidatedLedger, endpoints: OBSERVER_ENDPOINTS });
+    },
+  },
 });
 
 const MARK: Record<string, string> = { PASS: "ok  ", FAIL: "FAIL", UNVERIFIABLE: "??  ", NOT_CLAIMED: "--  " };

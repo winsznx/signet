@@ -17,7 +17,8 @@
       "C2FLR funding received and spent on deployment, minting and FDC requests",
       "Cloudflare: existing local Wrangler OAuth login was sufficient; site deployed"
     ],
-    "note": "Phases 00-13 have run. Signet's own leg of the target-chain lifecycle is verified on chain; settlement needs the whitelist. See docs/requests/fassets-agent-whitelist.md."
+    "note": "Phases 00-13 have run and schema V2 corrects the duplicate-payment defect phase 10 found. Signet's own leg of the target-chain lifecycle was verified on chain at the time it ran; that specific receipt is a V1 receipt and no longer reproduces. Settlement needs the whitelist. See docs/guarantee.md and docs/requests/fassets-agent-whitelist.md."
   },
-  "updatedAt": "2026-08-11T17:30:29Z"
+  "updatedAt": "2026-08-11T21:20:38Z",
+  "schemaVersion": 2
 }

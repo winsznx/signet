@@ -236,9 +236,11 @@ const proofBody = `
       window.</p>
       <p class="limits-title">What exists instead</p>
       <ul class="limits">
-        <li>the window is bounded: 4 to 12 ledgers in this build</li>
+        <li>the window is recorded, not bounded: it measured 4 ledgers in the one V2 run this build produced</li>
         <li>the observed ledger is bound into the authorization commitment, so the width of the
         window for any payment Signet ever made is public arithmetic</li>
+        <li>the independent verifier re-observes the ledger itself and fails a receipt whose
+        observation does not match what it finds, while endpoints still retain the window</li>
         <li>in the intended deployment Signet holds the agent's only XRPL signing authority, so no
         independent legitimate payer exists. That is a design claim, not demonstrated here.</li>
       </ul>

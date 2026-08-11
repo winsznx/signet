@@ -92,12 +92,42 @@ somebody else.
 
 No third party lost funds, which is luck about the test setup rather than a property of the system.
 
-[ADR 0003](../adr/0003-underlying-payment-precheck.md) has the analysis and proposes the fix: a new
-decision input carrying validated underlying payments the signing boundary observed, plus a reason
-code. It is proposed and not done, because changing the decision inputs changes the canonical
-encoding and invalidates the 62 frozen fixtures, and that is a protocol version bump rather than
-something to do unreviewed at the end of a run. The operational mitigation is implemented one layer
-out and, replayed against the incident, refuses to sign.
+**This has since been corrected.** [ADR 0003](../adr/0003-underlying-payment-precheck.md) was
+accepted and implemented as schema V2. See the section below.
+
+## Schema V2, the correction
+
+The duplicate payment above is fixed at the protocol layer, not worked around.
+
+| | |
+|---|---|
+| what changed | the decision requires the signing boundary's own XRP ledger observation |
+| reason codes | `S021_PAYMENT_ALREADY_OBSERVED`, `S022_UNDERLYING_STATE_UNAVAILABLE`, `S023_UNDERLYING_STATE_DISAGREEMENT`, `S024_UNDERLYING_OBSERVATION_STALE` |
+| encoding | authorization preimage 431 → 468 bytes, binding the observed ledger, the source count and a root over what was found |
+| obligation encoding | deliberately unchanged, so the deployed Coston2 contract still agrees |
+| V1 | refused with `S001_UNKNOWN_SCHEMA`; its 62 fixtures preserved byte-for-byte |
+| regression | `scripts/lifecycle/incident-44928272.test.mjs`, which asserts no V2 input reproduces the original authorization |
+| what is actually guaranteed | **[`docs/guarantee.md`](../guarantee.md), read this** |
+
+Two independent audits ran against V2 and found five real defects, all now fixed:
+
+1. **Go signed a payment the reference model refused.** A malformed observation hash was silently
+   becoming 32 zero bytes in Go while TypeScript threw and refused `S020`. Reproduced on identical
+   stdin bytes. Fixed, with a conformance fixture.
+2. **Go and TypeScript computed different commitments** for the same authorized decision when two
+   observed payments shared a transaction hash: Go's sort is not stable and JavaScript's is. Both
+   now use a total order, with two fixtures asserting the root does not depend on input order.
+3. **The verifier did not actually check the observation against the ledger.** It recomputed the
+   commitment from the receipt's own numbers, which catches arithmetic and nothing else. It now
+   re-observes the ledger itself and fails a receipt whose observation does not match.
+   `docs/guarantee.md` claimed this before it was true; that is corrected in place and marked.
+4. **The observer silently truncated at 400 results**, ignoring `account_tx` pagination. It now
+   follows the marker and reports unavailable rather than a partial answer.
+5. **This file's own phase table has been empty since phase 02.** A status edit removed the contents
+   of `docs/run/AUTONOMOUS_RUN.md` and every later "record status in the run ledger" wrote a string
+   replacement into an empty file and silently succeeded. Nothing checked, the deployed operator page
+   showed an empty table for the entire run, and an evidence audit is what caught it. Restored, and
+   `web/test/check.mjs` now fails the build if the table is empty.
 
 ## Things reviews caught, and what happened
 
@@ -171,4 +201,7 @@ Cloudflare needed no new credentials: the existing local Wrangler OAuth login al
 - Any claim that this is TEE-attested. It is not, anywhere.
 - Any claim that Signet has settled a FAssets redemption. One redemption it participated in did
   complete, but the agent's payment settled it and Signet's was a duplicate.
+- Any claim of exactly-once payment against an independent racer. Signet enforces at-most-once by
+  itself; the window between observing and validating cannot be closed. `docs/guarantee.md` says so
+  in the first paragraph rather than in a footnote.
 - Any claim that the coordinator cannot obtain an arbitrary signature. It can.

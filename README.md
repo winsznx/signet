@@ -11,4 +11,12 @@ Contents:
 - `docs/source-lock.template.json`: upstream source lock.
 - `docs/claim-ledger.template.json`: evidence ledger.
 
-This pack is planning material. It contains no keys, credentials, deployed addresses or claim that Signet has already been built.
+This started as planning material. It is no longer: phases 00 to 13 have run, the contracts are
+deployed on Coston2, and the claims are in `evidence/claim-ledger.json` with what each one does not
+prove stated beside it.
+
+It still contains no keys or credentials. Deployed addresses are in `deployments/coston2.json` and
+are testnet only.
+
+Start with [`docs/guarantee.md`](docs/guarantee.md), which states narrowly what Signet does and does
+not guarantee, and why the narrow version is the true one.

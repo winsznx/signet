@@ -62,9 +62,18 @@ export function observationRoot(fields: {
   sourceCount: number;
   payments: readonly ObservedPaymentForRoot[];
 }): Uint8Array {
-  const sorted = [...fields.payments].sort((a, b) =>
-    a.transactionHash.toLowerCase() < b.transactionHash.toLowerCase() ? -1 : 1,
-  );
+  // A total order, not merely a sort key. Ordering by hash alone leaves ties, and a tie is then
+  // resolved by whatever each language's sort happens to do: Array.prototype.sort is spec-stable,
+  // Go's sort.Slice explicitly is not, and two entries sharing a hash produced different roots in
+  // the two implementations. Comparing the amount as well makes the remaining ties genuinely
+  // indistinguishable, so the root does not depend on the order the observer reported.
+  const sorted = [...fields.payments].sort((a, b) => {
+    const left = a.transactionHash.toLowerCase();
+    const right = b.transactionHash.toLowerCase();
+    if (left !== right) return left < right ? -1 : 1;
+    if (a.amountDrops !== b.amountDrops) return a.amountDrops < b.amountDrops ? -1 : 1;
+    return 0;
+  });
   return keccak_256(
     concat(
       OBSERVATION_DOMAIN,

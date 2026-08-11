@@ -17,6 +17,7 @@ import type { Receipt, XrplTransaction } from "./verify.ts";
 const standardAddressHash = (address: string): Uint8Array => keccak_256(new TextEncoder().encode(address));
 
 /** Fields the commitment covers that live only in the receipt's own record of the decision. */
+/** The commitment inputs the ledger does not hold, as a receipt records them. */
 interface DecisionContext {
   readonly flareChainId: string;
   readonly assetManager: string;
@@ -31,7 +32,6 @@ interface DecisionContext {
   readonly lastUnderlyingBlock: string;
   readonly lastUnderlyingTimestamp: string;
   readonly maxFeeDrops: string;
-  /** What the signing boundary saw on the XRP ledger, which V2 binds into the commitment. */
   readonly underlying?: {
     readonly available: boolean;
     readonly agreed: boolean;
@@ -43,7 +43,7 @@ interface DecisionContext {
 }
 
 export function commitmentFromReceipt(receipt: Receipt, tx: XrplTransaction): string | null {
-  const context = (receipt as Receipt & { decisionContext?: DecisionContext }).decisionContext;
+  const context = receipt.decisionContext as DecisionContext | undefined;
   if (!context || !receipt.requestId) return null;
 
   // V2 binds the underlying observation. A receipt without it cannot have its commitment

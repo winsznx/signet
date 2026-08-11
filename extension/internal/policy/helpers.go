@@ -28,18 +28,31 @@ func mustAddress(s string) [20]byte {
 	return out
 }
 
+// mustBytes32 returns the zero value for a malformed input.
+//
+// That is safe only where the caller has already validated the string, or where the zero value
+// cannot change a decision. It is NOT safe for anything that feeds a commitment: a security review
+// found that a malformed observation hash was silently becoming 32 zero bytes here while the
+// reference model threw and refused S020_INTERNAL_FAIL_CLOSED, so Go authorized a payment the
+// specification rejects. Anything that reaches an encoder must use bytes32 and handle the error.
 func mustBytes32(s string) [32]byte {
+	out, _ := bytes32(s)
+	return out
+}
+
+// bytes32 parses a 32-byte hex string, reporting failure rather than absorbing it.
+func bytes32(s string) ([32]byte, bool) {
 	var out [32]byte
 	clean := strings.TrimPrefix(strings.ToLower(s), "0x")
 	if len(clean) != 64 {
-		return out
+		return out, false
 	}
 	b, err := hex.DecodeString(clean)
 	if err != nil {
-		return out
+		return out, false
 	}
 	copy(out[:], b)
-	return out
+	return out, true
 }
 
 func hexTo32(s string) ([32]byte, bool) {

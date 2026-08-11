@@ -45,17 +45,25 @@ Signet observes the ledger, then signs, then submits. A competing payment can la
 ```
 
 The window is `t0 → t2`: from the ledger the observation covers, to the ledger Signet's own payment
-validates in. On XRPL Testnet in this build that measured roughly 4 to 12 ledgers, or 15 to 50
-seconds, dominated by the FDC-independent parts of signing and submission.
+validates in.
+
+**One measurement exists.** In the single V2 run this build produced, the observation covered ledger
+19827358 and the payment validated in 19827362: a window of **4 ledgers**. That figure is in
+`evidence/receipts/lifecycle-0EA28A0EBC5D23D3536BABB1296007DBA50E0E3B3EA84862B32A20C32FD16B22.json`
+and anyone can subtract it themselves. An earlier draft of this document quoted a range of "4 to 12
+ledgers, or 15 to 50 seconds"; the upper end was arithmetic from the ledger close interval, not
+something measured, and an evidence audit caught it. One sample is not a range and this document no
+longer prints one.
 
 So the honest statement about an external racer is:
 
 - A competing payment **validated at or before** the observed ledger is detected, and Signet refuses.
 - A competing payment **validated after** the observed ledger and before Signet's own validates is
   **not** detected, and Signet will pay on top of it.
-- The window is bounded, recorded, and auditable, because `observedAtLedger` is bound into the
-  authorization commitment. Anyone can compute exactly how wide the window was for any payment
-  Signet ever made.
+- The window is recorded and auditable, because `observedAtLedger` is bound into the authorization
+  commitment. Anyone can compute exactly how wide it was for any payment Signet ever made. It is not
+  bounded by anything Signet enforces: nothing prevents a slow submission from widening it, and no
+  check refuses a payment whose window grew.
 
 Narrowing the window further is possible and is not the same as closing it. Re-observing immediately
 before submission would shrink `t0 → t1` to near zero; it cannot shrink `t1 → t2`, because a
@@ -133,13 +141,22 @@ What the design does about it:
 
 - The observation is **bound into the commitment**, so a false "I saw nothing" is permanently
   attributable to the build that made it.
-- The independent verifier **recomputes** the commitment from public data, so a receipt whose
-  observation does not match what the ledger holds is detectable by anyone.
+- The independent verifier **re-observes the ledger itself** and compares what it finds against what
+  the receipt claims to have seen. A receipt reporting an empty observation for a window in which the
+  ledger holds a matching payment is a `FAIL`, not a pass.
 - In the intended deployment the observer runs inside the same measured boundary as the decider, so
   fabricating an observation requires compromising the attested code rather than the coordinator.
 
-The last of those is the one that would make it airtight, and this build does not have it: there is
-no TEE here, and the extension runs as an ordinary process.
+A correction is owed here. An earlier draft of this document claimed the second bullet while the
+verifier did not do it: it recomputed the commitment from the receipt's own self-reported
+observation, which catches arithmetic mistakes and nothing else. A coordinator that fabricated an
+empty observation and hashed it correctly passed every check. A security review found it and the
+verifier now does its own looking, with `verifier/test/corruption.test.ts` holding it to that.
+
+Detection is still bounded by history retention: an endpoint that no longer holds the window cannot
+confirm or refute what a receipt claims about it, and the verifier reports `UNVERIFIABLE` rather than
+passing. And the third bullet is the one that would make this airtight; this build does not have it,
+because there is no TEE and the extension runs as an ordinary process.
 
 ## Summary table
 
@@ -151,4 +168,5 @@ no TEE here, and the extension runs as an ordinary process.
 | An external payer whose payment validated before the observation | prevented | demonstrated by incident replay |
 | An external payer racing inside the window | **not prevented**, bounded and auditable | stated honestly |
 | An external payer at all, in the intended deployment | prevented by exclusive XRPL signing authority | design claim, not demonstrated |
-| A fabricated observation | attributable, not prevented | needs the TEE this build lacks |
+| A fabricated observation | detectable by independent re-observation while endpoints retain the window; not prevented | demonstrated in `verifier/test/corruption.test.ts` |
+| A fabricated observation, after the window ages out of endpoint history | neither prevented nor detectable | stated honestly; needs the TEE this build lacks |

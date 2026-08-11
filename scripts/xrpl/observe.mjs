@@ -73,21 +73,49 @@ async function observeFrom(endpoint, { destination, reference, fromLedger, toLed
   const complete = parseCompleteLedgers(serverInfo?.info?.complete_ledgers);
   if (!coversSpan(complete, fromLedger, toLedger)) return null;
 
-  let page;
-  try {
-    page = await rpc(
-      endpoint,
-      "account_tx",
-      { account: destination, ledger_index_min: fromLedger, ledger_index_max: toLedger, limit: 400, binary: false },
-      fetchImpl,
-    );
-  } catch {
-    return null;
+  /**
+   * Every page, not the first one.
+   *
+   * `account_tx` returns at most `limit` entries and a `marker` when more remain. An earlier version
+   * asked once and treated a truncated page as the complete answer, which meant a busy destination
+   * account could have a genuine competing payment silently excluded while this function still
+   * reported `available: true`. That is precisely the false empty the file header forbids, and a
+   * security review found it. The loop is bounded, and hitting the bound returns null rather than a
+   * partial answer: an observation that ran out of patience has not seen the whole span.
+   */
+  const MAX_PAGES = 25;
+  const entries = [];
+  let marker;
+  let ledgerIndexMax = toLedger;
+  for (let page = 0; page < MAX_PAGES; page += 1) {
+    let response;
+    try {
+      response = await rpc(
+        endpoint,
+        "account_tx",
+        {
+          account: destination,
+          ledger_index_min: fromLedger,
+          ledger_index_max: toLedger,
+          limit: 400,
+          binary: false,
+          ...(marker === undefined ? {} : { marker }),
+        },
+        fetchImpl,
+      );
+    } catch {
+      return null;
+    }
+    entries.push(...(response?.transactions ?? []));
+    ledgerIndexMax = Number(response?.ledger_index_max ?? ledgerIndexMax);
+    marker = response?.marker;
+    if (marker === undefined) break;
+    if (page === MAX_PAGES - 1) return null;
   }
 
   const wanted = reference.toLowerCase().replace(/^0x/, "");
   const payments = [];
-  for (const entry of page?.transactions ?? []) {
+  for (const entry of entries) {
     const tx = bodyOf(entry);
     if (!tx || tx.TransactionType !== "Payment") continue;
     if (tx.Destination !== destination) continue;
@@ -104,7 +132,7 @@ async function observeFrom(endpoint, { destination, reference, fromLedger, toLed
     });
   }
   payments.sort((a, b) => (a.transactionHash < b.transactionHash ? -1 : 1));
-  return { endpoint, payments, ledgerIndex: Number(page?.ledger_index_max ?? toLedger) };
+  return { endpoint, payments, ledgerIndex: ledgerIndexMax };
 }
 
 const fingerprint = (payments) =>

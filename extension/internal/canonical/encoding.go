@@ -107,10 +107,19 @@ type ObservedPayment struct {
 // allowed to proceed on an unavailable or contradictory observation must not be indistinguishable,
 // afterwards, from one that had a clean look at the ledger.
 func ObservationRoot(available, agreed bool, observedAtLedger uint32, observedAtTime uint64, sourceCount uint8, payments []ObservedPayment) [32]byte {
+	// A total order, not merely a sort key. Ordering by transaction hash alone leaves ties, and a
+	// tie is resolved by whatever the sort happens to do: Go's sort.Slice is explicitly not stable
+	// while JavaScript's Array.prototype.sort is, so two entries sharing a hash produced different
+	// roots in the two languages. A security review demonstrated it. Comparing the amount as well
+	// makes the remaining ties genuinely indistinguishable, so the root no longer depends on the
+	// order the observer happened to report.
 	sorted := make([]ObservedPayment, len(payments))
 	copy(sorted, payments)
-	sort.Slice(sorted, func(i, j int) bool {
-		return bytes.Compare(sorted[i].TransactionHash[:], sorted[j].TransactionHash[:]) < 0
+	sort.SliceStable(sorted, func(i, j int) bool {
+		if c := bytes.Compare(sorted[i].TransactionHash[:], sorted[j].TransactionHash[:]); c != 0 {
+			return c < 0
+		}
+		return sorted[i].AmountDrops < sorted[j].AmountDrops
 	})
 
 	d := domain(ObservationDomainString)
@@ -189,7 +198,7 @@ func ObligationHash(f ObligationFields) ([32]byte, error) {
 	return Keccak256(preimage), nil
 }
 
-// EncodeAuthorization produces the 431-byte authorization preimage.
+// EncodeAuthorization produces the authorization preimage, AuthorizationPreimageLength bytes.
 func EncodeAuthorization(f AuthorizationFields) ([]byte, error) {
 	// "No tag" must have exactly one encoding, so it can never collide with "tag 0".
 	if f.DestinationTagMode == 0 && f.DestinationTag != 0 {

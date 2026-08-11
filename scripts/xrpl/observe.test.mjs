@@ -48,6 +48,21 @@ function transport(byEndpoint) {
     }
     if (body.method === "account_tx") {
       if (plan.accountTxFails) return new Response("boom", { status: 503 });
+      // Pages are served from `plan.pages` when present, so a test can make the endpoint truncate.
+      if (plan.pages) {
+        const index = body.params[0].marker ?? 0;
+        const page = plan.pages[index] ?? { transactions: [] };
+        return new Response(
+          JSON.stringify({
+            result: {
+              transactions: page.transactions ?? [],
+              ledger_index_max: plan.ledgerIndex ?? 19825100,
+              ...(page.next === undefined ? {} : { marker: page.next }),
+            },
+          }),
+          { status: 200 },
+        );
+      }
       return new Response(
         JSON.stringify({ result: { transactions: plan.transactions ?? [], ledger_index_max: plan.ledgerIndex ?? 19825100 } }),
         { status: 200 },
@@ -156,6 +171,34 @@ const base = { destination: DESTINATION, reference: REFERENCE, currentValidatedL
     fetchImpl: transport({ [A]: { transactions: [provisional] }, [B]: { transactions: [provisional] } }),
   });
   check("a provisional payment is reported but not validated", observation.payments[0]?.validated === false);
+}
+
+// ---------------------------------------------------------------- pagination
+
+{
+  // The match is on the second page. Asking once and stopping would miss it entirely and still
+  // report a clean look, which is the false empty this observer exists to never produce.
+  const paged = { pages: { 0: { transactions: [], next: 1 }, 1: { transactions: [payment()] } } };
+  const observation = await observeUnderlying({
+    ...base,
+    fetchImpl: transport({ [A]: paged, [B]: paged }),
+  });
+  check("a marker is followed rather than treated as the end", observation.payments.length === 1, "found on page two");
+  check("the paged result is still reported as available and agreed", observation.available && observation.agreed);
+}
+
+{
+  // An endpoint that never stops paging must not yield a partial answer.
+  const endless = { pages: new Proxy({}, { get: () => ({ transactions: [], next: 1 }) }) };
+  const observation = await observeUnderlying({
+    ...base,
+    fetchImpl: transport({ [A]: endless, [B]: endless }),
+  });
+  check(
+    "an observation that ran out of pages is unavailable, not partial",
+    observation.available === false,
+    "a bounded loop reports failure rather than a subset",
+  );
 }
 
 // ---------------------------------------------------------------- the observed ledger is a floor

@@ -199,23 +199,35 @@ type Decision struct {
 }
 
 // observationRootOf mirrors the reference model's root exactly, including the sort.
-func observationRootOf(u *UnderlyingObservation) [32]byte {
+//
+// It reports failure rather than absorbing it. The reference model throws on a malformed hash or a
+// non-uint64 amount and the throw becomes S020_INTERNAL_FAIL_CLOSED; a Go version that quietly
+// substituted zeroes would authorize a payment the specification refuses, which a security review
+// demonstrated against this exact function.
+func observationRootOf(u *UnderlyingObservation) ([32]byte, bool) {
 	payments := make([]canonical.ObservedPayment, 0, len(u.Payments))
 	for _, p := range u.Payments {
-		amount := uint64(0)
-		if p.AmountDrops != nil && p.AmountDrops.IsUint64() {
-			amount = p.AmountDrops.Uint64()
+		hash, ok := bytes32(p.TransactionHash)
+		if !ok {
+			return [32]byte{}, false
+		}
+		if p.AmountDrops == nil || p.AmountDrops.Sign() < 0 || !p.AmountDrops.IsUint64() {
+			return [32]byte{}, false
 		}
 		payments = append(payments, canonical.ObservedPayment{
-			TransactionHash: mustBytes32(p.TransactionHash),
-			AmountDrops:     amount,
+			TransactionHash: hash,
+			AmountDrops:     p.AmountDrops.Uint64(),
 		})
 	}
-	observedAt := uint64(0)
-	if u.ObservedAtTime != nil && u.ObservedAtTime.IsUint64() {
-		observedAt = u.ObservedAtTime.Uint64()
+	if u.ObservedAtTime == nil || u.ObservedAtTime.Sign() < 0 || !u.ObservedAtTime.IsUint64() {
+		return [32]byte{}, false
 	}
-	return canonical.ObservationRoot(u.Available, u.Agreed, uint32(u.ObservedAtLedger), observedAt, uint8(u.SourceCount), payments)
+	if u.ObservedAtLedger < 0 || u.ObservedAtLedger > uint32Max || u.SourceCount < 0 || u.SourceCount > uint8Max {
+		return [32]byte{}, false
+	}
+	return canonical.ObservationRoot(
+		u.Available, u.Agreed, uint32(u.ObservedAtLedger), u.ObservedAtTime.Uint64(), uint8(u.SourceCount), payments,
+	), true
 }
 
 func errorClassOf(reason string) string {
@@ -548,6 +560,11 @@ func evaluate(in Input) Decision {
 		sequenceMode = 1
 	}
 
+	observationRoot, rootOK := observationRootOf(u)
+	if !rootOK {
+		return refuse(in, ReasonInternalFailClosed)
+	}
+
 	commitment, err := canonical.AuthorizationCommitment(canonical.AuthorizationFields{
 		ObligationFields: canonical.ObligationFields{
 			FlareChainID:      in.Domain.FlareChainID,
@@ -579,7 +596,7 @@ func evaluate(in Input) Decision {
 		ExtensionCodeHash:            mustBytes32(p.ExtensionCodeHash),
 		ObservedAtLedger:             uint32(u.ObservedAtLedger),
 		ObservedSourceCount:          uint8(u.SourceCount),
-		ObservationRoot:              observationRootOf(u),
+		ObservationRoot:              observationRoot,
 	})
 	if err != nil {
 		return refuse(in, ReasonInternalFailClosed)

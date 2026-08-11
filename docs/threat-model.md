@@ -81,8 +81,8 @@ every time the gate runs. It asserts the refusal and, more importantly, that **n
 the original authorization**.
 
 **Residual, and it cannot be closed:** a competing payment that validates after Signet's observation
-and before Signet's own payment validates is not detectable. That window measured 4 to 12 ledgers in
-this build. See [`docs/guarantee.md`](guarantee.md) for the precise statement and for the production
+and before Signet's own payment validates is not detectable. That window measured 4 ledgers in the single V2 run this build
+produced; one sample is not a range. See [`docs/guarantee.md`](guarantee.md) for the precise statement and for the production
 configuration under which no independent legitimate payer exists at all.
 
 ## Accepted medium risks

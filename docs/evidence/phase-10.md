@@ -163,3 +163,20 @@ the agent's signer to make that payment, and becoming an agent is governance-gat
   what surfaced the ADR 0003 gap.
 - The extension ran as an ordinary process. No TEE, no attestation.
 - `confirmRedemptionPayment` has never been called by us and cannot be until the whitelist clears.
+
+## Addendum, 2026-08-11: this run log no longer reproduces
+
+The verifier output recorded in section 5 was true when it ran. Re-running the same command today
+gives `UNVERIFIABLE`, for two independent reasons, and a reader following the handoff's invitation to
+check a claim themselves should know before they try:
+
+- The receipt predates schema V2. It binds no underlying observation, so its V1-encoded commitment
+  cannot be recomputed by a verifier that only implements V2.
+- The XRPL transaction has aged out of the retained history of both locked testnet endpoints.
+
+Neither is a retraction of what was observed. Both are what an evidence audit means by a
+reproducibility gap, and recording it is cheaper than letting a reader discover it and wonder which
+other numbers moved.
+
+The duplicate payment this phase found is corrected in schema V2. See
+[ADR 0003](../adr/0003-underlying-payment-precheck.md) and [`docs/guarantee.md`](../guarantee.md).

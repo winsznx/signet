@@ -794,6 +794,77 @@ export const SCENARIOS: readonly Scenario[] = [
     reason: "S001_UNKNOWN_SCHEMA",
     mutate: (input) => ({ ...input, domain: { ...input.domain, schemaVersion: 1 } }),
   },
+  // ---------------------------------------------------------------- two defects a review found
+  //
+  // Both of these authorized in Go while the reference model refused, on byte-identical input. They
+  // are fixtures rather than notes because a cross-language divergence that nobody encoded is a
+  // divergence that comes back.
+  {
+    id: "refuse-observation-hash-malformed",
+    intent:
+      "a malformed observed transaction hash must fail closed in both languages. Go was silently substituting 32 zero bytes and signing; the reference model threw and refused.",
+    expect: "refuse",
+    reason: "S020_INTERNAL_FAIL_CLOSED",
+    mutate: withUnderlying({
+      payments: [
+        {
+          transactionHash: "0xZZZZ" as Hex,
+          destinationAddress: "r9oQTGAD1Wnuy5t8sPHA9LWTSdsho4AQ72",
+          amountDrops: 1n,
+          paymentReference: ("0x" + "22".repeat(32)) as Hex,
+          validated: false,
+        },
+      ],
+    }),
+  },
+  {
+    id: "authorize-duplicate-observation-hashes-sort-totally",
+    intent:
+      "two observed payments sharing a transaction hash must produce one root in both languages. Go's sort is not stable and JavaScript's is, so ordering by hash alone gave two different commitments.",
+    expect: "authorize",
+    mutate: withUnderlying({
+      payments: [
+        {
+          transactionHash: ("0x" + "77".repeat(32)) as Hex,
+          destinationAddress: "r9oQTGAD1Wnuy5t8sPHA9LWTSdsho4AQ72",
+          amountDrops: 2n,
+          paymentReference: ("0x" + "22".repeat(32)) as Hex,
+          validated: false,
+        },
+        {
+          transactionHash: ("0x" + "77".repeat(32)) as Hex,
+          destinationAddress: "r9oQTGAD1Wnuy5t8sPHA9LWTSdsho4AQ72",
+          amountDrops: 1n,
+          paymentReference: ("0x" + "22".repeat(32)) as Hex,
+          validated: false,
+        },
+      ],
+    }),
+  },
+  {
+    id: "authorize-duplicate-observation-hashes-reversed",
+    intent:
+      "the same two payments supplied in the opposite order must give the identical commitment, which is what a total order buys and a stable-sort-by-hash does not.",
+    expect: "authorize",
+    mutate: withUnderlying({
+      payments: [
+        {
+          transactionHash: ("0x" + "77".repeat(32)) as Hex,
+          destinationAddress: "r9oQTGAD1Wnuy5t8sPHA9LWTSdsho4AQ72",
+          amountDrops: 1n,
+          paymentReference: ("0x" + "22".repeat(32)) as Hex,
+          validated: false,
+        },
+        {
+          transactionHash: ("0x" + "77".repeat(32)) as Hex,
+          destinationAddress: "r9oQTGAD1Wnuy5t8sPHA9LWTSdsho4AQ72",
+          amountDrops: 2n,
+          paymentReference: ("0x" + "22".repeat(32)) as Hex,
+          validated: false,
+        },
+      ],
+    }),
+  },
 ];
 
 

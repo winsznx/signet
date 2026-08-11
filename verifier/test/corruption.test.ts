@@ -34,8 +34,43 @@ const TX: XrplTransaction = {
   meta: { TransactionResult: "tesSUCCESS" },
 };
 
+/** The commitment inputs the ledger does not hold. Only `underlying` matters to these tests. */
+const CONTEXT_BASE = {
+  flareChainId: "114",
+  assetManager: "0xc1Ca88b937d0b528842F95d5731ffB586f4fbDFA",
+  instructionSender: "0xd6cF30B6411DB8465147FfDcF0e0418030B4b9CA",
+  agentVault: "0xd5defe2c62d48788bb3889534fbfe7aea0602d64",
+  requestGeneration: 0,
+  xrplNetworkId: 1,
+  policyVersion: 1,
+  extensionId: "1",
+  extensionCodeHash: `0x${"86".repeat(32)}`,
+  firstUnderlyingBlock: "19824924",
+  lastUnderlyingBlock: "19825472",
+  lastUnderlyingTimestamp: "1786468650",
+  maxFeeDrops: "50000",
+};
+
+/** An honest observation: the ledger held nothing but Signet's own payment. */
+const OBSERVATION = {
+  available: true,
+  agreed: true,
+  sourceCount: 2,
+  observedAtLedger: 19_823_390,
+  observedAtTime: "1800000020",
+  payments: [] as { transactionHash: string; amountDrops: string }[],
+};
+
+/** An observer that reports what the ledger actually holds, independent of the receipt. */
+const ledgerHolds = (payments: { transactionHash: string; validated: boolean }[]) => ({
+  async observe() {
+    return { available: true, payments };
+  },
+});
+
 const HONEST: Receipt = {
   seam: "composed-lifecycle",
+  decisionContext: { ...CONTEXT_BASE, underlying: OBSERVATION },
   requestId: REQUEST_ID.toString(),
   agentVault: "0xd5defe2c62d48788bb3889534fbfe7aea0602d64",
   authorizationCommitment: "0xcommitment",
@@ -69,6 +104,7 @@ async function verify(receipt: Receipt, tx: XrplTransaction = TX, commitment: st
     obligations,
     fetchImpl: ledgerHolding(tx),
     recomputeCommitment: () => commitment,
+    underlying: ledgerHolds([]),
   });
 }
 
@@ -140,8 +176,69 @@ describe("a corrupted bundle", () => {
       obligations,
       fetchImpl: inconsistent,
       recomputeCommitment: () => "0xcommitment",
+      underlying: ledgerHolds([]),
     });
     expect(result.verdict).toBe("FAIL");
+  });
+});
+
+describe("a fabricated observation", () => {
+  /**
+   * The check that makes the V2 correction verifiable by an outsider.
+   *
+   * Recomputing the commitment from the receipt's own numbers only catches arithmetic. A coordinator
+   * that fabricated an empty observation and hashed it correctly passes that check and fails this
+   * one, which is the incident-44928272 scenario exactly.
+   */
+  const competing = { transactionHash: `0x${"8f".repeat(32)}`, validated: true };
+
+  it("is caught when the ledger holds a payment the receipt says it did not see", async () => {
+    const result = await verifyReceipt("test", HONEST, {
+      xrplEndpoints: ENDPOINTS,
+      obligations,
+      fetchImpl: ledgerHolding(TX),
+      recomputeCommitment: () => "0xcommitment",
+      underlying: ledgerHolds([competing]),
+    });
+    expect(result.verdict).toBe("FAIL");
+    expect(result.findings.find((f) => f.outcome === "FAIL")?.name).toContain("observation matches the ledger");
+  });
+
+  it("passes when the receipt reported the payment the ledger holds", async () => {
+    const result = await verifyReceipt(
+      "test",
+      { ...HONEST, decisionContext: { ...CONTEXT_BASE, underlying: { ...OBSERVATION, payments: [{ transactionHash: competing.transactionHash, amountDrops: "1" }] } } },
+      {
+        xrplEndpoints: ENDPOINTS,
+        obligations,
+        fetchImpl: ledgerHolding(TX),
+        recomputeCommitment: () => "0xcommitment",
+        underlying: ledgerHolds([competing]),
+      },
+    );
+    expect(result.verdict).toBe("PASS");
+  });
+
+  it("does not count the receipt's own payment against it", async () => {
+    const result = await verifyReceipt("test", HONEST, {
+      xrplEndpoints: ENDPOINTS,
+      obligations,
+      fetchImpl: ledgerHolding(TX),
+      recomputeCommitment: () => "0xcommitment",
+      underlying: ledgerHolds([{ transactionHash: `0x${HONEST.txHash!.toLowerCase()}`, validated: true }]),
+    });
+    expect(result.verdict).toBe("PASS");
+  });
+
+  it("is unverifiable, never passing, when no endpoint retains the window", async () => {
+    const result = await verifyReceipt("test", HONEST, {
+      xrplEndpoints: ENDPOINTS,
+      obligations,
+      fetchImpl: ledgerHolding(TX),
+      recomputeCommitment: () => "0xcommitment",
+      underlying: { async observe() { return { available: false, payments: [] }; } },
+    });
+    expect(result.verdict).toBe("UNVERIFIABLE");
   });
 });
 
@@ -168,6 +265,7 @@ describe("a receipt cannot escape a check by staying silent", () => {
       obligations: { async readCanonicalRedemption() { return null; } },
       fetchImpl: ledgerHolding(TX),
       recomputeCommitment: () => "0xcommitment",
+      underlying: ledgerHolds([]),
     });
     expect(result.verdict).toBe("UNVERIFIABLE");
   });

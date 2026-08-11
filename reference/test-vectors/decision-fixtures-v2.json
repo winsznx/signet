@@ -1,7 +1,7 @@
 {
   "authorizationDomain": "SIGNET_FASSETS_REDEMPTION_V1",
   "authorizationPreimageLength": 468,
-  "fixtureSetHash": "0x6e716fc4bbe6e14539e6b91d27905ac91a9cecfb0891a8a631b72d2b713bf07e",
+  "fixtureSetHash": "0xee2f147dab17a4683dbfafe2fe20f795a23662115e071711c7f2ebd3bd4fd640",
   "fixtures": [
     {
       "expected": {
@@ -6220,6 +6220,319 @@
         }
       },
       "intent": "a V1 input cannot carry the observation V2 requires, so accepting it would be accepting exactly the blindness that caused the incident"
+    },
+    {
+      "expected": {
+        "errorClass": "POLICY_DENIAL",
+        "kind": "refuse",
+        "obligationHash": "0x31e3d860072262eeb11afc5e250c3d7e4c884b9702fc4fbc24c0da966c0e9f75",
+        "reason": "S020_INTERNAL_FAIL_CLOSED"
+      },
+      "id": "refuse-observation-hash-malformed",
+      "input": {
+        "binding": {
+          "agentVault": "0x00000000000000000000000000000000000000a1",
+          "approvedCodeHash": "0x1111111111111111111111111111111111111111111111111111111111111111",
+          "assetManager": "0x00000000000000000000000000000000000000b1",
+          "extensionId": "7",
+          "flareChainId": "114",
+          "instructionSender": "0x00000000000000000000000000000000000000c1",
+          "keyState": "ACTIVE",
+          "policyVersion": 1,
+          "signerCount": 0,
+          "signingMode": "REGULAR_KEY",
+          "status": "ACTIVE",
+          "xrplNetworkId": 1,
+          "xrplSourceAddress": "rpZNAnHcvr6TbaY7QJa9yrVfu6coDz9pPH"
+        },
+        "domain": {
+          "assetManager": "0x00000000000000000000000000000000000000b1",
+          "flareChainId": "114",
+          "instructionSender": "0x00000000000000000000000000000000000000c1",
+          "schemaVersion": 2,
+          "xrplNetworkId": 1
+        },
+        "policy": {
+          "extensionCodeHash": "0x1111111111111111111111111111111111111111111111111111111111111111",
+          "extensionId": "7",
+          "ledgerCloseIntervalSeconds": "4",
+          "maxObservationAgeLedgers": 10,
+          "minimumUnderlyingSources": 2,
+          "paused": false,
+          "policyVersion": 1,
+          "revokedCodeHashes": [],
+          "safetyMarginLedgers": 50,
+          "safetyMarginSeconds": "300"
+        },
+        "prior": [],
+        "redemption": {
+          "agentVault": "0x00000000000000000000000000000000000000a1",
+          "assetMintingDecimals": 6,
+          "destinationTag": "0",
+          "feeUBA": "50000",
+          "firstUnderlyingBlock": "19800000",
+          "lastUnderlyingBlock": "19800500",
+          "lastUnderlyingTimestamp": "1800000900",
+          "paymentAddress": "rhf7192NqpPvBUnAobBJAryNFQNbPKz11w",
+          "paymentReference": "0x4642505266410002000000000000000000000000000000000000000000001092",
+          "requestGeneration": 0,
+          "requestId": "4242",
+          "requiresDestinationTag": false,
+          "status": "ACTIVE",
+          "valueUBA": "10000000"
+        },
+        "underlying": {
+          "agreed": true,
+          "available": true,
+          "observedAtLedger": 19800010,
+          "observedAtTime": "1800000020",
+          "payments": [
+            {
+              "amountDrops": "1",
+              "destinationAddress": "r9oQTGAD1Wnuy5t8sPHA9LWTSdsho4AQ72",
+              "paymentReference": "0x2222222222222222222222222222222222222222222222222222222222222222",
+              "transactionHash": "0xZZZZ",
+              "validated": false
+            }
+          ],
+          "sourceCount": 2
+        },
+        "xrpl": {
+          "baseFeeDrops": "10",
+          "currentLedgerCloseTime": "1800000020",
+          "currentValidatedLedger": 19800010,
+          "feeDrops": "12",
+          "lastLedgerSequence": 19800110,
+          "maxFeeDrops": "5000",
+          "sequenceMode": "SEQUENCE",
+          "sequenceOrTicket": 91
+        }
+      },
+      "intent": "a malformed observed transaction hash must fail closed in both languages. Go was silently substituting 32 zero bytes and signing; the reference model threw and refused."
+    },
+    {
+      "expected": {
+        "authorizationCommitment": "0xe2802b0bd7b51af95db5711fb7ac75b9fd782268b0f4d0bd88ace76ae6899817",
+        "kind": "authorize",
+        "obligationHash": "0x31e3d860072262eeb11afc5e250c3d7e4c884b9702fc4fbc24c0da966c0e9f75",
+        "txTemplate": {
+          "Account": "rpZNAnHcvr6TbaY7QJa9yrVfu6coDz9pPH",
+          "Amount": "9950000",
+          "Destination": "rhf7192NqpPvBUnAobBJAryNFQNbPKz11w",
+          "Fee": "12",
+          "Flags": 0,
+          "LastLedgerSequence": 19800110,
+          "Memos": [
+            {
+              "Memo": {
+                "MemoData": "4642505266410002000000000000000000000000000000000000000000001092"
+              }
+            }
+          ],
+          "Sequence": 91,
+          "TransactionType": "Payment"
+        }
+      },
+      "id": "authorize-duplicate-observation-hashes-sort-totally",
+      "input": {
+        "binding": {
+          "agentVault": "0x00000000000000000000000000000000000000a1",
+          "approvedCodeHash": "0x1111111111111111111111111111111111111111111111111111111111111111",
+          "assetManager": "0x00000000000000000000000000000000000000b1",
+          "extensionId": "7",
+          "flareChainId": "114",
+          "instructionSender": "0x00000000000000000000000000000000000000c1",
+          "keyState": "ACTIVE",
+          "policyVersion": 1,
+          "signerCount": 0,
+          "signingMode": "REGULAR_KEY",
+          "status": "ACTIVE",
+          "xrplNetworkId": 1,
+          "xrplSourceAddress": "rpZNAnHcvr6TbaY7QJa9yrVfu6coDz9pPH"
+        },
+        "domain": {
+          "assetManager": "0x00000000000000000000000000000000000000b1",
+          "flareChainId": "114",
+          "instructionSender": "0x00000000000000000000000000000000000000c1",
+          "schemaVersion": 2,
+          "xrplNetworkId": 1
+        },
+        "policy": {
+          "extensionCodeHash": "0x1111111111111111111111111111111111111111111111111111111111111111",
+          "extensionId": "7",
+          "ledgerCloseIntervalSeconds": "4",
+          "maxObservationAgeLedgers": 10,
+          "minimumUnderlyingSources": 2,
+          "paused": false,
+          "policyVersion": 1,
+          "revokedCodeHashes": [],
+          "safetyMarginLedgers": 50,
+          "safetyMarginSeconds": "300"
+        },
+        "prior": [],
+        "redemption": {
+          "agentVault": "0x00000000000000000000000000000000000000a1",
+          "assetMintingDecimals": 6,
+          "destinationTag": "0",
+          "feeUBA": "50000",
+          "firstUnderlyingBlock": "19800000",
+          "lastUnderlyingBlock": "19800500",
+          "lastUnderlyingTimestamp": "1800000900",
+          "paymentAddress": "rhf7192NqpPvBUnAobBJAryNFQNbPKz11w",
+          "paymentReference": "0x4642505266410002000000000000000000000000000000000000000000001092",
+          "requestGeneration": 0,
+          "requestId": "4242",
+          "requiresDestinationTag": false,
+          "status": "ACTIVE",
+          "valueUBA": "10000000"
+        },
+        "underlying": {
+          "agreed": true,
+          "available": true,
+          "observedAtLedger": 19800010,
+          "observedAtTime": "1800000020",
+          "payments": [
+            {
+              "amountDrops": "2",
+              "destinationAddress": "r9oQTGAD1Wnuy5t8sPHA9LWTSdsho4AQ72",
+              "paymentReference": "0x2222222222222222222222222222222222222222222222222222222222222222",
+              "transactionHash": "0x7777777777777777777777777777777777777777777777777777777777777777",
+              "validated": false
+            },
+            {
+              "amountDrops": "1",
+              "destinationAddress": "r9oQTGAD1Wnuy5t8sPHA9LWTSdsho4AQ72",
+              "paymentReference": "0x2222222222222222222222222222222222222222222222222222222222222222",
+              "transactionHash": "0x7777777777777777777777777777777777777777777777777777777777777777",
+              "validated": false
+            }
+          ],
+          "sourceCount": 2
+        },
+        "xrpl": {
+          "baseFeeDrops": "10",
+          "currentLedgerCloseTime": "1800000020",
+          "currentValidatedLedger": 19800010,
+          "feeDrops": "12",
+          "lastLedgerSequence": 19800110,
+          "maxFeeDrops": "5000",
+          "sequenceMode": "SEQUENCE",
+          "sequenceOrTicket": 91
+        }
+      },
+      "intent": "two observed payments sharing a transaction hash must produce one root in both languages. Go's sort is not stable and JavaScript's is, so ordering by hash alone gave two different commitments."
+    },
+    {
+      "expected": {
+        "authorizationCommitment": "0xe2802b0bd7b51af95db5711fb7ac75b9fd782268b0f4d0bd88ace76ae6899817",
+        "kind": "authorize",
+        "obligationHash": "0x31e3d860072262eeb11afc5e250c3d7e4c884b9702fc4fbc24c0da966c0e9f75",
+        "txTemplate": {
+          "Account": "rpZNAnHcvr6TbaY7QJa9yrVfu6coDz9pPH",
+          "Amount": "9950000",
+          "Destination": "rhf7192NqpPvBUnAobBJAryNFQNbPKz11w",
+          "Fee": "12",
+          "Flags": 0,
+          "LastLedgerSequence": 19800110,
+          "Memos": [
+            {
+              "Memo": {
+                "MemoData": "4642505266410002000000000000000000000000000000000000000000001092"
+              }
+            }
+          ],
+          "Sequence": 91,
+          "TransactionType": "Payment"
+        }
+      },
+      "id": "authorize-duplicate-observation-hashes-reversed",
+      "input": {
+        "binding": {
+          "agentVault": "0x00000000000000000000000000000000000000a1",
+          "approvedCodeHash": "0x1111111111111111111111111111111111111111111111111111111111111111",
+          "assetManager": "0x00000000000000000000000000000000000000b1",
+          "extensionId": "7",
+          "flareChainId": "114",
+          "instructionSender": "0x00000000000000000000000000000000000000c1",
+          "keyState": "ACTIVE",
+          "policyVersion": 1,
+          "signerCount": 0,
+          "signingMode": "REGULAR_KEY",
+          "status": "ACTIVE",
+          "xrplNetworkId": 1,
+          "xrplSourceAddress": "rpZNAnHcvr6TbaY7QJa9yrVfu6coDz9pPH"
+        },
+        "domain": {
+          "assetManager": "0x00000000000000000000000000000000000000b1",
+          "flareChainId": "114",
+          "instructionSender": "0x00000000000000000000000000000000000000c1",
+          "schemaVersion": 2,
+          "xrplNetworkId": 1
+        },
+        "policy": {
+          "extensionCodeHash": "0x1111111111111111111111111111111111111111111111111111111111111111",
+          "extensionId": "7",
+          "ledgerCloseIntervalSeconds": "4",
+          "maxObservationAgeLedgers": 10,
+          "minimumUnderlyingSources": 2,
+          "paused": false,
+          "policyVersion": 1,
+          "revokedCodeHashes": [],
+          "safetyMarginLedgers": 50,
+          "safetyMarginSeconds": "300"
+        },
+        "prior": [],
+        "redemption": {
+          "agentVault": "0x00000000000000000000000000000000000000a1",
+          "assetMintingDecimals": 6,
+          "destinationTag": "0",
+          "feeUBA": "50000",
+          "firstUnderlyingBlock": "19800000",
+          "lastUnderlyingBlock": "19800500",
+          "lastUnderlyingTimestamp": "1800000900",
+          "paymentAddress": "rhf7192NqpPvBUnAobBJAryNFQNbPKz11w",
+          "paymentReference": "0x4642505266410002000000000000000000000000000000000000000000001092",
+          "requestGeneration": 0,
+          "requestId": "4242",
+          "requiresDestinationTag": false,
+          "status": "ACTIVE",
+          "valueUBA": "10000000"
+        },
+        "underlying": {
+          "agreed": true,
+          "available": true,
+          "observedAtLedger": 19800010,
+          "observedAtTime": "1800000020",
+          "payments": [
+            {
+              "amountDrops": "1",
+              "destinationAddress": "r9oQTGAD1Wnuy5t8sPHA9LWTSdsho4AQ72",
+              "paymentReference": "0x2222222222222222222222222222222222222222222222222222222222222222",
+              "transactionHash": "0x7777777777777777777777777777777777777777777777777777777777777777",
+              "validated": false
+            },
+            {
+              "amountDrops": "2",
+              "destinationAddress": "r9oQTGAD1Wnuy5t8sPHA9LWTSdsho4AQ72",
+              "paymentReference": "0x2222222222222222222222222222222222222222222222222222222222222222",
+              "transactionHash": "0x7777777777777777777777777777777777777777777777777777777777777777",
+              "validated": false
+            }
+          ],
+          "sourceCount": 2
+        },
+        "xrpl": {
+          "baseFeeDrops": "10",
+          "currentLedgerCloseTime": "1800000020",
+          "currentValidatedLedger": 19800010,
+          "feeDrops": "12",
+          "lastLedgerSequence": 19800110,
+          "maxFeeDrops": "5000",
+          "sequenceMode": "SEQUENCE",
+          "sequenceOrTicket": 91
+        }
+      },
+      "intent": "the same two payments supplied in the opposite order must give the identical commitment, which is what a total order buys and a stable-sort-by-hash does not."
     }
   ],
   "formatVersion": 2,

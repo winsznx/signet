@@ -110,3 +110,15 @@ a test that gets skipped, and a skipped verifier test is how a verifier quietly 
   Binding it to the registry's on-chain record requires the registry to be deployed, which is
   Phase 10.
 - The evidence bundle is the receipts directory rather than a signed, content-addressed archive.
+
+## Addendum, 2026-08-11: two changes since this was written
+
+**The recorded run no longer reproduces.** The commitment check recorded above passed against a V1
+receipt. That receipt binds no underlying observation, so V2's verifier reports `UNVERIFIABLE` for
+it, and the transaction has aged out of both locked endpoints' retained history.
+
+**The verifier does more than this phase describes.** A security review found that recomputing the
+commitment from a receipt's own `decisionContext` only ever catches arithmetic: a coordinator that
+fabricated an empty observation and hashed it correctly passed every check. The verifier now
+re-observes the XRP ledger itself and fails a receipt whose observation does not match what it finds,
+while endpoints still retain the window. `verifier/test/corruption.test.ts` covers it.
