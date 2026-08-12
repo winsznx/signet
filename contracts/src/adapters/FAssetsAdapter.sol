@@ -157,6 +157,7 @@ library FAssetsAdapter {
         // forge-lint: disable-next-line(unsafe-typecast)
         return uint8(decimals);
     }
+
     /// @notice Reads the obligation and resolves the agent from FAssets rather than being told it.
     ///
     /// @dev Gate B's entry point. `readCanonicalRedemption` asks the caller which agent it expects
@@ -172,5 +173,4 @@ library FAssetsAdapter {
         RedemptionRequestInfo.DataExt memory info = IRedeemExtended(_assetManager).redemptionRequestInfoExt(_requestId);
         return readCanonicalRedemption(_assetManager, _requestId, info.agentVault);
     }
-
 }
