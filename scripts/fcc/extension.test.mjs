@@ -1,31 +1,33 @@
 #!/usr/bin/env node
 /**
- * Signet's FCC extension, against the extension contract and against itself.
+ * Signet's FCC extension, against the extension contract.
+ *
+ * NOTE, Gate B: `AUTHORIZE_REDEMPTION` no longer accepts a JSON decision input. It takes the
+ * ABI-encoded canonical instruction that `SignetFccInstructionSender` builds from FAssets state, and
+ * the extension supplies the XRPL allocation and the underlying observation itself. The
+ * decision-equivalence cases that used to live here moved to
+ * `extension/internal/fccinput` (payload decoding and the adversarial override set) and to
+ * `contracts/test/unit/CanonicalInstruction.t.sol` (the invariant that one request id yields one
+ * payload for every caller). What remains here is the wire contract, which is what this file was
+ * always for.
  *
  * An organizer asked for the XRPL payment to be derived "inside FCC". Before this existed, Signet's
  * decision ran as a CLI reading stdin, which is not FCC in any sense the protocol means. This tests
  * the thing that actually satisfies the contract: an HTTP extension a tee-node can drive, returning
  * an ActionResult the node signs.
  *
- * Two kinds of assertion, and the second matters more.
- *
- * **Contract compliance.** 200 with an ActionResult whenever a handler ran, including when it
- * failed; 501 for an unregistered op-type or command; 400 for a malformed body. Failure is signalled
- * by `ActionResult.status`, never by the HTTP status.
- *
- * **One decision, two transports.** The FCC path and the CLI path must produce byte-identical
- * decisions for the same input. If they can differ then the 76 frozen fixtures cover the CLI and not
- * the thing FCC runs, and the fixture set would be measuring the wrong binary.
+ * What is asserted: 200 with an ActionResult whenever a handler ran, including when it failed; 501
+ * for an unregistered op-type or command; 400 for a malformed body; and that a caller-authored
+ * obligation no longer decodes at all. Failure is signalled by `ActionResult.status`, never by the
+ * HTTP status.
  */
-import { execFileSync, spawn } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { spawn } from "node:child_process";
 import { join } from "node:path";
 import { REPO_ROOT } from "../lib/source-lock.mjs";
 
 const PORT = Number(process.env.SIGNET_FCC_PORT ?? 8099);
 const BASE = `http://127.0.0.1:${PORT}`;
 const FCC = join(REPO_ROOT, ".runtime", "lifecycle", "signet-fcc-extension");
-const CLI = join(REPO_ROOT, ".runtime", "lifecycle", "signet-extension");
 
 const OP_TYPE = "SIGNET_REDEMPTION";
 const COMMAND_AUTHORIZE = "AUTHORIZE_REDEMPTION";
@@ -67,16 +69,6 @@ async function post(body) {
   });
   const text = await response.text();
   return { status: response.status, text };
-}
-
-/** The same decision through the CLI, for comparison. */
-function viaCli(inputJson) {
-  try {
-    return JSON.parse(execFileSync(CLI, [], { input: inputJson, encoding: "utf8" }));
-  } catch (error) {
-    if (error.status === 2) return JSON.parse(error.stdout);
-    throw error;
-  }
 }
 
 const server = spawn(FCC, ["-port", String(PORT)], { stdio: "ignore" });
@@ -130,78 +122,22 @@ for (let attempt = 0; attempt < 40; attempt += 1) {
   check("a failed handler logs the error", result.log.startsWith("error:"), result.log.slice(0, 48));
 }
 
-// ---------------------------------------------------------------- one decision, two transports
-
-const fixtures = JSON.parse(
-  readFileSync(join(REPO_ROOT, "reference", "test-vectors", "decision-fixtures-v2.json"), "utf8"),
-);
-
-const cases = [
-  "valid-standard-memo",
-  "refuse-payment-already-observed-incident-44928272",
-  "refuse-underlying-sources-disagree",
-  "refuse-underlying-observation-stale",
-  "refuse-expired-window",
-  "refuse-wrong-agent",
-];
-
-for (const id of cases) {
-  const fixture = fixtures.fixtures.find((f) => f.id === id);
-  if (!fixture) {
-    check(`fixture ${id} exists`, false);
-    continue;
-  }
-  const inputJson = JSON.stringify(fixture.input);
-  const { status, text } = await post(action(OP_TYPE, COMMAND_AUTHORIZE, inputJson));
-  const result = JSON.parse(text);
-  const data = JSON.parse(Buffer.from(result.data.replace(/^0x/, ""), "hex").toString("utf8"));
-  const cli = viaCli(inputJson);
-
-  check(`${id}: FCC returns 200 with an ActionResult`, status === 200 && result.status === 1, result.log);
-  check(
-    `${id}: the FCC decision equals the CLI decision`,
-    data.kind === cli.kind &&
-      data.obligationHash === cli.obligationHash &&
-      (data.authorizationCommitment ?? "") === (cli.authorizationCommitment ?? "") &&
-      (data.reason ?? "") === (cli.reason ?? ""),
-    `${data.kind}${data.reason ? ` ${data.reason}` : ""}`,
-  );
-  check(
-    `${id}: the FCC decision equals the frozen fixture`,
-    data.kind === fixture.expected.kind && (data.reason ?? "") === (fixture.expected.reason ?? ""),
-    `expected ${fixture.expected.kind}${fixture.expected.reason ? ` ${fixture.expected.reason}` : ""}`,
-  );
-  if (data.kind === "authorize") {
-    check(
-      `${id}: the payment derived inside FCC is the obligation's`,
-      data.payment.Destination === fixture.input.redemption.paymentAddress &&
-        String(BigInt(data.payment.Amount)) ===
-          String(BigInt(fixture.input.redemption.valueUBA) - BigInt(fixture.input.redemption.feeUBA)),
-      `${data.payment.Amount} drops to ${data.payment.Destination}`,
-    );
-  }
-}
-
-// ---------------------------------------------------------------- the incident, through FCC
+// ---------------------------------------------------------------- the canonical payload is required
 
 {
-  const fixture = fixtures.fixtures.find((f) => f.id === "refuse-payment-already-observed-incident-44928272");
-  const { text } = await post(action(OP_TYPE, COMMAND_AUTHORIZE, JSON.stringify(fixture.input)));
+  // A JSON decision input is what the old, caller-trusting interface took. It must now fail to
+  // decode: there is no path left that accepts an obligation somebody else authored.
+  const legacy = JSON.stringify({ domain: { schemaVersion: 2 }, redemption: { paymentAddress: "rAttacker" } });
+  const { status, text } = await post(action(OP_TYPE, COMMAND_AUTHORIZE, legacy));
   const result = JSON.parse(text);
-  const data = JSON.parse(Buffer.from(result.data.replace(/^0x/, ""), "hex").toString("utf8"));
+  check("a caller-authored JSON obligation is rejected", status === 200 && result.status === 0, result.log?.slice(0, 60));
   check(
-    "incident 44928272 is refused inside the FCC extension, not only in the CLI",
-    data.kind === "refuse" && data.reason === "S021_PAYMENT_ALREADY_OBSERVED",
-    data.reason,
-  );
-  check("a refusal through FCC carries no authorization commitment", !data.authorizationCommitment);
-  check(
-    "a refusal is a successful handler run, not a handler failure",
-    result.status === 1 && result.log === "ok",
-    `status=${result.status} log=${result.log}`,
+    "and it is rejected as a decode failure, not as a policy refusal",
+    (result.log ?? "").includes("canonical instruction"),
+    result.log?.slice(0, 60),
   );
 }
 
 server.kill();
-console.log(`\n${failures === 0 ? "the FCC extension satisfies its contract and agrees with the audited decision" : `${failures} FCC checks failed`}`);
+console.log(`\n${failures === 0 ? "the FCC extension satisfies its contract and accepts only the canonical payload" : `${failures} FCC checks failed`}`);
 process.exit(failures === 0 ? 0 : 1);

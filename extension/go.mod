@@ -4,7 +4,7 @@ go 1.26.0
 
 require (
 	github.com/flare-foundation/go-flare-common v1.2.2-0.20260727094511-09a10067e6a4
-	github.com/flare-foundation/tee-node v0.0.24
+	github.com/flare-foundation/tee-node v0.0.25
 	golang.org/x/crypto v0.50.0
 )
 

@@ -23,6 +23,7 @@ import { execFileSync, spawn } from "node:child_process";
 import { mkdirSync, readFileSync, writeFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { keccak_256 } from "@noble/hashes/sha3";
+import { encodeAbiParameters } from "viem";
 import { REPO_ROOT } from "../lib/source-lock.mjs";
 import * as chain from "./chain.mjs";
 import { Wallet, decode as decodeXrpl } from "xrpl";
@@ -116,10 +117,47 @@ async function decideThroughFcc(input) {
       }
     }
 
+    // The ABI-encoded canonical instruction, exactly as SignetFccInstructionSender builds it. Gate B
+    // removed the JSON path: the extension no longer accepts an obligation anyone else authored, and
+    // it takes the XRPL allocation and the underlying observation for itself.
+    const canonicalInstruction = encodeAbiParameters(
+      [{
+        type: "tuple",
+        components: [
+          { name: "schemaVersion", type: "uint256" }, { name: "flareChainId", type: "uint256" },
+          { name: "assetManager", type: "address" }, { name: "instructionSender", type: "address" },
+          { name: "agentVault", type: "address" }, { name: "requestId", type: "uint256" },
+          { name: "requestGeneration", type: "uint32" }, { name: "actionId", type: "bytes32" },
+          { name: "obligationHash", type: "bytes32" }, { name: "paymentAddress", type: "string" },
+          { name: "paymentReference", type: "bytes32" }, { name: "valueUBA", type: "uint256" },
+          { name: "feeUBA", type: "uint256" }, { name: "firstUnderlyingBlock", type: "uint64" },
+          { name: "lastUnderlyingBlock", type: "uint64" }, { name: "lastUnderlyingTimestamp", type: "uint64" },
+          { name: "requiresDestinationTag", type: "bool" }, { name: "destinationTag", type: "uint256" },
+          { name: "assetMintingDecimals", type: "uint8" }, { name: "xrplSourceAddress", type: "string" },
+          { name: "xrplNetworkId", type: "uint32" }, { name: "extensionId", type: "uint256" },
+          { name: "approvedCodeHash", type: "bytes32" }, { name: "policyVersion", type: "uint32" },
+        ],
+      }],
+      [{
+        schemaVersion: 2n, flareChainId: chain.COSTON2_CHAIN_ID,
+        assetManager: chain.ASSET_MANAGER, instructionSender: deployment.sender,
+        agentVault: obligation.agentVault, requestId: obligation.requestId,
+        requestGeneration: 0, actionId: action.transactionHash,
+        obligationHash: action.obligationHash, paymentAddress: obligation.paymentAddress,
+        paymentReference: obligation.paymentReference, valueUBA: obligation.valueUBA,
+        feeUBA: obligation.feeUBA, firstUnderlyingBlock: obligation.firstUnderlyingBlock,
+        lastUnderlyingBlock: obligation.lastUnderlyingBlock,
+        lastUnderlyingTimestamp: obligation.lastUnderlyingTimestamp,
+        requiresDestinationTag: false, destinationTag: 0n,
+        assetMintingDecimals: 6, xrplSourceAddress: secrets.classicAddress,
+        xrplNetworkId: XRPL_NETWORK_ID, extensionId: EXTENSION_ID,
+        approvedCodeHash: CODE_HASH, policyVersion: POLICY_VERSION,
+      }],
+    );
     const fixed = {
       opType: toBytes32Utf8("SIGNET_REDEMPTION"),
       opCommand: toBytes32Utf8("AUTHORIZE_REDEMPTION"),
-      originalMessage: `0x${Buffer.from(canonical(input), "utf8").toString("hex")}`,
+      originalMessage: canonicalInstruction,
     };
     const response = await fetch(`http://127.0.0.1:${FCC_PORT}/action`, {
       method: "POST",
@@ -419,12 +457,31 @@ const decision = decideBoth("valid lifecycle", baseInput);
  * not two decisions that happen to agree today.
  */
 const fcc = await decideThroughFcc(baseInput);
+/**
+ * The FCC decision agrees with the audited one about the obligation, not about the commitment.
+ *
+ * Gate B moved the XRPL allocation and the underlying observation inside the extension, so the
+ * extension picks its own sequence, ledger position and fee. The commitment binds those, and it
+ * legitimately differs from one computed against a snapshot taken a moment earlier. What must not
+ * differ is anything derived from the obligation: same obligation hash, same destination, same
+ * amount, same reference.
+ */
 check(
-  "the decision derived inside the FCC extension matches the audited decision",
-  fcc.kind === decision.kind &&
-    fcc.obligationHash === decision.obligationHash &&
-    (fcc.authorizationCommitment ?? "") === (decision.authorizationCommitment ?? ""),
+  "the FCC extension agrees on the obligation it was given",
+  fcc.kind === decision.kind && fcc.obligationHash === decision.obligationHash,
   `${fcc.kind} via op-type SIGNET_REDEMPTION / AUTHORIZE_REDEMPTION`,
+);
+check(
+  "the payment derived inside FCC carries the obligation's own fields",
+  fcc.payment.Destination === obligation.paymentAddress &&
+    BigInt(fcc.payment.Amount) === obligation.valueUBA - obligation.feeUBA &&
+    `0x${fcc.payment.Memos[0].Memo.MemoData.toLowerCase()}` === obligation.paymentReference.toLowerCase(),
+  `${fcc.payment.Amount} drops to ${fcc.payment.Destination}`,
+);
+check(
+  "the extension chose its own allocation rather than being handed one",
+  fcc.authorizationCommitment !== decision.authorizationCommitment,
+  "commitment binds the allocation the extension observed for itself",
 );
 check(
   "the FCC ActionResult is a successful handler run carrying a decision",

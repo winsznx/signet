@@ -1,0 +1,72 @@
+{
+  "seam": "composed-lifecycle",
+  "schemaVersion": 2,
+  "fcc": {
+    "derivedInsideFccExtension": true,
+    "opType": "SIGNET_REDEMPTION",
+    "opCommand": "AUTHORIZE_REDEMPTION",
+    "actionResultStatus": 1,
+    "actionResultLog": "ok",
+    "extensionVersion": "0.1.0",
+    "registeredExtensionId": "66164",
+    "registeredInstructionSender": "0xDd8aA7A4f43f01258A426a30d02032821De9bc6e",
+    "teeMachineRegistered": false,
+    "attestation": "none: the extension ran as a local process, not in a Confidential Space VM"
+  },
+  "network": "xrpl-testnet",
+  "flareChain": "coston2-fork@33947158",
+  "requestId": "45002076",
+  "agentVault": "0x165c62b4531d28e34c68a8b2acbf4d0421e4e028",
+  "authorizationCommitment": "0xc09d5b399d21a8178e4da7ecf5223f546e5bed5a5cf88bb4b0e7d1f5cff8c952",
+  "obligationHash": "0xec917eac8a1969a74eb634a535415d8b7f6aa0ec0423ac2e11eb55fc774126f9",
+  "obligationHashOnChain": "0xec917eac8a1969a74eb634a535415d8b7f6aa0ec0423ac2e11eb55fc774126f9",
+  "extensionCodeHash": "0x3e3b9acd026d4b55354bd9eabfa56893912778ede4b7793c924b9d54c7416760",
+  "txHash": "907C3E3D0E6F96697219880F5868F3392D9CAD7952C6011095A7E6ACD9A3E3D1",
+  "validatedLedger": 19834056,
+  "engineResult": "tecUNFUNDED_PAYMENT",
+  "replayEngineResult": "tefPAST_SEQ",
+  "fdcStatus": "VALID",
+  "decisionContext": {
+    "flareChainId": "114",
+    "assetManager": "0xc1Ca88b937d0b528842F95d5731ffB586f4fbDFA",
+    "instructionSender": "0x9CFbee56C9Ae7DacD1c6ac040eCcE04c803E12D8",
+    "agentVault": "0x165c62b4531d28e34c68a8b2acbf4d0421e4e028",
+    "requestGeneration": 0,
+    "xrplNetworkId": 1,
+    "policyVersion": 1,
+    "extensionId": "1",
+    "extensionCodeHash": "0x3e3b9acd026d4b55354bd9eabfa56893912778ede4b7793c924b9d54c7416760",
+    "firstUnderlyingBlock": "19833935",
+    "lastUnderlyingBlock": "19834534",
+    "lastUnderlyingTimestamp": "1786496653",
+    "maxFeeDrops": "50000",
+    "underlying": {
+      "available": true,
+      "agreed": true,
+      "sourceCount": 2,
+      "observedAtLedger": 19834050,
+      "observedAtTime": "1786495917",
+      "payments": []
+    }
+  },
+  "template": {
+    "TransactionType": "Payment",
+    "Account": "rPvarExLQuuqtkMBfDHp3pNnESZ5HByXta",
+    "Destination": "rpa8bBa8GS1Zit6y9PcpQbahkqFahpWMyb",
+    "Amount": "9950000",
+    "Fee": "10",
+    "Flags": 0,
+    "LastLedgerSequence": 19834092,
+    "Memos": [
+      {
+        "Memo": {
+          "MemoData": "4642505266410002000000000000000000000000000000000000000002AEAD5C"
+        }
+      }
+    ],
+    "Sequence": 19822153
+  },
+  "signedBy": "regular-key",
+  "checksPassed": "75/76",
+  "explorer": "https://testnet.xrpl.org/transactions/907C3E3D0E6F96697219880F5868F3392D9CAD7952C6011095A7E6ACD9A3E3D1"
+}

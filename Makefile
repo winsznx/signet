@@ -175,12 +175,9 @@ test-incident:
 # The FCC extension against its contract, and against the audited decision.
 .PHONY: test-fcc
 test-fcc:
-	@if [ ! -x .runtime/lifecycle/signet-fcc-extension ]; then \
-		mkdir -p .runtime/lifecycle && cd extension && GOWORK=off go build -trimpath -o ../.runtime/lifecycle/signet-fcc-extension ./cmd/signet-fcc-extension; \
-	fi
-	@if [ ! -x .runtime/lifecycle/signet-extension ]; then \
-		cd extension && GOWORK=off go build -trimpath -o ../.runtime/lifecycle/signet-extension ./cmd/signet-extension; \
-	fi
+	@mkdir -p .runtime/lifecycle
+	@cd extension && GOWORK=off go build -trimpath -o ../.runtime/lifecycle/signet-fcc-extension ./cmd/signet-fcc-extension
+	@cd extension && GOWORK=off go build -trimpath -o ../.runtime/lifecycle/signet-extension ./cmd/signet-extension
 	node scripts/fcc/extension.test.mjs
 
 .PHONY: test-checkpoint

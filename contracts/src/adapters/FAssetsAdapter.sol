@@ -157,4 +157,20 @@ library FAssetsAdapter {
         // forge-lint: disable-next-line(unsafe-typecast)
         return uint8(decimals);
     }
+    /// @notice Reads the obligation and resolves the agent from FAssets rather than being told it.
+    ///
+    /// @dev Gate B's entry point. `readCanonicalRedemption` asks the caller which agent it expects
+    ///      and refuses a mismatch, which is right when the caller has an independent reason to know.
+    ///      It is wrong when the caller is untrusted: an attacker who supplies the agent chooses
+    ///      which binding a real request is aimed at. This overload takes the agent from the request
+    ///      itself, so identity comes from the protocol and there is nothing to lie about.
+    function readCanonicalRedemptionById(address _assetManager, uint256 _requestId)
+        internal
+        view
+        returns (ISignetTypes.AdapterFailure failure, ISignetTypes.CanonicalRedemption memory redemption)
+    {
+        RedemptionRequestInfo.DataExt memory info = IRedeemExtended(_assetManager).redemptionRequestInfoExt(_requestId);
+        return readCanonicalRedemption(_assetManager, _requestId, info.agentVault);
+    }
+
 }

@@ -4,6 +4,8 @@ pragma solidity ^0.8.27;
 import {ITeeExtensionRegistry} from "./interfaces/ITeeExtensionRegistry.sol";
 import {ITeeMachineRegistry} from "./interfaces/ITeeMachineRegistry.sol";
 import {SignetRegistry} from "../SignetRegistry.sol";
+import {FAssetsAdapter} from "../adapters/FAssetsAdapter.sol";
+import {ISignetTypes} from "../interfaces/ISignetTypes.sol";
 
 /// @title SignetFccInstructionSender
 /// @notice On-chain entry point for sending Signet redemption instructions to a Flare Confidential
@@ -20,6 +22,40 @@ import {SignetRegistry} from "../SignetRegistry.sol";
 ///      no reset: bound to a stale value the contract must be redeployed, and reads keep working, so
 ///      a mistake here hides until someone sends an instruction.
 contract SignetFccInstructionSender {
+    using FAssetsAdapter for address;
+
+    /// @notice The obligation as this contract resolved it from FAssets, ABI-encoded and sent to FCC.
+    ///
+    /// @dev Every field here comes from `redemptionRequestInfoExt` on the asset manager or from
+    ///      Signet's own registry. None of it is reachable by a caller. This struct is the canonical
+    ///      instruction payload: the extension decodes it and derives the payment from these values
+    ///      and nothing else.
+    struct CanonicalInstruction {
+        uint256 schemaVersion;
+        uint256 flareChainId;
+        address assetManager;
+        address instructionSender;
+        address agentVault;
+        uint256 requestId;
+        uint32 requestGeneration;
+        bytes32 actionId;
+        bytes32 obligationHash;
+        string paymentAddress;
+        bytes32 paymentReference;
+        uint256 valueUBA;
+        uint256 feeUBA;
+        uint64 firstUnderlyingBlock;
+        uint64 lastUnderlyingBlock;
+        uint64 lastUnderlyingTimestamp;
+        bool requiresDestinationTag;
+        uint256 destinationTag;
+        uint8 assetMintingDecimals;
+        string xrplSourceAddress;
+        uint32 xrplNetworkId;
+        uint256 extensionId;
+        bytes32 approvedCodeHash;
+        uint32 policyVersion;
+    }
     /// @notice Signet's single op-type. There is no second one.
     // forge-lint: disable-next-line(unsafe-typecast)
     bytes32 public constant OP_TYPE_SIGNET_REDEMPTION = bytes32("SIGNET_REDEMPTION");
@@ -52,6 +88,11 @@ contract SignetFccInstructionSender {
     error ExtensionIdNotSet();
     error ZeroAddress();
     error NotAContract();
+    error AdapterRefused(ISignetTypes.AdapterFailure failure);
+    error BindingNotActive();
+
+    /// @notice Schema version of the canonical instruction payload.
+    uint256 public constant SCHEMA_VERSION = 2;
 
     /// @notice Ties an FCC instruction to the Signet action it concerns, so the on-chain record
     ///         links the obligation to the instruction without anyone having to trust the message.
@@ -102,53 +143,126 @@ contract SignetFccInstructionSender {
         return _extensionId;
     }
 
-    /// @notice Carries one Signet authorization instruction into FCC, for an obligation that already
-    ///         exists as an action in Signet's registry.
+    /// @notice Authorizes one FAssets redemption. **The caller supplies only the request id.**
     ///
-    /// @param _agentVault the agent the obligation belongs to
     /// @param _requestId the FAssets redemption request id
-    /// @param _generation the request generation
-    /// @param _message the canonical Signet decision input
+    /// @param _generation the request generation, which the registry's action state constrains
     ///
-    /// @dev An earlier version of this function took `_message` alone and relayed it unmodified. A
-    ///      security review was right to call that an unauthenticated signing-decision relay: the
-    ///      message is the whole decision input, so any caller could invent an obligation identity
-    ///      and receive a signature for it. It also carried a comment claiming the opposite, which
-    ///      was worse than the code.
+    /// @dev This function is the whole point of Gate B, and its history is worth stating.
     ///
-    ///      The obligation identity is now a parameter and is checked against `SignetRegistry`,
-    ///      where an action can only exist if the pinned `SignetInstructionSender` opened it after
-    ///      reading the obligation from FAssets. A caller can no longer name an obligation that does
-    ///      not exist.
+    ///      The first version took the entire decision input as a caller-supplied blob and relayed
+    ///      it. The second checked that the named obligation existed but still relayed the blob. In
+    ///      both, an untrusted caller chose the destination, the amount, the reference, the tag and
+    ///      the window, and `decide()` checked those values for internal consistency rather than for
+    ///      truth. That is not a signing boundary; it is a signing service with extra steps.
     ///
-    ///      What this does NOT do is verify the rest of the snapshot inside `_message`. The
-    ///      destination, amount and window still arrive from whoever built the input, and
-    ///      `decide()` checks their internal consistency rather than their truth. That gap is
-    ///      recorded in `docs/threat-model.md` and is not closed here; this function narrows who can
-    ///      invoke it and to which obligations, which is the part that was newly broken.
-    function authorizeRedemption(address _agentVault, uint256 _requestId, uint32 _generation, bytes calldata _message)
-        external
-        payable
-        returns (bytes32)
-    {
-        bytes32 bindingId = SIGNET_REGISTRY.bindingIdFor(ASSET_MANAGER, _agentVault);
-        bytes32 actionId = SIGNET_REGISTRY.actionIdFor(bindingId, _requestId, _generation);
-        if (SIGNET_REGISTRY.actionFor(actionId).state == SignetRegistry.ActionState.NONE) revert NoSuchAction();
+    ///      Now there is no blob. The obligation is resolved here, from
+    ///      `redemptionRequestInfoExt` on the asset manager, and the instruction payload is built by
+    ///      this contract from what FAssets returned and what Signet's own registry holds. A caller
+    ///      cannot express a destination, an amount, a reference, a tag, a window or an agent,
+    ///      because there is no parameter that carries one and the payload is not theirs to write.
+    ///
+    ///      The agent is not a parameter either: it is read from the obligation. Passing one would
+    ///      let a caller aim a real request at a binding of their choosing.
+    function authorizeRedemption(uint256 _requestId, uint32 _generation) external payable returns (bytes32) {
+        // The obligation, from FAssets. `readCanonicalRedemptionById` resolves the agent from the
+        // request rather than accepting one, so identity comes from the protocol.
+        (ISignetTypes.AdapterFailure failure, ISignetTypes.CanonicalRedemption memory redemption) =
+            ASSET_MANAGER.readCanonicalRedemptionById(_requestId);
+        if (failure != ISignetTypes.AdapterFailure.NONE) revert AdapterRefused(failure);
 
-        emit RedemptionInstructionSent(actionId, _agentVault, _requestId, _generation);
+        bytes32 bindingId = SIGNET_REGISTRY.bindingIdFor(ASSET_MANAGER, redemption.agentVault);
+        SignetRegistry.AgentBinding memory agentBinding = SIGNET_REGISTRY.binding(bindingId);
+        if (agentBinding.status != SignetRegistry.BindingStatus.ACTIVE) revert BindingNotActive();
+
+        bytes32 actionId = SIGNET_REGISTRY.actionIdFor(bindingId, _requestId, _generation);
+        SignetRegistry.Action memory action = SIGNET_REGISTRY.actionFor(actionId);
+        if (action.state == SignetRegistry.ActionState.NONE) revert NoSuchAction();
+
+        CanonicalInstruction memory instruction = CanonicalInstruction({
+            schemaVersion: SCHEMA_VERSION,
+            flareChainId: block.chainid,
+            assetManager: ASSET_MANAGER,
+            instructionSender: agentBinding.instructionSender,
+            agentVault: redemption.agentVault,
+            requestId: _requestId,
+            requestGeneration: _generation,
+            actionId: actionId,
+            obligationHash: action.obligationHash,
+            paymentAddress: redemption.paymentAddress,
+            paymentReference: redemption.paymentReference,
+            valueUBA: redemption.valueUBA,
+            feeUBA: redemption.feeUBA,
+            firstUnderlyingBlock: redemption.firstUnderlyingBlock,
+            lastUnderlyingBlock: redemption.lastUnderlyingBlock,
+            lastUnderlyingTimestamp: redemption.lastUnderlyingTimestamp,
+            requiresDestinationTag: redemption.mode == ISignetTypes.RedemptionMode.DESTINATION_TAG,
+            destinationTag: redemption.destinationTag,
+            assetMintingDecimals: ASSET_MANAGER.assetMintingDecimals(),
+            xrplSourceAddress: agentBinding.xrplSourceAddress,
+            xrplNetworkId: agentBinding.xrplNetworkId,
+            extensionId: agentBinding.extensionId,
+            approvedCodeHash: agentBinding.approvedCodeHash,
+            policyVersion: agentBinding.policyVersion
+        });
+
+        emit RedemptionInstructionSent(actionId, redemption.agentVault, _requestId, _generation);
 
         address[] memory teeIds = TEE_MACHINE_REGISTRY.getRandomTeeIds(_requireExtensionId(), 1);
 
         ITeeExtensionRegistry.TeeInstructionParams memory params = ITeeExtensionRegistry.TeeInstructionParams({
             opType: OP_TYPE_SIGNET_REDEMPTION,
             opCommand: OP_COMMAND_AUTHORIZE_REDEMPTION,
-            message: _message,
+            message: abi.encode(instruction),
             cosigners: new address[](0),
             cosignersThreshold: 0,
             claimBackAddress: msg.sender
         });
 
         return TEE_EXTENSION_REGISTRY.sendInstructions{value: msg.value}(teeIds, params);
+    }
+
+    /// @notice The canonical instruction this contract would send for a request, without sending it.
+    /// @dev Exists so the invariant "two callers, one payload" is testable without a TEE machine.
+    function canonicalInstructionFor(uint256 _requestId, uint32 _generation)
+        external
+        view
+        returns (CanonicalInstruction memory instruction)
+    {
+        (ISignetTypes.AdapterFailure failure, ISignetTypes.CanonicalRedemption memory redemption) =
+            ASSET_MANAGER.readCanonicalRedemptionById(_requestId);
+        if (failure != ISignetTypes.AdapterFailure.NONE) revert AdapterRefused(failure);
+
+        bytes32 bindingId = SIGNET_REGISTRY.bindingIdFor(ASSET_MANAGER, redemption.agentVault);
+        SignetRegistry.AgentBinding memory agentBinding = SIGNET_REGISTRY.binding(bindingId);
+        bytes32 actionId = SIGNET_REGISTRY.actionIdFor(bindingId, _requestId, _generation);
+
+        instruction = CanonicalInstruction({
+            schemaVersion: SCHEMA_VERSION,
+            flareChainId: block.chainid,
+            assetManager: ASSET_MANAGER,
+            instructionSender: agentBinding.instructionSender,
+            agentVault: redemption.agentVault,
+            requestId: _requestId,
+            requestGeneration: _generation,
+            actionId: actionId,
+            obligationHash: SIGNET_REGISTRY.actionFor(actionId).obligationHash,
+            paymentAddress: redemption.paymentAddress,
+            paymentReference: redemption.paymentReference,
+            valueUBA: redemption.valueUBA,
+            feeUBA: redemption.feeUBA,
+            firstUnderlyingBlock: redemption.firstUnderlyingBlock,
+            lastUnderlyingBlock: redemption.lastUnderlyingBlock,
+            lastUnderlyingTimestamp: redemption.lastUnderlyingTimestamp,
+            requiresDestinationTag: redemption.mode == ISignetTypes.RedemptionMode.DESTINATION_TAG,
+            destinationTag: redemption.destinationTag,
+            assetMintingDecimals: ASSET_MANAGER.assetMintingDecimals(),
+            xrplSourceAddress: agentBinding.xrplSourceAddress,
+            xrplNetworkId: agentBinding.xrplNetworkId,
+            extensionId: agentBinding.extensionId,
+            approvedCodeHash: agentBinding.approvedCodeHash,
+            policyVersion: agentBinding.policyVersion
+        });
     }
 
     /// @notice Asks the extension whether it is alive. Carries no obligation and returns no payment.
