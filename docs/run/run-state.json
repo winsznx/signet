@@ -1,6 +1,6 @@
 {
   "product": "Signet",
-  "status": "ready_for_demo_review",
+  "status": "ready_for_demo_recording",
   "currentPhase": "14",
   "lastPassingPhase": "14",
   "validation": "passed",
@@ -22,7 +22,11 @@
     "extensionRegistered": true,
     "extensionId": "66248",
     "instructionSender": "0x7e2dd9078c7d741e0cF81904264A79e70212963a",
-    "supersedes": ["66163", "66164", "66244"],
+    "supersedes": [
+      "66163",
+      "66164",
+      "66244"
+    ],
     "machineRegistered": false,
     "machineProduction": false,
     "simulatedExecution": true,
@@ -39,7 +43,20 @@
     "note": "Finding 1 (re-invocable authorizeRedemption) is FIXED and redeployed. Four remain, recorded rather than fixed. See docs/threat-model.md, 'Open after gate B'.",
     "location": "docs/threat-model.md"
   },
-  "updatedAt": "2026-08-14T19:05:00Z",
+  "updatedAt": "2026-08-16T09:00:00Z",
   "schemaVersion": 2,
-  "acceptanceBoundary": "docs/evidence/organizer-accepted-proof-boundary.md"
+  "acceptanceBoundary": "docs/evidence/organizer-accepted-proof-boundary.md",
+  "productSurface": {
+    "routes": [
+      "/",
+      "/operator",
+      "/proof",
+      "/proof/claims",
+      "/proof/transactions",
+      "/proof/incident/44928272",
+      "404"
+    ],
+    "demoRehearsal": "2:44 measured against production, asserted beat by beat in web/test/rehearsal.mjs",
+    "note": "Product surface completeness is now a release requirement; see CLAUDE.md."
+  }
 }

@@ -12,199 +12,118 @@ Supersedes `DEMO_SCRIPT.md`, which was written for a 4-minute cut.
 
 ## Before you hit record
 
+Everything below happens **in the product**. The terminal appears once, at the end, and only if you
+want it: the proof page already carries the judge result.
+
 ```bash
-cd ~/signet
-git status                      # must be clean
-make judge                      # must print 13 PASS, 0 FAIL, 2 UNVERIFIABLE
-export PATH="$HOME/.foundry/bin:$PATH"
-export RPC=https://coston2-api.flare.network/ext/C/rpc
+PLAYWRIGHT=<path>/node_modules node web/test/rehearsal.mjs https://signet-proof.pages.dev
 ```
 
-Terminal at ~16pt, wide enough that `cast` output does not wrap. Clear scrollback. **Check no
-terminal has `.runtime/secrets` or an indexer password in history.**
+That walks this exact path, asserts every beat has what it needs on screen, and prints the projected
+runtime. Last measured: **2:46**, navigation 6.2s, narration 2:40.
 
-Have these open in tabs, already loaded:
-
-1. https://signet-proof.pages.dev/
-2. https://coston2.testnet.flarescan.com/address/0x7e2dd9078c7d741e0cF81904264A79e70212963a
-3. `evidence/receipts/lifecycle-A10C7C3C…399D.json`
+Open https://signet-proof.pages.dev at 1440 wide. Nothing else needs preparing. No wallet, no funds,
+no install.
 
 ---
 
-## 0:00 — 0:20 · The mechanism
+## 0:00 — 0:15 · What this is
 
-**Say, over one slide:**
+**Screen:** the homepage hero.
 
-> FAssets decides what is owed. Signet decides whether that exact XRP payment may exist. FDC proves
-> what happened.
->
-> Today, for an FAssets agent, the thing that decides what to pay and the thing that holds the key
-> are the same process. Signet is the thing in between.
+> FAssets creates redemption obligations on Flare, but the actual XRP payment happens outside Flare.
+> Signet turns that obligation into the authorization policy.
 
-**Slide:** the six-step chain, nothing else.
+The strip under the CTAs already says Coston2 live, extension 66248 registered, execution simulated.
+Do not read it out. Let it sit there.
 
-```text
-requestId → canonical FAssets obligation → Signet/FCC authorization
-         → XRPL observation → exact XRP payment → FDC proof
-```
+## 0:15 — 0:35 · The caller supplies only a request id
 
----
+**Screen:** scroll to **Try to break it**.
 
-## 0:20 — 0:50 · Moment A: an attacker asks for arbitrary XRP, and gets no signature
+> This is a real redemption. Everything a caller supplies is on the left: a request id and a
+> generation. That is the entire input.
 
-The strongest thirty seconds. It is a *type error*, not a policy refusal.
+Point at the two bordered fields.
 
-```bash
-cast sig "authorizeRedemption(uint256,uint32)"
-# 0x064267dd
-```
+## 0:35 — 0:50 · Everything else comes from FAssets
 
-**Say:**
+> Below it, the destination, the amount, the reference, the window and the agent. Every one of them
+> carries a FAssets badge, and every one is a readout rather than a field. You cannot type the
+> recipient, because there is no parameter for it.
 
-> This is the only payment-bearing entry point on the deployed contract. A request id and a
-> generation. There is no destination parameter, no amount, no reference, no window, no tag.
->
-> An attacker cannot ask for an arbitrary payment, because there is no field in which to ask.
+## 0:50 — 1:10 · Try to change it
 
-Then show the refusal is structural, from the test output already on screen:
+**Click:** *Change the destination*. Then *Change the amount*.
 
-```text
-[PASS] test_theSignatureCarriesNoPaymentField()
-[PASS] test_theSameRequestIdYieldsTheSamePayloadForEveryCaller (runs: 256)
-```
+> Not refused by a policy check that could be misconfigured. Not representable: the entry point is
+> authorizeRedemption(requestId, generation), and there is no destination argument.
 
-> Two hundred and fifty-six callers, one request id, one payload. Nothing a caller controls moves it.
+## 1:10 — 1:25 · Observe before signing
 
----
+**Click:** *Pay an obligation someone already paid*.
 
-## 0:50 — 1:20 · Moment B: only a requestId in, the exact FAssets obligation out
+> Before authorizing, Signet checks the XRP ledger itself, across independent endpoints that must
+> agree. If the obligation was already paid, it refuses with S021.
 
-```bash
-cast call 0x1a9C4A0f9D76c0b1D91d22E24E573a9b377618aE \
-  "getTeeExtensionInstructionsSender(uint256)(address)" 66248 --rpc-url $RPC
-# 0x7e2dd9078c7d741e0cF81904264A79e70212963a
-```
+## 1:25 — 1:45 · This was not theoretical
 
-**Say:**
+**Click:** *See this fail for real*, or the Incident nav item.
 
-> That is the live Flare TEE manager on Coston2, and extension 66248 routes to Signet's own sender.
-> The contract reads the destination, the amount, the reference, the tag and the payment window
-> from FAssets itself.
+> Our first model failed live. The agent had already paid on XRPL. Flare still said ACTIVE, because
+> ACTIVE means not yet confirmed, not unpaid. Signet paid the same obligation again, thirty-six
+> ledgers later.
 
-Then, the fail-closed proof against a settled obligation:
-
-```bash
-cast call 0x7e2dd9078c7d741e0cF81904264A79e70212963a \
-  "canonicalInstructionFor(uint256,uint32)" 44928272 1 --rpc-url $RPC
-# reverts AdapterRefused(1) = NOT_ACTIVE
-```
-
-> FAssets no longer reports that request active, so the contract refuses to build a payment for it.
-> Fail closed, on chain, right now.
-
----
-
-## 1:20 — 1:50 · Moment C: the payment reached XRPL, and links independently
-
-**On screen:** the receipt, four fields highlighted. Already-finalized evidence, no waiting.
-
-| field | value |
-|---|---|
-| `derivedInsideFccExtension` | `true` |
-| `txHash` | `A10C7C3C…399D`, ledger 19895487 |
-| `replayEngineResult` | `tefPAST_SEQ` |
-| `fdcStatus` | `VALID` |
-
-**Say:**
-
-> The payment is on XRPL Testnet, validated. Replaying the identical signed blob is refused by the
-> ledger itself. And the FDC verifier accepted an XRPPayment attestation for it on Coston2.
->
-> The FDC proof is the XRP-specific type, with the intended destination and the actual destination
-> matching. A generic payment proof would not carry the memo or the destination tag.
-
-**Do not** run the lifecycle live. It submits a real payment and takes minutes.
-
----
-
-## 1:50 — 2:25 · Moment D: the live incident, and S021
-
-Slow down. This is the part that separates the submission.
-
-**On screen:** three lines.
-
-```text
-ledger 19825006   the assigned agent paid the obligation
-Coston2           request 44928272 reported ACTIVE
-ledger 19825042   Signet paid it again
-```
-
-**Say:**
-
-> Running against the live chain, Signet double-paid a real Coston2 redemption.
->
-> ACTIVE does not mean unpaid. It means not yet confirmed on Flare, and confirmation is a separate
-> transaction the agent sends after its payment validates. Signet had three duplicate-payment
-> guards. All three watched Flare. None could see a payment made by someone else on XRPL.
->
-> The fix is a protocol change, not a patch. The decision now requires the signing boundary's own
-> XRP ledger observation, across independent endpoints that must agree, bound into the
-> authorization commitment.
-
-**Then run the regression, which is instant:**
-
-```bash
-node scripts/lifecycle/incident-44928272.test.mjs
-```
-
-> The same obligation is now refused with `S021_PAYMENT_ALREADY_OBSERVED`, and this test asserts no
-> valid input can reproduce the original authorization.
-
-**Say plainly, do not soften:**
+Point at the two ledger numbers.
 
 > No third party lost funds. That is luck about the test setup, not a property of the system.
 
----
+## 1:45 — 2:05 · The evidence
 
-## 2:25 — 2:45 · Moment E: check it yourself, and the boundary
+**Screen:** Proof → Transactions. Open the top receipt.
 
-```bash
-make judge
-```
+> The payment, validated on XRPL Testnet. Replaying the identical blob is refused by the ledger
+> itself. And an XRPPayment attestation for it was accepted by FDC on Coston2.
 
-> Thirteen checks pass, no wallet, no funds, no Docker, no GCP, no TEE, no secrets. Two come back
-> unverifiable, and that is the point: one XRPL node had pruned the ledger, and the FDC acceptance
-> flag is self-reported by the receipt rather than re-checked here. Unverifiable is never folded
-> into pass.
+## 2:05 — 2:25 · What we did not prove
 
-**Close on the boundary. Do not skip this and do not rush it:**
+**Screen:** /proof.
 
-> One thing this does not claim. The extension ran as a local process. No TEE machine is registered,
-> nothing is hardware-attested, and Signet has never operated a whitelisted FAssets agent or settled
-> a redemption. Those are tracked as separate claims and every one of them says unavailable.
+> Thirteen pass, zero fail, two unverifiable. We report missing evidence as unverifiable rather than
+> pretending it passed. One XRPL node has pruned the ledger; the other check needs the Merkle proof
+> re-encoded, which the receipt verifier does and this command does not.
+
+## 2:25 — 2:46 · The boundary, and the line
+
+**Screen:** homepage, scroll to **What this deployment is not**.
+
+> The extension ran as a local process. No TEE machine is registered, nothing is hardware-attested,
+> and Signet has never operated a whitelisted FAssets agent. Five separate statuses, none of them
+> blurred.
 >
-> FAssets decides what is owed. Signet decides whether that payment may exist. FDC proves what
-> happened.
+> FAssets decides what is owed. Signet decides whether that exact XRP payment may exist. FDC proves
+> what happened.
 
 ---
 
 ## Rules
 
-- Run the `cast` calls live. A screenshot of a chain read is worth less than the read.
-- The word "attested" does not appear in the audio, except in the closing sentence saying there is
-  none.
-- If a command fails on camera, keep the take and say what failed.
-- No dashboard. No `npm install`. No FDC round waiting. No architecture diagram beyond the six-step
-  chain.
-- If you are over 3:00, cut from moment C, not from moment D or the closing boundary.
+- Do not open the repository. The product carries the whole story now.
+- Do not run the lifecycle live: it submits a real payment and takes minutes.
+- The word "attested" appears once, in the closing sentence saying there is none.
+- If a click fails on camera, keep the take and say what failed.
+- If you are over 2:55, cut the transactions beat, not the incident or the boundary.
 
 ## Shot list
 
-| # | shot | source | duration |
-|---|---|---|---|
-| 0 | six-step chain | slide | 0:20 |
-| A | `cast sig` + fuzz result | terminal | 0:30 |
-| B | two live `cast call`s | terminal, live chain | 0:30 |
-| C | receipt, four fields | editor | 0:30 |
-| D | incident lines + regression run | slide, then terminal | 0:35 |
-| E | `make judge` + boundary | terminal | 0:20 |
+| # | screen | duration |
+|---|---|---|
+| 1 | hero | 0:15 |
+| 2 | demo, caller input | 0:20 |
+| 3 | demo, derived fields | 0:15 |
+| 4 | attack: destination, amount | 0:20 |
+| 5 | attack: already paid | 0:15 |
+| 6 | incident page | 0:20 |
+| 7 | transactions, one receipt open | 0:20 |
+| 8 | proof, judge result | 0:20 |
+| 9 | boundary + closing line | 0:21 |

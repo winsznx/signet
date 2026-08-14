@@ -25,7 +25,7 @@ help:
 	@echo "  scan              secret and dependency scanning"
 	@echo "  doctor            read-only diagnosis of the deployed FCC surface"
 	@echo "  judge             independent verification: no wallet, funds, Docker, GCP or TEE"
-	@echo "  test-browser      product tests across six viewports (needs PLAYWRIGHT=...)"
+	@echo "  test-browser      product tests, six viewports, plus a timed demo rehearsal"
 	@echo "  verify            every gate that is implemented today"
 	@echo "  verify-phase PHASE=NN"
 
@@ -181,6 +181,7 @@ judge:
 test-browser: web
 	@node web/test/browser.mjs
 	@node web/test/wallet.mjs
+	@node web/test/rehearsal.mjs
 
 # ---------------------------------------------------------------------------- gates
 
