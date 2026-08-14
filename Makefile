@@ -180,6 +180,7 @@ judge:
 .PHONY: test-browser
 test-browser: web
 	@node web/test/browser.mjs
+	@node web/test/wallet.mjs
 
 # ---------------------------------------------------------------------------- gates
 

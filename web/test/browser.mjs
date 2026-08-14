@@ -146,11 +146,17 @@ check(
   await page.locator('button:has-text("Hardware FCC authorization")').isDisabled(),
 );
 
-// A wallet that declines must not break the page.
+// A wallet that declines must not break the page. 4001 is the standard "user rejected" code, and
+// it reads differently from a wallet that simply never answers: conflating them would tell someone
+// they declined when the extension actually failed.
 await page.addInitScript(() => {
   window.ethereum = {
     request: async ({ method }) => {
-      if (method === "eth_requestAccounts") throw new Error("User rejected");
+      if (method === "eth_requestAccounts") {
+        const e = new Error("User rejected the request");
+        e.code = 4001;
+        throw e;
+      }
       if (method === "eth_chainId") return "0x72";
       return null;
     },
@@ -158,11 +164,32 @@ await page.addInitScript(() => {
   };
 });
 await page.reload({ waitUntil: "networkidle" });
+await page.waitForTimeout(300);
 const walletButton = page.locator("#wallet-button");
 check("wallet button appears only when a provider exists", await walletButton.isVisible());
 await walletButton.click();
+await page.waitForTimeout(400);
+check("a declined connection says declined", (await walletButton.innerText()).toLowerCase().includes("declined"));
+
+// A provider that fails for any other reason must say so rather than sit silent.
+await page.addInitScript(() => {
+  window.ethereum = {
+    request: async ({ method }) => {
+      if (method === "eth_requestAccounts") throw new Error("extension exploded");
+      if (method === "eth_chainId") return "0x72";
+      return null;
+    },
+    on: () => {},
+  };
+});
+await page.reload({ waitUntil: "networkidle" });
 await page.waitForTimeout(300);
-check("declined connection is reported, not thrown", (await walletButton.innerText()).toLowerCase().includes("declined"));
+await page.locator("#wallet-button").click();
+await page.waitForTimeout(400);
+check(
+  "a failing wallet is reported rather than leaving a dead button",
+  (await page.locator("#wallet-button").innerText()).toLowerCase().includes("did not respond"),
+);
 
 // A wallet on the wrong chain offers the switch.
 await page.addInitScript(() => {
@@ -176,8 +203,9 @@ await page.addInitScript(() => {
   };
 });
 await page.reload({ waitUntil: "networkidle" });
-await page.locator("#wallet-button").click();
 await page.waitForTimeout(300);
+await page.locator("#wallet-button").click();
+await page.waitForTimeout(500);
 check("wrong network offers a switch", (await page.locator("#wallet-button").innerText()).includes("Coston2"));
 
 // The inspector must refuse an invalid id rather than call anything.

@@ -620,7 +620,13 @@ for (const [file, model] of routes) {
 const brandSrc = join(REPO_ROOT, "web", "public", "brand");
 const brandOut = join(OUT, "brand");
 mkdirSync(brandOut, { recursive: true });
-for (const f of readdirSync(brandSrc)) copyFileSync(join(brandSrc, f), join(brandOut, f));
+// Copy assets, not "whatever is in the directory". A stray socket or editor file in here should
+// not be able to break the build, and it should certainly not be published.
+const ASSET_EXTENSIONS = /\.(png|svg|webp|avif|jpg|jpeg|ico)$/i;
+for (const f of readdirSync(brandSrc)) {
+  if (!ASSET_EXTENSIONS.test(f)) continue;
+  copyFileSync(join(brandSrc, f), join(brandOut, f));
+}
 
 // first-party script
 const appSrc = join(REPO_ROOT, "web", "public", "app.js");

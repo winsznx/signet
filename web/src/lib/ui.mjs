@@ -67,7 +67,11 @@ a:hover{text-decoration-color:var(--ember)}
 .nav-links a{font-size:14px;color:var(--iron);text-decoration:none;padding:8px 12px;border-radius:10000px}
 .nav-links a:hover{background:var(--snow);color:var(--obsidian)}
 .nav-links a[aria-current="page"]{background:var(--snow);color:var(--obsidian);border:1px solid var(--cloud)}
-.nav-right{display:flex;align-items:center;gap:10px;flex:0 0 auto}
+.nav-right{display:flex;align-items:center;gap:10px;flex:0 0 auto;position:relative}
+/* Shown only when more than one wallet announces itself, which is the case this exists for. */
+.wallet-picker{position:absolute;top:calc(100% + 8px);right:0;z-index:30;background:var(--snow);border:1px solid var(--cloud);border-radius:24px;padding:14px;min-width:220px;box-shadow:var(--shadow-md);display:flex;flex-direction:column;gap:6px}
+.wallet-picker-title{font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--fog);margin:0 0 4px 4px}
+.wallet-option{justify-content:flex-start;width:100%}
 .nav-toggle{display:none}
 @media (max-width:900px){
   .nav-inner{flex-wrap:wrap;gap:12px}
@@ -89,7 +93,7 @@ section{padding:80px 0 0}
 section:last-of-type{padding-bottom:80px}
 
 /* ---------------------------------------------------------------- hero */
-.hero{display:grid;grid-template-columns:1.05fr .95fr;gap:48px;align-items:center;padding:72px 0 8px}
+.hero{display:grid;grid-template-columns:1.05fr minmax(0,.95fr);gap:48px;align-items:center;padding:72px 0 8px}
 .hero-copy{min-width:0}
 .card,.rows,.step{min-width:0}
 .note,.lede{overflow-wrap:break-word}
@@ -102,15 +106,18 @@ section:last-of-type{padding-bottom:80px}
 .btn-ghost:hover{color:var(--obsidian)}
 .btn-quiet{background:none;color:var(--steel);padding:12px 8px}
 .btn[disabled],.btn[aria-disabled="true"]{opacity:.55;cursor:not-allowed}
-/* The stage is deliberate architecture, not a frame around an image: the illustration is lit for
-   black, so it gets a black field rather than being flattened onto Paper. */
-.stage{position:relative;background:var(--obsidian);border-radius:36px;padding:24px;overflow:hidden;min-height:340px;display:flex;align-items:center;justify-content:center}
-.stage img{width:100%;height:auto;display:block;max-width:660px}
-.stage::after{content:"";position:absolute;inset:0;border-radius:36px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.06);pointer-events:none}
+/* No panel, no frame. The illustration has a genuinely transparent background and its subject is
+   light-toned with ember accents, so it sits on Paper directly and reads cleaner there than it did
+   on the black field an earlier version put behind it. */
+.stage{display:flex;align-items:center;justify-content:center;min-width:0;overflow:hidden}
+/* Allowed to run a little past the column on wide screens. The subject is centre-weighted with a
+   lot of transparent margin, so at the column width it reads smaller than it is. */
+.stage img{width:100%;height:auto;display:block;max-width:none;transform:scale(1.1)}
+@media (max-width:900px){.stage img{transform:none}}
 @media (max-width:900px){
   .hero{grid-template-columns:1fr;gap:32px;padding:40px 0 0}
   h1{font-size:36px}
-  .stage{order:2;min-height:0;padding:16px;border-radius:24px}
+  .stage{order:2}
 }
 
 /* ---------------------------------------------------------------- status strip */

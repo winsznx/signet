@@ -70,11 +70,47 @@ async function rpcCall(method, params, endpoints = COSTON2_RPC) {
 
 // ---------------------------------------------------------------- wallet
 
-const wallet = { address: null, chainId: null };
+const wallet = { address: null, chainId: null, provider: null };
+
+/**
+ * Every injected wallet, not just whichever one won the race for window.ethereum.
+ *
+ * With several extensions installed they all try to occupy that single property, and the loser can
+ * end up wrapping or shadowing the winner. The visible symptom is a Connect button that appears to
+ * do nothing: a request goes to a provider whose UI never surfaces. EIP-6963 exists precisely for
+ * this, so providers are collected by announcement and window.ethereum is only the fallback for a
+ * wallet too old to announce itself.
+ */
+const providers = new Map();
+
+function discoverProviders() {
+  window.addEventListener("eip6963:announceProvider", (event) => {
+    const { info, provider } = event.detail ?? {};
+    if (!info?.uuid || !provider) return;
+    providers.set(info.uuid, { name: info.name ?? "Wallet", icon: info.icon ?? null, provider });
+  });
+  window.dispatchEvent(new Event("eip6963:requestProvider"));
+
+  if (window.ethereum && typeof window.ethereum.request === "function") {
+    const name = window.ethereum.isMetaMask ? "MetaMask" : "Injected wallet";
+    if (![...providers.values()].some((p) => p.provider === window.ethereum)) {
+      providers.set("window.ethereum", { name, icon: null, provider: window.ethereum, legacy: true });
+    }
+  }
+}
+
+const COSTON2_PARAMS = {
+  chainId: COSTON2_CHAIN_HEX,
+  chainName: "Flare Testnet Coston2",
+  nativeCurrency: { name: "Coston2 Flare", symbol: "C2FLR", decimals: 18 },
+  rpcUrls: [COSTON2_RPC[0]],
+  blockExplorerUrls: ["https://coston2.testnet.flarescan.com"],
+};
 
 function walletLabel(button, state, text) {
   button.dataset.state = state;
   button.textContent = text;
+  button.setAttribute("aria-live", "polite");
 }
 
 async function readChain(provider) {
@@ -88,51 +124,123 @@ function renderWallet(button) {
   walletLabel(button, "connected", shorten(wallet.address, 6, 4));
 }
 
+/** A transient message, so a refusal is never silent. */
+function flash(button, text, state = "notice") {
+  walletLabel(button, state, text);
+  setTimeout(() => renderWallet(button), 2600);
+}
+
+/** Ask which wallet, but only when there is genuinely a choice to make. */
+async function pickProvider(button) {
+  const list = [...providers.values()];
+  if (list.length === 0) return null;
+  if (list.length === 1) return list[0].provider;
+
+  const existing = $("#wallet-picker");
+  if (existing) existing.remove();
+
+  const picker = document.createElement("div");
+  picker.id = "wallet-picker";
+  picker.className = "wallet-picker";
+  picker.setAttribute("role", "dialog");
+  picker.setAttribute("aria-label", "Choose a wallet");
+  picker.innerHTML =
+    `<p class="wallet-picker-title">Choose a wallet</p>` +
+    list
+      .map((p, i) => `<button type="button" class="btn btn-ghost wallet-option" data-index="${i}">${esc(p.name)}</button>`)
+      .join("");
+  button.parentElement.appendChild(picker);
+
+  return new Promise((resolve) => {
+    picker.addEventListener("click", (event) => {
+      const option = event.target.closest(".wallet-option");
+      if (!option) return;
+      picker.remove();
+      resolve(list[Number(option.dataset.index)].provider);
+    });
+    document.addEventListener(
+      "keydown",
+      (event) => {
+        if (event.key === "Escape") {
+          picker.remove();
+          resolve(null);
+        }
+      },
+      { once: true },
+    );
+    picker.querySelector(".wallet-option")?.focus();
+  });
+}
+
+async function switchToCoston2(provider, button) {
+  try {
+    await provider.request({ method: "wallet_switchEthereumChain", params: [{ chainId: COSTON2_CHAIN_HEX }] });
+  } catch (error) {
+    // 4902 means the wallet has never heard of Coston2. Offering to add it is the difference
+    // between a working switch and a dead button for anyone who has not added the network by hand.
+    if (error && (error.code === 4902 || error.code === -32603)) {
+      try {
+        await provider.request({ method: "wallet_addEthereumChain", params: [COSTON2_PARAMS] });
+      } catch {
+        flash(button, "Network not added");
+        return false;
+      }
+    } else {
+      flash(button, "Switch declined");
+      return false;
+    }
+  }
+  wallet.chainId = await readChain(provider);
+  return true;
+}
+
 function initWallet() {
   const button = $("[data-wallet-connect]");
   if (!button) return;
-  const provider = window.ethereum;
+  discoverProviders();
 
-  // The button only appears once we know a provider exists. Offering "Connect wallet" to someone
-  // with no wallet is a dead end, and nothing on this site needs one.
-  if (!provider || typeof provider.request !== "function") return;
-  button.hidden = false;
-  renderWallet(button);
+  // Announcements can arrive a tick late, so re-check before deciding there is no wallet at all.
+  setTimeout(() => {
+    if (providers.size === 0) return;
+    button.hidden = false;
+    renderWallet(button);
+  }, 120);
 
   button.addEventListener("click", async () => {
     // Never on load. Only ever from this click.
     if (wallet.address && wallet.chainId !== COSTON2_CHAIN_ID) {
-      try {
-        await provider.request({ method: "wallet_switchEthereumChain", params: [{ chainId: COSTON2_CHAIN_HEX }] });
-        wallet.chainId = await readChain(provider);
-      } catch {
-        walletLabel(button, "wrong-network", "Switch declined");
-        setTimeout(() => renderWallet(button), 2200);
-      }
+      await switchToCoston2(wallet.provider, button);
       renderWallet(button);
       return;
     }
+
+    const provider = wallet.provider ?? (await pickProvider(button));
+    if (!provider) return renderWallet(button);
+
     walletLabel(button, "connecting", "Connecting…");
     try {
       const accounts = await provider.request({ method: "eth_requestAccounts" });
-      wallet.address = Array.isArray(accounts) ? accounts[0] : null;
+      wallet.address = Array.isArray(accounts) && accounts.length ? accounts[0] : null;
+      if (!wallet.address) return flash(button, "No account shared");
+      wallet.provider = provider;
       wallet.chainId = await readChain(provider);
-    } catch {
-      // Rejection is a normal outcome, not an error state to shout about.
+    } catch (error) {
       wallet.address = null;
-      walletLabel(button, "rejected", "Connection declined");
-      setTimeout(() => renderWallet(button), 2200);
+      // 4001 is the user declining, which is a normal outcome. Anything else is worth naming, so
+      // that "nothing happened" is never the experience.
+      flash(button, error?.code === 4001 ? "Connection declined" : "Wallet did not respond");
       return;
     }
-    renderWallet(button);
-  });
 
-  provider.on?.("accountsChanged", (accounts) => {
-    wallet.address = Array.isArray(accounts) && accounts.length ? accounts[0] : null;
-    renderWallet(button);
-  });
-  provider.on?.("chainChanged", (hex) => {
-    wallet.chainId = Number.parseInt(hex, 16);
+    provider.on?.("accountsChanged", (accounts) => {
+      wallet.address = Array.isArray(accounts) && accounts.length ? accounts[0] : null;
+      renderWallet(button);
+    });
+    provider.on?.("chainChanged", (hex) => {
+      wallet.chainId = Number.parseInt(hex, 16);
+      renderWallet(button);
+    });
+
     renderWallet(button);
   });
 }
