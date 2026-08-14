@@ -44,7 +44,7 @@ Resolve current Flare addresses from official periphery or ContractRegistry. Ver
 
 ## Working method
 
-The repository may be executed in autonomous-run mode when the user supplies `AUTONOMOUS_EXECUTION_PROMPT.md`. In that mode, the prompt below supersedes the older fresh-session-per-phase workflow.
+The repository was built in autonomous-run mode: one dedicated branch, one coherent commit per phase, continuing without confirmation between phases. The record of what that produced is `docs/run/AUTONOMOUS_RUN.md` and the per-phase evidence in `docs/evidence/`.
 
 For each phase:
 
@@ -66,7 +66,7 @@ Autonomous-run sequencing:
 - Stop for an explicit hard blocker, a falsified central claim without a safe admitted fallback, or after Phase 13 has passed and `docs/run/FINAL_REVIEW_HANDOFF.md` exists.
 - Do not execute Phase 14 submission or Phase 15 production-candidate expansion in the autonomous build run.
 
-The exact autonomous rules, deployment boundaries, Cloudflare policy, Supabase handoff, design rules, funding behavior and run-state schema live in `AUTONOMOUS_EXECUTION_PROMPT.md`.
+Deployment boundaries, hosting policy and the run-state schema are recorded in `docs/run/run-state.json` and `docs/run/ACCESS_STATUS.md`. Architecture is `ARCHITECTURE.md`.
 
 ## Repository commands
 
@@ -173,7 +173,7 @@ Do not count:
 
 ## Autonomous infrastructure constraints
 
-When `AUTONOMOUS_EXECUTION_PROMPT.md` is active:
+In autonomous-run mode:
 
 - All project artifacts remain inside the repository.
 - User-owned application hosting is Cloudflare only.

@@ -2,15 +2,25 @@
 
 An attested external execution layer for FAssets agents.
 
-```text
-FAssets obligation
-  -> FCC-constrained XRP signature
-    -> FDC-proven completion
-```
-
 A FAssets agent has to make an exact XRP payment against a redemption obligation. Today the thing
 that decides what to pay and the thing that holds the key are the same process, so an operator
 mistake or a compromised coordinator is a wrong payment. Signet is the thing in between.
+
+```mermaid
+graph LR
+  Caller["Caller<br/><br/>Supplies a requestId<br/>and nothing else"] -->|"requestId, generation"| Signet
+
+  FAssets["FAssets on Flare<br/><br/>Destination, amount,<br/>reference, tag, window.<br/>The obligation is the policy."] -->|"read on chain"| Signet
+
+  Signet["Signet<br/><br/>Derives the payment.<br/>Observes XRPL first.<br/>Authorize, or a typed refusal."]
+
+  Signet -->|"observe before signing"| XRPL
+  Signet -->|"one exact payment"| XRPL
+
+  XRPL["XRP Ledger<br/><br/>Validates the payment.<br/>Refuses a replay itself."] -->|"attested"| FDC
+
+  FDC["FDC<br/><br/>Proves the outcome<br/>back onto Flare"] -->|"anyone can re-check"| Verifier["Independent verifier"]
+```
 
 ---
 
@@ -36,6 +46,29 @@ mistake or a compromised coordinator is a wrong payment. Signet is the thing in 
 
 Hardware TEE attestation. Whitelisted-agent operation. Own-agent FAssets settlement. Universal
 exactly-once payment.
+
+---
+
+## What a caller can and cannot express
+
+```mermaid
+graph LR
+  In["authorizeRedemption(uint256, uint32)<br/><br/>The entire payment-bearing<br/>API surface"] --> G1{"FAssets reports<br/>this ACTIVE?"}
+  G1 -->|no| R1["Refused<br/>AdapterRefused(NOT_ACTIVE)"]
+  G1 -->|yes| G2{"Action in state<br/>REQUESTED?"}
+  G2 -->|no| R2["Refused<br/>ActionNotRequested(found)"]
+  G2 -->|yes| G3{"Already dispatched<br/>for this request?"}
+  G3 -->|yes| R3["Refused<br/>InstructionAlreadyDispatched<br/>At most one, ever"]
+  G3 -->|no| G4{"XRPL says already<br/>paid, or endpoints<br/>disagree, or stale?"}
+  G4 -->|"already paid"| R4["Refused<br/>S021_PAYMENT_ALREADY_OBSERVED"]
+  G4 -->|"no observation"| R5["Refused<br/>S022_UNDERLYING_STATE_UNAVAILABLE"]
+  G4 -->|"disagreement"| R6["Refused<br/>S023_UNDERLYING_STATE_DISAGREEMENT"]
+  G4 -->|"stale"| R7["Refused<br/>S024_UNDERLYING_OBSERVATION_STALE"]
+  G4 -->|"clean"| OK["Authorize<br/><br/>One exact payment, every field<br/>read from FAssets by the contract"]
+```
+
+There is no destination parameter. No amount, no reference, no window. Nothing to validate, because
+nothing can be supplied. Full detail in [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ---
 
@@ -87,7 +120,8 @@ node scripts/lifecycle/run.mjs
 | the caller supplies a request id and nothing else | [`docs/evidence/gate-b.md`](docs/evidence/gate-b.md) |
 | per-phase evidence | [`docs/evidence/phase-NN.md`](docs/evidence/) |
 | recovery procedures | [`docs/runbooks/recovery.md`](docs/runbooks/recovery.md) |
-| product requirements and architecture | [`PRD.md`](PRD.md) |
+| **architecture, with the full flows drawn** | [`ARCHITECTURE.md`](ARCHITECTURE.md) |
+| product requirements | [`PRD.md`](PRD.md) |
 
 Proof page: https://signet-proof.pages.dev/
 
@@ -125,3 +159,12 @@ No third party lost funds, which is luck about the test setup rather than a prop
 
 No keys or credentials are committed. Deployed addresses in `deployments/coston2.json` are testnet
 only.
+
+---
+
+## Licence
+
+[MIT](LICENSE).
+
+The eleven pinned upstream sources under [`upstream/`](upstream/) keep their own licences and are
+unmodified; each is content-hashed in [`docs/source-lock.json`](docs/source-lock.json).

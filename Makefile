@@ -182,6 +182,7 @@ test-browser: web
 	@node web/test/browser.mjs
 	@node web/test/wallet.mjs
 	@node web/test/rehearsal.mjs
+	@node scripts/check-mermaid.mjs
 
 # ---------------------------------------------------------------------------- gates
 
