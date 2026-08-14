@@ -7,7 +7,7 @@ Visibility: **public**, verified by unauthenticated fetch of the raw README
 Flare requires that contracts and the core backend/off-chain logic essential to proving the Flare
 integration be open source. This maps every submission claim to the public files that prove it.
 
-**No submission-critical claim depends on code absent from this repository.** 209 tracked files, no
+**No submission-critical claim depends on code absent from this repository.** 217 tracked files, no
 private submodules, no vendored binaries, and no build step that reaches for anything unpublished.
 
 ---
@@ -59,7 +59,7 @@ exists.
 | the shared FCC indexer credential | written only to a gitignored local proxy config, verified with `git check-ignore` before writing. **0 tracked files contain it** |
 | the Cosmica typeface | not licensed for redistribution; the page falls through to DM Sans |
 
-Verified by `make scan`: 205 tracked files scanned, no key material. A full-history scan for PEM
+Verified by `make scan`: 217 tracked files scanned, no key material. A full-history scan for PEM
 blocks and hex private keys returns only the secret scanner's own synthetic fixtures.
 
 ## Reproducing the whole thing

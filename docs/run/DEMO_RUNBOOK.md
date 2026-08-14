@@ -15,7 +15,7 @@ Supersedes `DEMO_SCRIPT.md`, which was written for a 4-minute cut.
 ```bash
 cd ~/signet
 git status                      # must be clean
-make judge                      # must print 13 PASS, 0 FAIL, 0 UNVERIFIABLE
+make judge                      # must print 13 PASS, 0 FAIL, 2 UNVERIFIABLE
 export PATH="$HOME/.foundry/bin:$PATH"
 export RPC=https://coston2-api.flare.network/ext/C/rpc
 ```
@@ -172,8 +172,9 @@ node scripts/lifecycle/incident-44928272.test.mjs
 make judge
 ```
 
-> Thirteen checks, no wallet, no funds, no Docker, no GCP, no TEE, no secrets. It reads the live
-> chains and the claim ledger and prints pass, fail or unverifiable. Unverifiable is never folded
+> Thirteen checks pass, no wallet, no funds, no Docker, no GCP, no TEE, no secrets. Two come back
+> unverifiable, and that is the point: one XRPL node had pruned the ledger, and the FDC acceptance
+> flag is self-reported by the receipt rather than re-checked here. Unverifiable is never folded
 > into pass.
 
 **Close on the boundary. Do not skip this and do not rush it:**

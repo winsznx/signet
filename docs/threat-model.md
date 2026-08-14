@@ -130,11 +130,20 @@ instructionDispatched[actionId] = true;
 
 The flag is set **before** the external call, so a reentrant caller cannot get underneath it.
 
+**Scope, stated precisely.** The mapping lives in the sender contract's own storage, so the invariant
+is "at most one dispatch per `(requestId, generation)` **per sender-contract instance**", not a
+registry-wide global. A second, independently deployed sender pointed at the same `SignetRegistry`
+would keep its own empty mapping and could dispatch again for the same action. A review confirmed
+this by deploying one. It does not reach the real signing authority, for a reason visible in the
+code: the dispatch routes through that rogue deployment's *own* extension id, never `66248`, so it
+can only reach a TEE pool the rogue deployer controls. Recorded here so the guarantee is not later
+assumed to be registry-enforced.
+
 **Why the marker is on chain rather than in the extension or a checkpoint.** The extension holds no
 memory of a prior authorization and a restart gives it a new identity, so a marker kept off chain
 would be lost exactly when it is needed.
 
-**Proof.** `contracts/test/unit/AuthorizeRedemptionState.t.sol`, 12 tests, all passing:
+**Proof.** `contracts/test/unit/AuthorizeRedemptionState.t.sol`, 14 tests, all passing:
 
 | test | asserts |
 |---|---|

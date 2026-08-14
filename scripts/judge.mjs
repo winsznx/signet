@@ -146,7 +146,10 @@ async function step3() {
 
   if (OFFLINE) return add(step, "did the XRP ledger validate that exact transaction?", "UNVERIFIABLE", "--offline");
 
-  let tx = null;
+  // Every endpoint is asked, not just until one answers. An earlier version broke on the first hit,
+  // which applied the two-source rule to absence but not to presence: one node's word was enough to
+  // pass. Signet's own observer does not accept that and neither should the judge's checker.
+  const found = [];
   const attempts = [];
   for (const endpoint of XRPL_ENDPOINTS) {
     try {
@@ -158,14 +161,33 @@ async function step3() {
       });
       const body = await res.json();
       if (body?.result && !body.result.error) {
-        tx = body.result;
+        found.push({ endpoint, tx: body.result });
         attempts.push(`${endpoint}: found`);
-        break;
+      } else {
+        attempts.push(`${endpoint}: ${body?.result?.error ?? "no answer"}`);
       }
-      attempts.push(`${endpoint}: ${body?.result?.error ?? "no answer"}`);
     } catch (error) {
       attempts.push(`${endpoint}: ${error.name === "TimeoutError" ? "timeout" : error.message}`);
     }
+  }
+  const tx = found[0]?.tx ?? null;
+
+  if (found.length === 1) {
+    add(
+      step,
+      "do independent endpoints agree the transaction exists?",
+      "UNVERIFIABLE",
+      `only ${found[0].endpoint} answered. ${attempts.join("; ")}. txnNotFound from a pruned node is a statement about that node, so one source is not agreement`,
+    );
+  } else if (found.length > 1) {
+    const results = new Set(found.map((f) => f.tx.meta?.TransactionResult ?? f.tx.engine_result));
+    const ledgers = new Set(found.map((f) => f.tx.ledger_index));
+    add(
+      step,
+      "do independent endpoints agree the transaction exists?",
+      results.size === 1 && ledgers.size === 1 ? "PASS" : "FAIL",
+      `${found.length} endpoints, result ${[...results].join("/")}, ledger ${[...ledgers].join("/")}`,
+    );
   }
 
   if (!tx) {
@@ -180,8 +202,20 @@ async function step3() {
   try {
     const validated = tx.validated === true;
     const result = tx.meta?.TransactionResult ?? tx.engine_result;
-    const destinationMatches = tx.Destination === newest.body.template?.Destination;
-    const amountMatches = String(tx.Amount) === String(newest.body.template?.Amount);
+    const template = newest.body.template ?? {};
+    const destinationMatches = tx.Destination === template.Destination;
+    const amountMatches = String(tx.Amount) === String(template.Amount);
+    // The source account matters as much as the destination. FAssets accepts a redemption payment
+    // from any address the agent controls, so "right destination, right amount" is satisfiable by a
+    // transaction Signet never signed. Checking Account is what ties the payment to this boundary.
+    const accountMatches = !template.Account || tx.Account === template.Account;
+    // The payment reference is the obligation's identity on the ledger. Without it, the check says
+    // a payment happened, not that this obligation was the one paid.
+    const expectedMemo = String(template.Memos?.[0]?.Memo?.MemoData ?? newest.body.paymentReference ?? "")
+      .replace(/^0x/, "")
+      .toLowerCase();
+    const observedMemo = String(tx.Memos?.[0]?.Memo?.MemoData ?? "").toLowerCase();
+    const memoMatches = expectedMemo === "" || observedMemo.includes(expectedMemo) || expectedMemo.includes(observedMemo);
 
     add(
       step,
@@ -191,9 +225,14 @@ async function step3() {
     );
     add(
       step,
-      "does the ledger agree with the receipt on destination and amount?",
-      destinationMatches && amountMatches ? "PASS" : "FAIL",
-      `destination ${destinationMatches ? "matches" : `differs: ledger ${tx.Destination}`}, amount ${amountMatches ? "matches" : `differs: ledger ${tx.Amount}`}`,
+      "does the ledger agree with the receipt on source, destination, amount and reference?",
+      destinationMatches && amountMatches && accountMatches && memoMatches ? "PASS" : "FAIL",
+      [
+        `source ${accountMatches ? "matches" : `differs: ledger ${tx.Account}`}`,
+        `destination ${destinationMatches ? "matches" : `differs: ledger ${tx.Destination}`}`,
+        `amount ${amountMatches ? "matches" : `differs: ledger ${tx.Amount}`}`,
+        `reference ${expectedMemo === "" ? "not in receipt" : memoMatches ? "matches" : "differs"}`,
+      ].join(", "),
     );
   } catch (error) {
     add(step, "did the XRP ledger validate that exact transaction?", "UNVERIFIABLE", `XRPL unreachable: ${error.message}`);
@@ -222,11 +261,41 @@ async function step4() {
     type === "XRPPayment" ? "PASS" : "FAIL",
     `attestationType=${type || "unreadable"}, sourceId=${source || "unreadable"}`,
   );
+  // `verifiedOnChain` is a boolean the coordinator wrote into a file in this repository. Reporting
+  // PASS from it would be re-reading our own claim and calling it verification, which is exactly
+  // what this command exists not to do. What IS independently checkable from here is that the
+  // attestation request transaction really landed on Coston2 and succeeded.
+  if (OFFLINE) {
+    add(step, "did the FDC request transaction land on Coston2?", "UNVERIFIABLE", "--offline");
+  } else if (!proof.requestTransaction) {
+    add(step, "did the FDC request transaction land on Coston2?", "FAIL", "the receipt names no request transaction");
+  } else {
+    try {
+      const receipt = await rpc("eth_getTransactionReceipt", [proof.requestTransaction]);
+      if (!receipt) {
+        add(step, "did the FDC request transaction land on Coston2?", "FAIL", `${proof.requestTransaction} is not on chain`);
+      } else {
+        const succeeded = receipt.status === "0x1";
+        const toFdcHub = (receipt.to ?? "").toLowerCase() === (proof.fdcHub ?? "").toLowerCase();
+        add(
+          step,
+          "did the FDC request transaction land on Coston2?",
+          succeeded && toFdcHub ? "PASS" : "FAIL",
+          `${proof.requestTransaction} status=${receipt.status} to=${receipt.to}${toFdcHub ? " (FdcHub)" : ` (expected FdcHub ${proof.fdcHub})`}`,
+        );
+      }
+    } catch (error) {
+      add(step, "did the FDC request transaction land on Coston2?", "UNVERIFIABLE", error.message);
+    }
+  }
+
+  // Stated as what it is. Re-checking acceptance means re-encoding the Merkle proof against
+  // FdcVerification, which the receipt verifier does and this command does not.
   add(
     step,
-    "was it accepted on chain by FdcVerification?",
-    proof.verifiedOnChain === true ? "PASS" : "FAIL",
-    `${proof.fdcVerification} round ${proof.response?.votingRound}, recorded verifiedOnChain=${proof.verifiedOnChain}`,
+    "was the proof accepted on chain by FdcVerification?",
+    "UNVERIFIABLE",
+    `the receipt reports verifiedOnChain=${proof.verifiedOnChain} for round ${proof.response?.votingRound}, which is self-reported. This command does not re-encode the Merkle proof; run "pnpm --filter @signet/verifier verify:receipt" to check it independently`,
   );
   add(
     step,

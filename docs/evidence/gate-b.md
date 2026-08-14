@@ -62,7 +62,7 @@ A caller must not control these and the chain cannot know them.
 
 | suite | count | what they assert |
 |---|---|---|
-| Solidity | 5 | a 256-run fuzz over caller addresses asserting one request id yields one payload for every caller, and a selector assertion that `authorizeRedemption(uint256,uint32)` carries no payment field. All five exercise the read-only `canonicalInstructionFor` preview and the selector; **none calls the state-changing `authorizeRedemption`**, which is how open finding 1 survived |
+| Solidity | 5 | a 256-run fuzz over caller addresses asserting one request id yields one payload for every caller, and a selector assertion that `authorizeRedemption(uint256,uint32)` carries no payment field. All five exercise the read-only `canonicalInstructionFor` preview and the selector; **none calls the state-changing `authorizeRedemption`**, which is how finding 1 survived until it was found and fixed |
 | Go | 16 | schema refusal, truncation, and an override attempt on each of destination, amount, fee, reference, tag mode, tag value, both deadlines and agent. The trailing-byte case is **not** an assertion: it was written to accept either outcome, and the decoder does not in fact reject trailing bytes. See open finding 4 |
 
 ### Deployed, and verified by RPC rather than by reading the deploy script's output
@@ -154,15 +154,16 @@ The full write-up, with severities, reachability and the live checks, is in
 
 | # | defect | reachable today |
 |---|---|---|
-| 1 | `authorizeRedemption` gates on `state != NONE` instead of `== REQUESTED`, so an already-authorized action can be instructed again | **no.** No TEE machine exists, so `getRandomTeeIds(66248, 1)` reverts `0xd65ac61e` first. **It arms the moment gate A lands, and is a blocker there** |
+| 1 | `authorizeRedemption` gated on `state != NONE` instead of `== REQUESTED`, so an already-authorized action could be instructed again | **FIXED and redeployed.** Only `REQUESTED` is admitted, and the dispatch is now recorded on chain before the external call. See `../threat-model.md` |
 | 2 | the extension sets `Prior: nil`, so `generation > 0` is always refused `S018` and the replacement flow is dead code | yes, fail-closed |
 | 3 | `internal/wire` still decodes a fully caller-authored obligation for `cmd/signet-extension` | yes, reaches no key |
 | 4 | `fccinput.Decode` does not reject trailing bytes although its doc comment says it does | no |
 | 5 | `xrplobserve` matches only `Memos[0]` | yes, narrows an accepted residual |
 
-None is fixed here. Phase 14's completion gate forbids feature work, and the contract half is already
-deployed: changing the source without redeploying would put this repository and the chain out of
-agreement, which is worse than a stated defect.
+> **Updated 2026-08-14.** Finding 1 was subsequently fixed and redeployed as extension `66248`,
+> under an explicit instruction that a correctness boundary must not rest on "unreachable today".
+> Findings 2 to 5 remain recorded rather than fixed: phase 14 forbids feature work, and changing the
+> source without redeploying would put this repository and the chain out of agreement.
 
 The review's attempts to influence destination, amount, fee, reference, tag mode, tag value, either
 window bound or the agent vault through the FCC path all failed. That is the claim this gate exists

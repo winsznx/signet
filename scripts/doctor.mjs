@@ -154,6 +154,12 @@ async function checkExtensionBinding() {
   if (!onChain.ok) {
     return record("fcc", "extension binding", SEVERITY.UNAVAILABLE, `getTeeExtensionInstructionsSender: ${onChain.error}`);
   }
+  // A successful JSON-RPC call can still carry a useless result. An earlier version assumed a
+  // string here and threw on `{"result": null}` from a misbehaving or hostile RPC, killing the whole
+  // run before a single row printed. A diagnostic must survive the thing it is diagnosing.
+  if (typeof onChain.value !== "string" || onChain.value.length < 42) {
+    return record("fcc", "extension binding", SEVERITY.UNAVAILABLE, `RPC returned no usable address: ${JSON.stringify(onChain.value)}`);
+  }
   const reported = addressFromWord(onChain.value.replace(/^0x/, ""));
   if (reported.toLowerCase() !== expected) {
     return record(
@@ -286,6 +292,10 @@ async function checkOneMachine(teeId) {
       SEVERITY.FAIL,
       `registered URL is not answering (${info.error}). A dead tunnel leaves an active machine on chain that cannot serve`,
     );
+  }
+  // /info is served by the machine itself, at a URL the machine registered. It is untrusted input.
+  if (info.value === null || typeof info.value !== "object") {
+    return record("machines", `${teeId} /info`, SEVERITY.FAIL, "the registered URL answered with a non-object body");
   }
   const machineData = info.value.machineData ?? {};
   record("machines", `${teeId} code hash`, SEVERITY.PASS, machineData.codeHash ?? "not reported");
@@ -433,14 +443,25 @@ async function checkXrpl() {
 
 export async function runDoctor() {
   results.length = 0;
-  await checkChain();
-  await checkSignetBinding();
-  await checkExtensionBinding();
-  await checkSupersededExtensions();
-  await checkMachines();
-  await checkSigningPolicy();
-  await checkFdc();
-  await checkXrpl();
+  // Each check is isolated. One hostile endpoint must not be able to suppress every other finding,
+  // which is what an uncaught throw in the middle of a sequential await chain does.
+  const checks = [
+    ["chain", checkChain],
+    ["signet", checkSignetBinding],
+    ["fcc", checkExtensionBinding],
+    ["fcc", checkSupersededExtensions],
+    ["machines", checkMachines],
+    ["fsp", checkSigningPolicy],
+    ["fdc", checkFdc],
+    ["xrpl", checkXrpl],
+  ];
+  for (const [area, run] of checks) {
+    try {
+      await run();
+    } catch (error) {
+      record(area, "check crashed", SEVERITY.UNAVAILABLE, `${error.message}. Remaining checks still ran`);
+    }
+  }
   return results;
 }
 

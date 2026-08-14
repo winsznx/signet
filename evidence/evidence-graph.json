@@ -656,7 +656,7 @@
       "proofLevel": 1,
       "proofLevelLabel": "executed locally against pinned source or fixtures",
       "wording": "The Go extension policy produces byte-identical decisions to the TypeScript reference model on all 62 frozen fixtures, including the authorization commitment and the transaction template.",
-      "limitationCount": 4,
+      "limitationCount": 5,
       "verifiedAt": "2026-08-11T17:10:00Z"
     },
     {

@@ -179,5 +179,5 @@ producing false statements, and new documentation.
 
 - Nothing submitted externally. That is the operator's call and the package is staged for it.
 - The demo has not been recorded. The script and shot list exist; the recording does not.
-- The five open findings are not fixed.
+- Findings 2 to 5 are not fixed. Finding 1 was fixed and redeployed after this phase was written; see docs/threat-model.md.
 - No real TEE, no attestation, no registered TEE machine.
