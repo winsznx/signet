@@ -25,6 +25,7 @@ help:
 	@echo "  scan              secret and dependency scanning"
 	@echo "  doctor            read-only diagnosis of the deployed FCC surface"
 	@echo "  judge             independent verification: no wallet, funds, Docker, GCP or TEE"
+	@echo "  test-browser      product tests across six viewports (needs PLAYWRIGHT=...)"
 	@echo "  verify            every gate that is implemented today"
 	@echo "  verify-phase PHASE=NN"
 
@@ -172,6 +173,13 @@ doctor:
 .PHONY: judge
 judge:
 	@node scripts/judge.mjs
+
+# Browser tests for the product surface: six viewports, no-JS rendering, wallet and inspector
+# states, screenshots. Playwright is not a repository dependency, so this skips cleanly without it.
+#   PLAYWRIGHT=/path/to/node_modules make test-browser
+.PHONY: test-browser
+test-browser: web
+	@node web/test/browser.mjs
 
 # ---------------------------------------------------------------------------- gates
 

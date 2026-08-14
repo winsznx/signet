@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 104 28" role="img" aria-label="Signet">
+  <!--
+    The Signet mark, redrawn as vector from the approved raster icon.
+
+    Why vector: the supplied lockup is a dark-on-dark raster and renders as an empty rectangle on
+    the Paper canvas. The geometry is simple enough to author exactly, and as SVG it inherits
+    currentColor, so one file is correct on Paper and on Obsidian instead of needing two rasters
+    that can drift apart.
+
+    The mark is the mechanism: several obligations converge, one gate admits them, one payment
+    leaves, and the ember square is the proof coming back.
+  -->
+  <g fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round">
+    <path d="M2.5 2.5H26" />
+    <path d="M11 10H31" />
+    <path d="M15 18H31" />
+    <path d="M2.5 25.5H26" />
+    <path d="M33 2.5h7a11.5 11.5 0 0 1 0 23h-7" />
+    <path d="M51.5 14H80" />
+  </g>
+  <rect x="86" y="10.5" width="7" height="7" fill="#ff5a00" />
+</svg>

@@ -1,489 +1,640 @@
 #!/usr/bin/env node
 /**
- * Builds the Signet proof site.
+ * Builds the Signet product site.
  *
- * Two pages and nothing else: a public proof page and an operator state view. The PRD's phase 12
- * scope says "no extra product surfaces", and a dashboard that grows a features page is how a
- * verification tool turns into marketing.
+ * Six routes, all generated from the repository's evidence. The split is the point: the homepage
+ * is a product narrative, and the exhaustive ledger it used to render lives one click away under
+ * /proof. Nothing was deleted to achieve that.
  *
- * The site is static and generated from the repository's own evidence. That is not a shortcut. A
- * proof page backed by a live API would be asking a reader to trust a server we run, which is the
- * opposite of the point; every number here traces to a committed receipt the reader can check
- * themselves with `verify:receipt`. The static fallback the phase asks for is the only mode.
- *
- * Unverified and unverifiable claims render as prominently as verified ones. A proof page that
- * shows only what passed is a brochure.
+ * The site is still static and still has no server to trust. What changed is that first-party
+ * JavaScript may now enhance it, under a CSP that names the exact RPC origins the repository
+ * already pins. Every route renders its full meaning with scripting off; the safe demo works with
+ * scripting off too, because it is radio inputs and CSS rather than a framework.
  */
-import { readFileSync, readdirSync, mkdirSync, writeFileSync, copyFileSync, existsSync } from "node:fs";
+import { mkdirSync, writeFileSync, copyFileSync, readdirSync, existsSync } from "node:fs";
 import { join } from "node:path";
-import { fileURLToPath } from "node:url";
+import {
+  REPO_ROOT, ledger, deployment, fccStatuses, homeCards, claimGroups, claimTotals, transactions,
+  demoReceipt, incident, REASON_CODES, judge, ENDPOINTS, CONNECT_SRC, claimById,
+} from "./lib/data.mjs";
+import { page, escape, short, badge, CSP, MARK } from "./lib/ui.mjs";
 
-const REPO_ROOT = fileURLToPath(new URL("../..", import.meta.url));
 const OUT = join(REPO_ROOT, "web", "dist");
+const explorerAddress = (a) => `${ENDPOINTS.explorers.coston2}/address/${a}`;
 
-const read = (...parts) => JSON.parse(readFileSync(join(REPO_ROOT, ...parts), "utf8"));
+// ---------------------------------------------------------------- shared blocks
 
-const ledger = read("evidence", "claim-ledger.json");
-const runState = read("docs", "run", "run-state.json");
-const receiptsDir = join(REPO_ROOT, "evidence", "receipts");
-const receipts = readdirSync(receiptsDir)
-  .filter((f) => f.endsWith(".json"))
-  .map((f) => ({ file: f, body: JSON.parse(readFileSync(join(receiptsDir, f), "utf8")) }));
+const deploymentStrip = () => `
+<dl class="strip">
+  <div><dt>Network</dt><dd class="tone-live"><span class="dot"></span>Coston2 · live</dd></div>
+  <div><dt>FCC extension</dt><dd class="tone-verified"><span class="dot"></span>${escape(deployment.extensionId)} · registered</dd></div>
+  <div><dt>Execution</dt><dd class="tone-simulated"><span class="dot"></span>Simulated FCC</dd></div>
+  <div><dt>XRPL</dt><dd class="tone-live"><span class="dot"></span>Testnet · live</dd></div>
+  <div><dt>FDC</dt><dd class="tone-verified"><span class="dot"></span>Proof on chain</dd></div>
+</dl>`;
 
-const escape = (value) =>
-  String(value).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+const fccStatusGrid = () => `
+<div class="rows">
+  ${fccStatuses
+    .map(
+      (s) => `<details class="row"><summary>
+      <span class="title">${escape(s.label)}</span>
+      <span class="badge ${s.tone === "verified" ? "verified" : s.tone === "simulated" ? "simulated" : "unavailable"}">${escape(s.value)}</span>
+    </summary><div class="body">${escape(s.detail)}</div></details>`,
+    )
+    .join("")}
+</div>`;
 
-const short = (hex, head = 10) => (typeof hex === "string" && hex.length > 24 ? `${hex.slice(0, head)}…${hex.slice(-6)}` : hex);
-
-/**
- * design.md, rendered as tokens.
- *
- * Cosmica is not distributed with this repository, so the stack falls through to DM Sans and then
- * to the system geometric sans. Shipping a font we do not have a licence to redistribute would be a
- * worse choice than losing the exact letterforms.
- */
-const CSS = `
-:root {
-  --ember: #ff5a00;
-  --obsidian: #09090b;
-  --graphite: #18181b;
-  --slate: #27272a;
-  --iron: #3f3f46;
-  --steel: #52525b;
-  --fog: #71717a;
-  --ash: #a1a1aa;
-  --mist: #d4d4d8;
-  --cloud: #ececee;
-  --paper: #f4f4f5;
-  --snow: #ffffff;
-  --unit: 4px;
-  --font: "Cosmica", "DM Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-}
-* { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; }
-body {
-  margin: 0;
-  background: var(--paper);
-  color: var(--graphite);
-  font-family: var(--font);
-  font-size: 15px;
-  line-height: 1.45;
-}
-main { max-width: 1080px; margin: 0 auto; padding: 0 24px 96px; }
-a { color: var(--obsidian); text-decoration-color: var(--mist); text-underline-offset: 3px; }
-a:hover { text-decoration-color: var(--ember); }
-:focus-visible { outline: 2px solid var(--ember); outline-offset: 3px; border-radius: 4px; }
-
-.skip {
-  position: absolute; left: -9999px; top: 0;
-  background: var(--obsidian); color: var(--snow); padding: 12px 20px; border-radius: 14px; z-index: 10;
-}
-.skip:focus { left: 24px; top: 16px; }
-
-header.masthead { padding: 56px 0 40px; }
-.eyebrow {
-  display: inline-flex; align-items: center; gap: 8px;
-  font-size: 12px; line-height: 1.64; font-weight: 500; letter-spacing: 0.02em;
-  text-transform: uppercase; color: var(--iron);
-  background: var(--snow); border: 1px solid var(--cloud); border-radius: 10000px; padding: 6px 14px;
-}
-.eyebrow.accent { background: var(--ember); border-color: var(--ember); color: var(--snow); }
-h1 { font-size: 56px; line-height: 1.12; font-weight: 600; letter-spacing: -0.015em; color: var(--obsidian); margin: 24px 0 0; }
-@media (max-width: 720px) { h1 { font-size: 36px; } main { padding: 0 20px 72px; } }
-.lede { font-size: 18px; line-height: 1.45; color: var(--iron); margin: 16px 0 0; max-width: 62ch; }
-/* The six-step chain. Scrolls inside itself rather than forcing the page sideways on a phone. */
-.chain { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
-  font-size: 13px; line-height: 1.6; color: var(--iron);
-  background: var(--snow); border: 1px solid var(--cloud); border-radius: 24px;
-  padding: 20px 24px; margin: 18px 0 0; overflow-x: auto; }
-
-h2 { font-size: 32px; line-height: 1.5; font-weight: 700; color: var(--obsidian); margin: 64px 0 4px; }
-h3 { font-size: 20px; line-height: 1.5; font-weight: 600; color: var(--slate); margin: 0 0 8px; }
-/* Steel, not Fog. design.md assigns Fog to helper text, but Fog on Paper is 4.40:1, which is under
-   4.5 for normal text, and these notes are 14px body copy rather than incidental labels. Fog is
-   still used on Snow, where it clears the threshold. */
-.section-note { font-size: 14px; color: var(--steel); margin: 0 0 24px; max-width: 66ch; }
-
-.grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
-.card {
-  background: var(--snow); border: 1px solid var(--cloud); border-radius: 36px; padding: 28px 32px;
-}
-.card.tight { border-radius: 24px; padding: 20px 24px; }
-
-.status { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 500; line-height: 1.64;
-  border-radius: 10000px; padding: 5px 12px; border: 1px solid var(--cloud); background: var(--paper); color: var(--iron); }
-.status .dot { width: 7px; height: 7px; border-radius: 10000px; background: currentColor; }
-.status.verified { color: var(--obsidian); border-color: var(--mist); }
-.status.unverified, .status.unverifiable { color: var(--ember); border-color: var(--ember); background: var(--snow); }
-.status.deferred { color: var(--steel); }
-
-dl.facts { margin: 0; display: grid; grid-template-columns: max-content 1fr; gap: 8px 20px; font-size: 14px; }
-dl.facts dt { color: var(--steel); }
-dl.facts dd { margin: 0; color: var(--graphite); }
-code, .mono { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace; font-size: 13px; }
-
-ul.limits { margin: 16px 0 0; padding-left: 18px; font-size: 14px; color: var(--steel); }
-ul.limits li { margin: 6px 0; }
-ul.limits li::marker { color: var(--ember); }
-
-.claim { margin-top: 16px; }
-.claim p.wording { font-size: 16px; line-height: 1.5; color: var(--graphite); margin: 12px 0 0; }
-.limits-title { font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--steel); margin: 20px 0 0; }
-
-table { width: 100%; border-collapse: collapse; font-size: 14px; }
-th { text-align: left; font-weight: 500; color: var(--steel); font-size: 12px; text-transform: uppercase;
-  letter-spacing: 0.04em; padding: 0 16px 10px 0; border-bottom: 1px solid var(--cloud); }
-td { padding: 12px 16px 12px 0; border-bottom: 1px solid var(--cloud); vertical-align: top; }
-tr:last-child td { border-bottom: none; }
-.scroll { overflow-x: auto; }
-
-footer { border-top: 1px solid var(--cloud); margin-top: 72px; padding: 32px 0 0; font-size: 13px; color: var(--steel); }
-nav.pages { display: flex; gap: 8px; margin-top: 24px; }
-nav.pages a {
-  font-size: 14px; text-decoration: none; padding: 9px 18px; border-radius: 14px;
-  border: 1px solid var(--cloud); background: var(--snow); color: var(--iron);
-}
-nav.pages a[aria-current="page"] { background: var(--obsidian); border-color: var(--obsidian); color: var(--snow); }
-`;
-
-function page({ title, description, current, body }) {
-  return `<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${escape(title)}</title>
-<meta name="description" content="${escape(description)}">
-<style>${CSS}</style>
-</head>
-<body>
-<a class="skip" href="#main">Skip to content</a>
-<main id="main">
-<header class="masthead">
-  <p style="margin:0"><span class="eyebrow accent">Signet</span></p>
-  <h1>${escape(title)}</h1>
-  <p class="lede">${escape(description)}</p>
-  <nav class="pages" aria-label="Pages">
-    <a href="/"${current === "proof" ? ' aria-current="page"' : ""}>Proof</a>
-    <a href="/operator"${current === "operator" ? ' aria-current="page"' : ""}>Operator</a>
-  </nav>
-</header>
-${body}
-<footer>
-  <p>Every figure on this page comes from a committed file in the repository. Check any of it yourself:
-  <code>pnpm --filter @signet/verifier verify:receipt &lt;transaction hash&gt;</code>.</p>
-  <p>Generated from <code>evidence/claim-ledger.json</code>, <code>evidence/receipts/</code> and
-  <code>docs/run/run-state.json</code>. Static: there is no server to trust.</p>
-</footer>
-</main>
-</body>
-</html>
-`;
-}
-
-// ---------------------------------------------------------------- proof page
-
-const statusClass = (status) => (status === "verified" ? "verified" : status === "deferred" ? "deferred" : "unverified");
-
-const claimCard = (claim) => `
-<article class="card claim">
-  <h3 id="${escape(claim.id)}">${escape(claim.id.replace(/^claim-/, "").replace(/-/g, " "))}</h3>
-  <p style="margin:0"><span class="status ${statusClass(claim.status)}"><span class="dot"></span>${escape(claim.status)}</span>
-  ${(claim.network ?? []).map((n) => `<span class="status">${escape(n)}</span>`).join(" ")}</p>
-  <p class="wording">${escape(claim.wording)}</p>
-  ${
-    (claim.limitations ?? []).length
-      ? `<p class="limits-title">What this does not prove</p><ul class="limits">${claim.limitations
-          .map((l) => `<li>${escape(l)}</li>`)
-          .join("")}</ul>`
-      : ""
-  }
-  <p class="limits-title">Evidence</p>
-  <ul class="limits">${(claim.evidence ?? []).map((e) => `<li><code>${escape(e)}</code></li>`).join("")}</ul>
+const claimCardHtml = (card) => `
+<article class="card">
+  <div class="badges">
+    ${badge(card.status === "verified" ? "Verified" : "Unavailable", card.tone === "verified" ? "verified" : card.tone === "unavailable" ? "unavailable" : "")}
+    ${card.networks.map((n) => badge(n)).join("")}
+  </div>
+  <h3><a href="${card.href}">${escape(card.title)}</a></h3>
+  <p class="note" style="margin-bottom:0">${escape(card.summary)}</p>
+  <a class="more" href="${card.href}">View evidence</a>
 </article>`;
 
-const settlementReceipts = receipts.filter((r) => r.body.txHash);
+// ---------------------------------------------------------------- / home
 
-const proofBody = `
-<section aria-labelledby="mechanism-h">
-  <h2 id="mechanism-h">The mechanism</h2>
-  <p class="lede"><strong>FAssets decides what is owed. Signet decides whether that exact XRP payment
-  may exist. FDC proves what happened.</strong></p>
-  <pre class="chain" aria-label="the six step chain">requestId
-  &rarr; canonical FAssets obligation
-    &rarr; Signet/FCC authorization
-      &rarr; XRPL observation
-        &rarr; exact XRP payment
-          &rarr; FDC proof</pre>
-  <p class="section-note">For an FAssets agent today, the thing that decides what to pay and the
-  thing that holds the key are the same process, so an operator mistake or a compromised coordinator
-  is a wrong payment. Signet is the thing in between.</p>
-</section>
+const MECHANISM = [
+  ["01", "FAssets obligation", "The protocol states what is owed", "Destination, amount, reference, destination tag and the payment window all come from FAssets protocol state, read on chain. Nobody types them."],
+  ["02", "Signet derives and observes", "The caller supplies a request id", "authorizeRedemption(uint256,uint32) has no parameter for a payment field. Signet also observes the XRP ledger itself, across independent endpoints that must agree, before it will authorize anything."],
+  ["03", "Exact XRP payment", "One obligation, at most one payment", "The signed transaction is persisted before submission, and the chain records at most one instruction dispatch per request and generation."],
+  ["04", "FDC proves the outcome", "Independently checkable on Flare", "An XRPPayment attestation carries the memo and destination tag a generic payment proof would not, and FdcVerification accepted it on Coston2."],
+];
 
-<section aria-labelledby="notgeneric-h">
-  <h2 id="notgeneric-h">Why this is not a generic policy signer</h2>
-  <div class="grid">
-    <article class="card">
-      <h3>A generic policy signer</h3>
-      <p>The operator defines the recipient, the budget and the allowlist. A TEE evaluates the policy
-      the operator wrote, and signs. If the operator is compromised or wrong, the policy is
-      compromised or wrong with it, and the signature is still valid.</p>
-    </article>
-    <article class="card">
-      <h3>Signet</h3>
-      <p>FAssets creates the obligation. The caller supplies a <code>requestId</code> and nothing
-      else. Protocol state determines the destination, amount, reference, tag and payment window.
-      Nobody authors the policy: <strong>the obligation is the policy</strong>, and FAssets writes
-      it.</p>
-      <p class="section-note">The deployed entry point is
-      <code>authorizeRedemption(uint256,uint32)</code>. There is no destination parameter, no amount,
-      no reference, no window. Not validated &mdash; absent.</p>
-    </article>
+const ATTACKS = [
+  ["destination", "Change the destination", "Impossible through the deployed API", `The entry point is <code>authorizeRedemption(uint256 requestId, uint32 generation)</code>. There is no destination parameter to change. A 256-run fuzz over caller addresses asserts one request id yields one payload for every caller.`, "impossible"],
+  ["amount", "Change the amount", "Impossible through the deployed API", `Same reason. The amount is read from the FAssets obligation by the contract, so a caller has nothing to alter.`, "impossible"],
+  ["reference", "Change the payment reference", "Impossible through the deployed API", `The reference is the obligation's identity on the ledger and is resolved on chain, not accepted from a caller.`, "impossible"],
+  ["paid", "Pay an obligation someone already paid", "Refused · S021_PAYMENT_ALREADY_OBSERVED", `This is not hypothetical. It happened on live Coston2 with request 44928272, and it is why schema V2 requires the signing boundary's own XRP ledger observation.`, "refused"],
+  ["noobs", "Authorize without observing XRPL", "Refused · S022_UNDERLYING_STATE_UNAVAILABLE", `Refusing is the default. There is no input that authorizes without an observation, and too few agreeing sources counts as no observation.`, "refused"],
+  ["disagree", "Feed disagreeing endpoints", "Refused · S023_UNDERLYING_STATE_DISAGREEMENT", `Endpoints that disagree fail closed, and this one is deliberately never retried automatically.`, "refused"],
+  ["stale", "Use a stale observation", "Refused · S024_UNDERLYING_OBSERVATION_STALE", `An observation too old to rely on is refused rather than accepted with a warning.`, "refused"],
+  ["replay", "Replay the signed payment", "Refused by the XRP ledger itself", `The identical signed blob resubmitted returns <code>tefPAST_SEQ</code>: the account sequence is already consumed. Signet does not have to be trusted for this one.`, "refused"],
+];
+
+const demoSection = () => `
+<section id="try" aria-labelledby="try-h">
+  <div class="wrap">
+    <span class="eyebrow">Try it · deterministic demo</span>
+    <h2 id="try-h">Try to break it</h2>
+    <p class="note">A representative obligation, and every way a caller might try to bend it. This runs from a committed
+    fixture and makes no network call, so it is labelled a deterministic demo rather than live. The reason codes are the
+    real ones the policy returns.</p>
+    <div class="grid-2">
+      <article class="card">
+        <div class="badges">${badge("FAssets", "verified")}${badge("Deterministic demo")}</div>
+        <h3>The request</h3>
+        <p class="note" style="margin-bottom:14px">This is all a caller supplies.</p>
+        <dl class="kv">
+          <dt>requestId</dt><dd class="mono">${escape(demoReceipt?.requestId ?? "—")}</dd>
+          <dt>generation</dt><dd class="mono">${escape(demoReceipt?.generation ?? 0)}</dd>
+        </dl>
+        <h4 style="margin-top:24px">Derived by the contract, from FAssets</h4>
+        <p class="note" style="margin-bottom:12px">Read-only. There is no parameter through which these could be supplied.</p>
+        <dl class="kv">
+          <dt>destination</dt><dd class="mono">${escape(demoReceipt?.destination ?? "—")}</dd>
+          <dt>amount</dt><dd class="mono">${escape(demoReceipt?.amountDrops ?? "—")} drops</dd>
+          <dt>agent vault</dt><dd class="mono">${escape(short(demoReceipt?.agentVault ?? "—"))}</dd>
+          <dt>window</dt><dd class="mono">${escape(demoReceipt?.firstUnderlyingBlock ?? "—")} → ${escape(demoReceipt?.lastUnderlyingBlock ?? "—")}</dd>
+        </dl>
+      </article>
+      <article class="card">
+        <div class="badges">${badge("Signet policy")}</div>
+        <h3>Attack it</h3>
+        <p class="note" style="margin-bottom:14px">Pick a move. The outcome is what the deployed contract and the policy actually do.</p>
+        <div class="attack-panel">
+          ${ATTACKS.map(([id], i) => `<input class="attack-radio" type="radio" name="attack" id="attack-${id}"${i === 0 ? " checked" : ""}>`).join("")}
+          <div class="attacks" role="group" aria-label="Attack to attempt">
+            ${ATTACKS.map(([id, label]) => `<label class="attack-chip" for="attack-${id}">${escape(label)}</label>`).join("")}
+          </div>
+          <div class="attack-outcomes" aria-live="polite">
+            ${ATTACKS.map(
+              ([id, , headline, detail, kind]) => `
+              <div class="attack-outcome" id="outcome-${id}">
+                <p class="outcome-head ${kind === "impossible" ? "impossible" : "refused"}">${escape(headline)}</p>
+                <p class="note" style="margin:0">${detail}</p>
+              </div>`,
+            ).join("")}
+          </div>
+        </div>
+      </article>
+    </div>
+    <p class="note" style="margin-top:20px">Reason codes: ${REASON_CODES.map(([c]) => `<code>${escape(c)}</code>`).join(", ")}.
+    <a href="/proof/claims#claim-v2-underlying-observation">What each one means</a>.</p>
   </div>
-  <h3>The removal test</h3>
-  <table>
-    <thead><tr><th scope="col">Remove</th><th scope="col">What breaks</th></tr></thead>
-    <tbody>
-      <tr><td class="mono">FAssets</td><td>there is no authoritative obligation, and Signet degrades into a policy someone typed</td></tr>
-      <tr><td class="mono">FCC</td><td>a compromised host can sign arbitrary XRP</td></tr>
-      <tr><td class="mono">XRPL observation</td><td>a payment already made by another party is invisible. This is incident 44928272, not a hypothetical</td></tr>
-      <tr><td class="mono">FDC</td><td>completion cannot be independently established on Flare; the operator's word becomes the evidence</td></tr>
-    </tbody>
-  </table>
-  <p class="section-note">Primary user: independent or institutional FAssets agent operators who
-  retain control of an underlying redemption account. The job is fulfilling redemption obligations
-  without leaving an unrestricted XRPL spending key available to a compromised operator host.</p>
-</section>
+</section>`;
 
-<section aria-labelledby="ledger-h">
-  <h2 id="ledger-h">Claims</h2>
-  <p class="section-note">Every public claim, with what it does not prove stated beside it. A claim
-  with no limitations listed is a claim that has not been examined hard enough, so they are shown
-  first-class rather than in a footnote.</p>
-  <div class="grid">${ledger.claims.map(claimCard).join("")}</div>
-</section>
-
-<section aria-labelledby="scope-h">
-  <h2 id="scope-h">What this deployment is</h2>
-  <p class="section-note">Flare declined to approve new FAssets agents and asked Signet to test the
-  execution layer instead. That is what this is. Signet does not operate an FAssets agent and does
-  not claim to.</p>
-  <div class="grid">
-    <article class="card">
-      <h3>The four steps</h3>
-      <ol class="limits">
-        <li>take a valid FAssets redemption obligation &mdash; <strong>live Coston2</strong> for the
-        obligation evidence, <strong>Coston2 fork on deployed FAssets bytecode</strong> for the
-        positive path</li>
-        <li>derive the required XRPL payment inside FCC &mdash; extension <code>66248</code>
-        <strong>registered on live Coston2</strong>, extension <strong>executed as a local
-        process</strong>. The caller supplies a request id and a generation; every payment field is
-        read from FAssets by the contract</li>
-        <li>sign and execute that exact payment &mdash; <strong>live XRPL Testnet</strong></li>
-        <li>prove the payment back through FDC &mdash; <strong>live Coston2</strong>,
-        <code>verifyXRPPayment</code> accepted on chain</li>
-      </ol>
-    </article>
-    <article class="card">
-      <h3>What is not here</h3>
-      <ul class="limits">
-        <li>no TEE. <code>getActiveTeeMachines(66248)</code> returns empty, nothing is
-        hardware-attested, and no on-chain FCC instruction round trip exists</li>
-        <li>no settled FAssets redemption. Settlement needs an agent's own underlying signing
-        authority, which Signet does not hold</li>
-        <li>no exactly-once guarantee against an independent racer</li>
-      </ul>
-    </article>
+const home = () => `
+<div class="wrap">
+  <div class="hero">
+    <div class="hero-copy">
+      <span class="eyebrow">Execution security for FAssets agents</span>
+      <h1>Only the XRP payment FAssets asked for.</h1>
+      <p class="lede">Signet reads the redemption obligation from Flare, derives the payment instead of accepting
+      caller-supplied fields, checks XRPL for a prior payment, and returns execution evidence through FDC.</p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="/operator">Open operator</a>
+        <a class="btn btn-ghost" href="/proof">See verified proof</a>
+        <a class="btn btn-quiet" href="${ENDPOINTS.repository}" rel="noreferrer noopener">GitHub ↗</a>
+      </div>
+      ${deploymentStrip()}
+    </div>
+    <div class="stage">
+      <img src="/brand/hero-mechanism.png" width="1300" height="867"
+        alt="Several redemption obligations converge into a single constrained gate, one exact XRP payment leaves it, and a proof path returns from the payment back to the gate.">
+    </div>
   </div>
-</section>
+</div>
 
-<section aria-labelledby="guarantee-h">
-  <h2 id="guarantee-h">What this does and does not guarantee</h2>
-  <p class="section-note">Stated narrowly because the previous framing was wide enough to be false.
-  Signet paid a live Coston2 redemption twice, and the correction is a schema change rather than a
-  note in a limitations list.</p>
-  <div class="grid">
-    <article class="card">
-      <h3>Enforced</h3>
-      <p class="wording">For an obligation whose only legitimate payment authority is Signet, at most
-      one payment per request generation. No authorization at all unless Signet has itself observed
-      the XRP ledger, across independently operated endpoints that agreed, recently, and seen no
-      validated payment already carrying that obligation's reference.</p>
-      <p class="limits-title">Fails closed on</p>
-      <ul class="limits">
-        <li>a matching payment already observed (<code>S021</code>)</li>
-        <li>no observation, or too few agreeing sources (<code>S022</code>)</li>
-        <li>endpoints contradicting each other (<code>S023</code>), never auto-retried</li>
-        <li>an observation that is stale, or from a ledger nobody validated (<code>S024</code>)</li>
-      </ul>
-    </article>
-    <article class="card">
-      <h3>Not enforced</h3>
-      <p class="wording">Exactly-once payment against an independent actor able to pay the same
-      obligation. A competing payment that validates after Signet's observation and before Signet's
-      own payment validates is not detectable, and no arrangement of observations closes that
-      window.</p>
-      <p class="limits-title">What exists instead</p>
-      <ul class="limits">
-        <li>the window is recorded, not bounded: it measured 4 ledgers in the one V2 run this build produced</li>
-        <li>the observed ledger is bound into the authorization commitment, so the width of the
-        window for any payment Signet ever made is public arithmetic</li>
-        <li>the independent verifier re-observes the ledger itself and fails a receipt whose
-        observation does not match what it finds, while endpoints still retain the window</li>
-        <li>in the intended deployment Signet holds the agent's only XRPL signing authority, so no
-        independent legitimate payer exists. That is a design claim, not demonstrated here.</li>
-      </ul>
-    </article>
+<section id="mechanism" aria-labelledby="mech-h">
+  <div class="wrap">
+    <span class="eyebrow">How it works</span>
+    <h2 id="mech-h">One request in. One exact payment out.</h2>
+    <p class="note">Each step opens. Nothing here needs reading in order.</p>
+    <div class="rail">
+      ${MECHANISM.map(
+        ([num, name, hint, detail]) => `<details class="step"><summary>
+          <span class="num">${escape(num)}</span>
+          <span class="name">${escape(name)}</span>
+          <span class="hint">${escape(hint)}</span>
+        </summary><p class="detail">${escape(detail)}</p></details>`,
+      ).join("")}
+    </div>
+    <details class="row" style="margin-top:16px;border:1px solid var(--cloud);border-radius:24px;background:var(--snow)">
+      <summary><span class="title">Why all four are load-bearing</span></summary>
+      <div class="body">
+        <ul>
+          <li><strong>Remove FAssets</strong> and there is no authoritative obligation. Signet degrades into enforcing a policy someone typed, which is a generic policy signer.</li>
+          <li><strong>Remove FCC</strong> and a compromised host can sign arbitrary XRP.</li>
+          <li><strong>Remove the XRPL observation</strong> and a payment already made by another party is invisible. That is incident 44928272, not a hypothetical.</li>
+          <li><strong>Remove FDC</strong> and completion cannot be independently established on Flare. The operator's word becomes the evidence.</li>
+        </ul>
+      </div>
+    </details>
   </div>
 </section>
 
-<section aria-labelledby="tx-h">
-  <h2 id="tx-h">Transactions</h2>
-  <p class="section-note">Every payment this system has made, on a public ledger anyone can read.</p>
-  <div class="card scroll">
-    <table>
-      <caption class="section-note" style="text-align:left;margin:0 0 12px">XRPL Testnet payments recorded in <code>evidence/receipts/</code></caption>
-      <thead><tr><th scope="col">Transaction</th><th scope="col">Request</th><th scope="col">Ledger</th><th scope="col">Result</th><th scope="col">Schema</th><th scope="col">Settles</th></tr></thead>
+${demoSection()}
+
+<section id="operator" aria-labelledby="op-h">
+  <div class="wrap">
+    <span class="eyebrow">Operator</span>
+    <h2 id="op-h">For agent operators who keep their own underlying account</h2>
+    <p class="note">The job: fulfil redemption obligations without leaving an unrestricted XRPL spending key available to a
+    compromised operator host. Before Signet, a hot signer can authorize arbitrary XRP. With Signet, a request id goes in and
+    a protocol-derived obligation comes out as the only admissible payment.</p>
+    <div class="grid">
+      <article class="card tight"><h4>Connect or continue read-only</h4><p class="note" style="margin:0">A wallet is optional and never implies agent status.</p></article>
+      <article class="card tight"><h4>Inspect a redemption</h4><p class="note" style="margin:0">Read the canonical obligation from Coston2 by request id.</p></article>
+      <article class="card tight"><h4>Observe XRPL</h4><p class="note" style="margin:0">Independent endpoints must agree before a decision is possible.</p></article>
+      <article class="card tight"><h4>Preview the decision</h4><p class="note" style="margin:0">Authorization or a typed refusal, with the reason code.</p></article>
+    </div>
+    <a class="btn btn-primary" style="margin-top:24px" href="/operator">Open operator</a>
+  </div>
+</section>
+
+<section id="incident" aria-labelledby="inc-h">
+  <div class="wrap">
+    <span class="eyebrow">Live incident · Coston2</span>
+    <h2 id="inc-h">The tests passed. The ledger proved us wrong.</h2>
+    <p class="note">A live redemption was still <code>ACTIVE</code> on Flare after the assigned agent had already paid it on
+    XRPL. Signet read <code>ACTIVE</code> as unpaid and sent the same obligation again.</p>
+    <div class="timeline">
+      <article class="card"><span class="when">Before</span><h4>ACTIVE meant authorize</h4><p class="note" style="margin:0">Three duplicate-payment guards, all watching Flare.</p></article>
+      <article class="card"><span class="when">Ledger ${escape(incident.agentPaidLedger)}</span><h4>The agent had paid</h4><p class="note" style="margin:0">From its own underlying address, on XRPL.</p></article>
+      <article class="card"><span class="when">Ledger ${escape(incident.signetPaidLedger)}</span><h4>Signet paid again</h4><p class="note" style="margin:0">${escape(incident.gapLedgers)} ledgers later. No third party lost funds, which is luck about the test setup.</p></article>
+      <article class="card"><span class="when">Now</span><h4>${escape(incident.reasonCode)}</h4><p class="note" style="margin:0">V2 requires the signing boundary's own XRPL observation, bound into the commitment.</p></article>
+    </div>
+    <a class="btn btn-ghost" style="margin-top:24px" href="/proof/incident/${escape(incident.requestId)}">Read the full incident</a>
+  </div>
+</section>
+
+<section id="proof" aria-labelledby="proof-h">
+  <div class="wrap">
+    <span class="eyebrow">Proof</span>
+    <h2 id="proof-h">What holds up, and what does not</h2>
+    <p class="note">Six of ${claimTotals.total} claims. Each one links to its evidence and to everything it does not prove.</p>
+    <div class="grid">${homeCards.map(claimCardHtml).join("")}</div>
+    <a class="btn btn-ghost" style="margin-top:24px" href="/proof">All ${claimTotals.total} claims</a>
+  </div>
+</section>
+
+<section id="boundary" aria-labelledby="b-h">
+  <div class="wrap">
+    <span class="eyebrow">Current deployment boundary</span>
+    <h2 id="b-h">What this deployment is not</h2>
+    <p class="note">Five FCC states, tracked separately, because collapsing any two of them is how a project ends up implying
+    attestation it does not have.</p>
+    ${fccStatusGrid()}
+  </div>
+</section>
+
+<section id="cta" aria-labelledby="cta-h">
+  <div class="wrap">
+    <h2 id="cta-h">Check it yourself</h2>
+    <p class="note">No wallet, no funds, no Docker, no GCP, no secrets. One command from a fresh clone.</p>
+    <p class="chain">make judge<br><span style="color:var(--fog)">→ ${judge.pass} PASS · ${judge.fail} FAIL · ${judge.unverifiable} UNVERIFIABLE</span></p>
+    <div class="cta-row">
+      <a class="btn btn-primary" href="/operator">Open operator</a>
+      <a class="btn btn-ghost" href="/proof">View proof</a>
+      <a class="btn btn-quiet" href="${ENDPOINTS.repository}" rel="noreferrer noopener">GitHub ↗</a>
+    </div>
+  </div>
+</section>`;
+
+// ---------------------------------------------------------------- /operator
+
+const operator = () => `
+<div class="wrap">
+  <div class="hero" style="grid-template-columns:1fr;padding-bottom:0">
+    <div class="hero-copy">
+      <span class="eyebrow">Operator console</span>
+      <h1>Inspect a redemption obligation.</h1>
+      <p class="lede">Read-only, against live Coston2 and XRPL. A wallet is optional, and connecting one never implies you
+      operate a FAssets agent.</p>
+      ${deploymentStrip()}
+    </div>
+  </div>
+</div>
+
+<section id="onboarding" aria-labelledby="onb-h">
+  <div class="wrap">
+    <h2 id="onb-h">First run</h2>
+    <p class="note">Seven steps. Nothing here spends anything, and nothing signs.</p>
+    <ol class="rows" style="list-style:none;margin:0;padding:0" id="onboarding-list">
+      ${[
+        ["Connect or continue read-only", "A wallet is optional. Everything below works without one."],
+        ["Check the network", "Coston2, chain id 114. The console offers a switch if your wallet is elsewhere."],
+        ["Review deployment state", "Registry, sender, extension and the five FCC statuses."],
+        ["Enter a redemption request id", "The only thing a caller supplies."],
+        ["Inspect the canonical obligation", "Every field carries where it came from."],
+        ["Observe XRPL", "Independent endpoints must agree."],
+        ["Preview the decision", "Authorization, or a typed refusal with its reason code."],
+      ]
+        .map(
+          ([t, d], i) =>
+            `<li class="row"><div style="padding:18px 22px"><span class="badge">${String(i + 1).padStart(2, "0")}</span>
+             <span class="title" style="margin-left:10px">${escape(t)}</span>
+             <p class="note" style="margin:8px 0 0">${escape(d)}</p></div></li>`,
+        )
+        .join("")}
+    </ol>
+  </div>
+</section>
+
+<section id="deployment" aria-labelledby="dep-h">
+  <div class="wrap">
+    <h2 id="dep-h">Deployment</h2>
+    <p class="note">Read from <code>deployments/coston2.json</code> at build time, and re-checked live when scripting is on.</p>
+    <div class="scroll"><table>
+      <thead><tr><th scope="col">Contract</th><th scope="col">Address</th><th scope="col">Live</th></tr></thead>
       <tbody>
-        ${settlementReceipts
+        ${[
+          ["SignetRegistry", deployment.registry],
+          ["SignetInstructionSender", deployment.instructionSender],
+          ["SignetFccInstructionSender", deployment.fccSender],
+          ["FlareTeeManager", deployment.flareTeeManager],
+          ["AssetManagerFXRP", deployment.assetManager],
+        ]
           .map(
-            (r) => `<tr>
-          <td><a class="mono" href="https://testnet.xrpl.org/transactions/${escape(r.body.txHash)}">${escape(short(r.body.txHash, 12))}</a></td>
-          <td class="mono">${escape(r.body.requestId ?? "—")}</td>
-          <td class="mono">${escape(r.body.validatedLedger ?? "—")}</td>
-          <td class="mono">${escape(r.body.engineResult ?? "—")}</td>
-          <td class="mono">${escape(r.body.schemaVersion ?? 1)}</td>
-          <td>${
-            r.body.settles === false
-              ? '<span class="status unverifiable"><span class="dot"></span>seam proof only</span>'
-              : '<span class="status verified"><span class="dot"></span>claims settlement</span>'
-          }</td>
+            ([name, addr]) => `<tr><td>${escape(name)}</td>
+            <td><a class="mono" href="${explorerAddress(addr)}" rel="noreferrer noopener">${escape(short(addr, 14, 8))}</a></td>
+            <td data-live-code="${escape(addr)}"><span class="badge">not checked</span></td></tr>`,
+          )
+          .join("")}
+      </tbody>
+    </table></div>
+    <h3 style="margin-top:32px">FCC status</h3>
+    ${fccStatusGrid()}
+  </div>
+</section>
+
+<section id="inspector" aria-labelledby="ins-h">
+  <div class="wrap">
+    <h2 id="ins-h">Request inspector</h2>
+    <p class="note">Reads the canonical obligation from the deployed contract on Coston2. With scripting off, the worked
+    example below shows exactly what it returns.</p>
+    <noscript><p class="noscript">JavaScript is off, so the live inspector is unavailable. The committed example below is
+    the same shape the live read returns.</p></noscript>
+    <div class="card" id="inspector-panel" data-inspector hidden>
+      <div class="badges">${badge("Live Coston2", "verified")}</div>
+      <label for="request-id" style="display:block;font-weight:600;margin-bottom:6px">Redemption request id</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <input id="request-id" name="request-id" inputmode="numeric" autocomplete="off"
+          value="${escape(incident.requestId)}"
+          style="flex:1 1 220px;min-width:0;font-family:var(--mono);font-size:14px;padding:12px 14px;border:1px solid var(--cloud);border-radius:14px;background:var(--snow)">
+        <button class="btn btn-primary" type="button" data-inspect>Inspect obligation</button>
+      </div>
+      <p class="note" id="inspector-status" role="status" aria-live="polite" style="margin:14px 0 0"></p>
+      <div id="inspector-result"></div>
+    </div>
+    <article class="card" style="margin-top:16px">
+      <div class="badges">${badge("Committed example")}${badge("Deterministic demo")}</div>
+      <h3>Worked example</h3>
+      <dl class="kv">
+        <dt>requestId</dt><dd class="mono">${escape(demoReceipt?.requestId ?? "—")}</dd>
+        <dt>destination</dt><dd class="mono">${escape(demoReceipt?.destination ?? "—")}</dd>
+        <dt>amount</dt><dd class="mono">${escape(demoReceipt?.amountDrops ?? "—")} drops</dd>
+        <dt>XRPL result</dt><dd class="mono">${escape(demoReceipt?.engineResult ?? "—")}</dd>
+        <dt>replay</dt><dd class="mono">${escape(demoReceipt?.replayEngineResult ?? "—")}</dd>
+        <dt>FDC</dt><dd class="mono">${escape(demoReceipt?.fdcStatus ?? "—")}</dd>
+        <dt>attestation</dt><dd>${escape(demoReceipt?.attestation ?? "none")}</dd>
+      </dl>
+    </article>
+  </div>
+</section>
+
+<section id="actions" aria-labelledby="act-h">
+  <div class="wrap">
+    <h2 id="act-h">What this console can and cannot do</h2>
+    <p class="note">An unavailable action is shown disabled with its reason rather than hidden.</p>
+    <div class="scroll"><table>
+      <thead><tr><th scope="col">Action</th><th scope="col">Status</th><th scope="col">Why</th></tr></thead>
+      <tbody>
+        ${[
+          ["Connect wallet", "Real", "Explicit click only, plain EIP-1193, no SDK."],
+          ["Switch to Coston2", "Real", "Chain id 114."],
+          ["Read canonical obligation", "Real", "Where the request state permits it."],
+          ["Inspect deployment", "Real", "Read-only contract code checks."],
+          ["Observe XRPL", "Real, read-only", "Independent endpoints must agree."],
+          ["Verify a receipt", "Real", "Runs in the repository, not the browser."],
+          ["Deterministic attack demo", "Simulation", "Labelled, from a committed fixture."],
+          ["Simulated FCC policy execution", "Simulated", "Local process, no TEE, labelled everywhere."],
+          ["Hardware FCC authorization", "Unavailable", "No TEE machine. MachineManager owner admission required."],
+          ["Operate as a whitelisted FAssets agent", "Out of scope", "Flare declined new agents; Signet holds no agent authority."],
+        ]
+          .map(
+            ([a, s, w]) =>
+              `<tr><td>${escape(a)}</td><td>${badge(s, s === "Real" || s === "Real, read-only" ? "verified" : s === "Unavailable" || s === "Out of scope" ? "unavailable" : "simulated")}</td><td class="note" style="margin:0">${escape(w)}</td></tr>`,
+          )
+          .join("")}
+      </tbody>
+    </table></div>
+    <p style="margin-top:20px"><button class="btn btn-ghost" type="button" disabled
+      title="No TEE machine is registered. MachineManager owner admission is required.">Hardware FCC authorization · unavailable</button></p>
+  </div>
+</section>`;
+
+// ---------------------------------------------------------------- /proof
+
+const proofOverview = () => `
+<div class="wrap">
+  <div class="hero" style="grid-template-columns:1fr;padding-bottom:0">
+    <div class="hero-copy">
+      <span class="eyebrow">Proof</span>
+      <h1>What Signet has actually proven.</h1>
+      <p class="lede">${claimTotals.total} claims, ${claimTotals.verified} verified and ${claimTotals.unavailable} unavailable.
+      Every one states what it does not prove.</p>
+    </div>
+  </div>
+</div>
+
+<section id="verify" aria-labelledby="v-h">
+  <div class="wrap">
+    <h2 id="v-h">Verify it yourself</h2>
+    <p class="note">No wallet, no funds, no Docker, no GCP, no secrets.</p>
+    <p class="chain">git clone ${escape(ENDPOINTS.repository)}<br>make judge</p>
+    <dl class="strip">
+      <div><dt>Pass</dt><dd class="tone-verified"><span class="dot"></span>${judge.pass}</dd></div>
+      <div><dt>Fail</dt><dd class="tone-verified"><span class="dot"></span>${judge.fail}</dd></div>
+      <div><dt>Unverifiable</dt><dd class="tone-simulated"><span class="dot"></span>${judge.unverifiable}</dd></div>
+    </dl>
+    <details class="row" style="margin-top:16px;border:1px solid var(--cloud);border-radius:24px;background:var(--snow)">
+      <summary><span class="title">What UNVERIFIABLE means, and why it is not a failure</span></summary>
+      <div class="body">
+        <p>It means the check could not be performed from where it ran, and it is never folded into a pass. Today there are two.
+        One XRPL testnet node has pruned the ledger holding the payment, so a single endpoint cannot testify to it. And whether
+        FdcVerification accepted the proof is reported by the receipt rather than re-checked by <code>make judge</code>; the
+        receipt verifier re-encodes the Merkle proof and does check it.</p>
+      </div>
+    </details>
+  </div>
+</section>
+
+<section id="claims" aria-labelledby="c-h">
+  <div class="wrap">
+    <h2 id="c-h">Claims by area</h2>
+    <p class="note">Collapsed by default. The full ledger with every limitation is on
+    <a href="/proof/claims">the claims page</a>.</p>
+    ${claimGroups
+      .map(
+        ([group, claims]) => `
+      <h3 style="margin-top:32px">${escape(group)} <span class="badge">${claims.length}</span></h3>
+      <div class="rows">
+        ${claims
+          .map(
+            (c) => `<details class="row"><summary>
+              <span class="title">${escape(c.title)}</span>
+              ${badge(c.status === "verified" ? "verified" : c.status, c.status === "verified" ? "verified" : "unavailable")}
+              ${(c.network ?? []).map((n) => badge(n)).join("")}
+              <span class="sub">${escape(String(c.wording).slice(0, 180))}${String(c.wording).length > 180 ? "…" : ""}</span>
+            </summary><div class="body"><a class="more" href="/proof/claims#${escape(c.id)}">Full claim and limitations</a></div></details>`,
+          )
+          .join("")}
+      </div>`,
+      )
+      .join("")}
+  </div>
+</section>
+
+<section id="explore" aria-labelledby="e-h">
+  <div class="wrap">
+    <h2 id="e-h">Go deeper</h2>
+    <div class="grid">
+      <article class="card"><h3><a href="/proof/claims">Full claim ledger</a></h3><p class="note" style="margin:0">All ${claimTotals.total} claims with every limitation.</p></article>
+      <article class="card"><h3><a href="/proof/transactions">Transactions</a></h3><p class="note" style="margin:0">${transactions.length} receipts, their role and their evidence class.</p></article>
+      <article class="card"><h3><a href="/proof/incident/${escape(incident.requestId)}">Incident ${escape(incident.requestId)}</a></h3><p class="note" style="margin:0">The duplicate payment, and the protocol change it forced.</p></article>
+    </div>
+  </div>
+</section>`;
+
+// ---------------------------------------------------------------- /proof/claims
+
+const claimsPage = () => `
+<div class="wrap">
+  <div class="hero" style="grid-template-columns:1fr;padding-bottom:0">
+    <div class="hero-copy">
+      <span class="eyebrow">Proof · full ledger</span>
+      <h1>Every claim, and what it does not prove.</h1>
+      <p class="lede">Generated from <code>evidence/claim-ledger.json</code>. A claim with no limitations listed is a claim
+      that has not been examined hard enough, so they are shown first-class.</p>
+    </div>
+  </div>
+</div>
+${claimGroups
+  .map(
+    ([group, claims]) => `
+<section id="group-${escape(group.toLowerCase())}" aria-labelledby="g-${escape(group.toLowerCase())}">
+  <div class="wrap">
+    <h2 id="g-${escape(group.toLowerCase())}">${escape(group)}</h2>
+    <div class="rows">
+      ${claims
+        .map(
+          (c) => `<details class="row" id="${escape(c.id)}"><summary>
+        <span class="title">${escape(c.title)}</span>
+        ${badge(c.status, c.status === "verified" ? "verified" : "unavailable")}
+        ${badge(`level ${c.proofLevel}`)}
+        ${(c.network ?? []).map((n) => badge(n)).join("")}
+      </summary><div class="body">
+        <h4>The claim</h4><p>${escape(c.wording)}</p>
+        <h4>What it does not prove</h4>
+        <ul>${(c.limitations ?? []).map((l) => `<li>${escape(l)}</li>`).join("")}</ul>
+        <h4>Evidence</h4>
+        <ul>${(c.evidence ?? []).map((e) => `<li><code>${escape(e)}</code></li>`).join("")}</ul>
+      </div></details>`,
+        )
+        .join("")}
+    </div>
+  </div>
+</section>`,
+  )
+  .join("")}`;
+
+// ---------------------------------------------------------------- /proof/transactions
+
+const transactionsPage = () => `
+<div class="wrap">
+  <div class="hero" style="grid-template-columns:1fr;padding-bottom:0">
+    <div class="hero-copy">
+      <span class="eyebrow">Proof · transactions</span>
+      <h1>Every receipt, and what it is evidence of.</h1>
+      <p class="lede">A receipt that only proves a seam says so. One of these is an incident, not a demonstration.</p>
+    </div>
+  </div>
+</div>
+<section id="tx" aria-labelledby="tx-h">
+  <div class="wrap">
+    <h2 id="tx-h">Receipts</h2>
+    <div class="scroll"><table>
+      <thead><tr>
+        <th scope="col">Transaction</th><th scope="col">Request</th><th scope="col">Network</th>
+        <th scope="col">Ledger</th><th scope="col">Result</th><th scope="col">Role</th>
+      </tr></thead>
+      <tbody>
+        ${transactions
+          .map(
+            (t) => `<tr>
+          <td>${t.explorer ? `<a class="mono" href="${escape(t.explorer)}" rel="noreferrer noopener">${escape(short(t.hash, 12, 6))}</a>` : `<span class="mono">${escape(short(t.hash, 12, 6))}</span>`}</td>
+          <td class="mono">${escape(t.requestId ?? "—")}</td>
+          <td>${escape(t.network)}</td>
+          <td class="mono">${escape(t.ledgerIndex ?? "—")}</td>
+          <td>${escape(t.result ?? "—")}</td>
+          <td>${badge(t.role, t.role === "Incident" ? "simulated" : "")}${t.settles === false ? badge("seam only") : ""}</td>
         </tr>`,
           )
           .join("")}
       </tbody>
-    </table>
+    </table></div>
+    <p class="note" style="margin-top:16px">Evidence files are listed inside each claim on
+    <a href="/proof/claims">the claims page</a> rather than used as the primary label here.</p>
   </div>
-</section>
-`;
+</section>`;
 
-// ---------------------------------------------------------------- operator page
+// ---------------------------------------------------------------- /proof/incident
 
-// The row label is not always a two-digit phase number: gate B is a row too. An earlier version
-// matched /^\| \d\d \|/ and silently dropped it, which is the second time this table has lost
-// content without anything failing. Match any row whose first cell is not the header or separator,
-// and assert below that nothing was dropped.
-const phaseRows = (() => {
-  const doc = readFileSync(join(REPO_ROOT, "docs", "run", "AUTONOMOUS_RUN.md"), "utf8");
-  const section = doc.split(/^## /m).find((s) => s.startsWith("Phase index"));
-  if (!section) throw new Error("AUTONOMOUS_RUN.md has no 'Phase index' section");
-  const table = section.split("\n").filter((line) => /^\|/.test(line) && !/^\|\s*-+/.test(line));
-  const rows = table
-    .map((line) => line.split("|").map((cell) => cell.trim()))
-    .filter((cells) => cells[1] && cells[1] !== "Phase")
-    .map((cells) => ({ phase: cells[1], name: cells[2], status: cells[3] || "pending" }));
-  const dropped = table.length - 1 - rows.length;
-  if (dropped !== 0) throw new Error(`phase table parse dropped ${dropped} rows; the parser and the table disagree`);
-  return rows;
-})();
-
-const blocker = runState.blocker ?? {};
-
-const operatorBody = `
-<section aria-labelledby="state-h">
-  <h2 id="state-h">Run state</h2>
-  <p class="section-note">Read from <code>docs/run/run-state.json</code> at build time.</p>
-  <div class="grid">
-    <div class="card">
-      <h3>Where the run is</h3>
-      <dl class="facts">
-        <dt>Status</dt><dd>${escape(runState.status)}</dd>
-        <dt>Current phase</dt><dd>${escape(runState.currentPhase)}</dd>
-        <dt>Last passing</dt><dd>${escape(runState.lastPassingPhase ?? "—")}</dd>
-        <dt>Updated</dt><dd class="mono">${escape(runState.updatedAt)}</dd>
-      </dl>
+const incidentPage = () => {
+  const c = incident.claim;
+  return `
+<div class="wrap">
+  <div class="hero" style="grid-template-columns:1fr;padding-bottom:0">
+    <div class="hero-copy">
+      <span class="eyebrow">Live incident · Coston2 · request ${escape(incident.requestId)}</span>
+      <h1>The tests passed. The ledger proved us wrong.</h1>
+      <p class="lede">Signet paid a redemption obligation that another party had already paid, because <code>ACTIVE</code> on
+      Flare does not mean unpaid on XRPL, and every guard Signet had watched the wrong chain.</p>
     </div>
-    <div class="card">
-      <h3>What is blocked</h3>
-      ${
-        blocker.requirement
-          ? `<dl class="facts">
-              <dt>Needs</dt><dd>${escape(blocker.requirement)}</dd>
-              <dt>Phases held</dt><dd>${escape((blocker.deferredPhases ?? []).join(", ") || "—")}</dd>
-              <dt>Last attempt</dt><dd class="mono">${escape(blocker.reattemptedAt ?? "—")}</dd>
-              <dt>Result</dt><dd>${escape(blocker.reattemptResult ?? "—")}</dd>
-            </dl>`
-          : "<p style=\"margin:0;color:var(--steel)\">Nothing blocked.</p>"
-      }
+  </div>
+</div>
+
+<section id="what" aria-labelledby="w-h">
+  <div class="wrap">
+    <h2 id="w-h">What happened</h2>
+    <div class="timeline">
+      <article class="card"><span class="when">Ledger ${escape(incident.agentPaidLedger)}</span><h4>The agent paid</h4><p class="note" style="margin:0">From its own underlying address.</p></article>
+      <article class="card"><span class="when">Meanwhile</span><h4>Coston2 said ACTIVE</h4><p class="note" style="margin:0">Which means not yet confirmed on Flare, not unpaid.</p></article>
+      <article class="card"><span class="when">Ledger ${escape(incident.signetPaidLedger)}</span><h4>Signet paid again</h4><p class="note" style="margin:0">${escape(incident.gapLedgers)} ledgers later.</p></article>
+      <article class="card"><span class="when">Correction</span><h4>${escape(incident.reasonCode)}</h4><p class="note" style="margin:0">Schema V2 requires the boundary's own observation.</p></article>
     </div>
   </div>
 </section>
 
-<section aria-labelledby="phases-h">
-  <h2 id="phases-h">Phases</h2>
-  <p class="section-note">A phase is not complete because code compiles. It is complete when its
-  evidence and its target-network requirement both pass, which is why several below are partial.</p>
-  <div class="card scroll">
-    <table>
-      <thead><tr><th scope="col">Phase</th><th scope="col">Name</th><th scope="col">Status</th></tr></thead>
-      <tbody>${phaseRows
-        .map(
-          (r) => `<tr><td class="mono">${escape(r.phase)}</td><td>${escape(r.name)}</td>
-          <td>${
-            /PASS/.test(r.status)
-              ? `<span class="status verified"><span class="dot"></span>${escape(r.status.replace(/\[.*/, "").trim())}</span>`
-              : /DEFERRED|PARTIAL/.test(r.status)
-                ? `<span class="status unverifiable"><span class="dot"></span>${escape(r.status.replace(/\[.*/, "").trim())}</span>`
-                : `<span class="status deferred"><span class="dot"></span>${escape(r.status || "pending")}</span>`
-          }</td></tr>`,
-        )
-        .join("")}</tbody>
-    </table>
+<section id="why" aria-labelledby="y-h">
+  <div class="wrap">
+    <h2 id="y-h">Root cause</h2>
+    <p class="note">Signet had three duplicate-payment guards and all three are real: the registry rejects a repeated action,
+    the coordinator database permits one completion per obligation, and the XRP ledger refuses a consumed sequence. Every one
+    of them prevents <em>Signet</em> paying twice. None can see a payment made by somebody else.</p>
+    <p class="note">The defect was not a missing check. It was a missing chain.</p>
+    <h3 style="margin-top:32px">Reason codes this created</h3>
+    <div class="rows">
+      ${REASON_CODES.map(
+        ([code, when]) =>
+          `<details class="row"><summary><span class="title mono">${escape(code)}</span></summary><div class="body">${escape(when)}</div></details>`,
+      ).join("")}
+    </div>
   </div>
 </section>
-`;
+
+<section id="residual" aria-labelledby="r-h">
+  <div class="wrap">
+    <h2 id="r-h">The residual, stated rather than hidden</h2>
+    <p class="note"><code>S021</code> fires on a payment that has <strong>validated</strong>. Between another party submitting a
+    payment and that payment validating, Signet can still observe nothing and authorize. That window cannot be closed by
+    observation. Closing it needs exclusive signing authority over the underlying account, which is Signet's production
+    architecture and is not instantiated by this deployment.</p>
+    <p class="note">No third party lost funds. That is luck about the test setup, not a property of the system.</p>
+    ${c ? `<div class="rows"><details class="row"><summary><span class="title">The claim this incident backs</span>${badge(c.status, "verified")}</summary><div class="body"><p>${escape(c.wording)}</p><h4>What it does not prove</h4><ul>${(c.limitations ?? []).map((l) => `<li>${escape(l)}</li>`).join("")}</ul></div></details></div>` : ""}
+    <p class="note" style="margin-top:20px">Permanent regression: <code>${escape(incident.regression)}</code>, which asserts no
+    V2 input can reproduce the original authorization. It runs in <code>make verify</code>.</p>
+    <a class="btn btn-ghost" href="/proof/transactions">See the transactions</a>
+  </div>
+</section>`;
+};
 
 // ---------------------------------------------------------------- emit
 
-mkdirSync(OUT, { recursive: true });
-writeFileSync(
-  join(OUT, "index.html"),
-  page({
-    title: "What Signet has actually proven",
-    // "Attested external execution layer" is the product's category name, and in a search result or
-    // a share preview it would appear stripped of the page that qualifies it. On the one page whose
-    // job is precision about what is proven, the summary says what is true instead.
-    description:
-      "An external execution layer for FAssets agents: obligation in, constrained XRP signature out, FDC proof back on chain. The extension runs as a local process with no TEE and nothing is hardware-attested. Every claim is paired with what it does not prove, and every figure traces to a committed file you can verify yourself.",
-    current: "proof",
-    body: proofBody,
-  }),
-);
-writeFileSync(
-  join(OUT, "operator.html"),
-  page({
-    title: "Operator state",
-    description: "Where the build run is, what is blocked, and why.",
-    current: "operator",
-    body: operatorBody,
-  }),
-);
+const DESCRIPTION =
+  "Signet reads a FAssets redemption obligation from Flare, derives the XRP payment instead of accepting caller-supplied fields, checks XRPL for a prior payment, and proves the outcome through FDC. The extension runs as a local process: nothing is hardware-attested.";
 
-// Cloudflare Pages serves _headers verbatim. The policy is strict because this page has no scripts
-// and no external assets, so anything asking for either is a change worth noticing.
+const routes = [
+  ["index.html", { title: "Signet — only the XRP payment FAssets asked for", description: DESCRIPTION, current: "home", body: home(), script: "/app.js" }],
+  ["operator/index.html", { title: "Operator console — Signet", description: "Inspect a Coston2 redemption obligation, observe XRPL and preview Signet's decision. Read-only, wallet optional.", current: "operator", body: operator(), script: "/app.js" }],
+  ["proof/index.html", { title: "Proof — Signet", description: `${claimTotals.total} claims, each stating what it does not prove.`, current: "proof", body: proofOverview() }],
+  ["proof/claims/index.html", { title: "Claim ledger — Signet", description: "Every Signet claim with its evidence and its limitations.", current: "proof", body: claimsPage() }],
+  ["proof/transactions/index.html", { title: "Transactions — Signet", description: "Every committed receipt and what it is evidence of.", current: "proof", body: transactionsPage() }],
+  [`proof/incident/${incident.requestId}/index.html`, { title: `Incident ${incident.requestId} — Signet`, description: "Signet double-paid a live Coston2 redemption. What happened, why, and the protocol change it forced.", current: "incident", body: incidentPage() }],
+];
+
+mkdirSync(OUT, { recursive: true });
+for (const [file, model] of routes) {
+  const target = join(OUT, file);
+  mkdirSync(join(target, ".."), { recursive: true });
+  writeFileSync(target, page(model));
+}
+
+// brand assets
+const brandSrc = join(REPO_ROOT, "web", "public", "brand");
+const brandOut = join(OUT, "brand");
+mkdirSync(brandOut, { recursive: true });
+for (const f of readdirSync(brandSrc)) copyFileSync(join(brandSrc, f), join(brandOut, f));
+
+// first-party script
+const appSrc = join(REPO_ROOT, "web", "public", "app.js");
+if (existsSync(appSrc)) copyFileSync(appSrc, join(OUT, "app.js"));
+
 writeFileSync(
   join(OUT, "_headers"),
   `/*
-  Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; img-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
-  X-Content-Type-Options: nosniff
+  Content-Security-Policy: ${CSP}
   Referrer-Policy: no-referrer
+  X-Content-Type-Options: nosniff
+  Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=()
 `,
 );
 
-const assets = ["favicon.ico", "favicon.svg"];
-for (const asset of assets) {
-  const source = join(REPO_ROOT, asset);
-  if (existsSync(source)) copyFileSync(source, join(OUT, asset));
-}
-
-console.log(`built ${ledger.claims.length} claims and ${settlementReceipts.length} transactions into web/dist`);
+console.log(`built ${routes.length} routes, ${claimTotals.total} claims, ${transactions.length} receipts`);
+console.log(`connect-src: ${CONNECT_SRC.join(" ")}`);
