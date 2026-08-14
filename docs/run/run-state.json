@@ -1,34 +1,45 @@
 {
   "product": "Signet",
-  "status": "ready_for_submission",
+  "status": "ready_for_demo_review",
   "currentPhase": "14",
   "lastPassingPhase": "14",
   "validation": "passed",
+  "repository": "https://github.com/winsznx/signet",
+  "proofSite": "https://signet-proof.pages.dev/",
   "blocker": {
     "kind": "none",
     "resolved": [
       "C2FLR funding received and spent on deployment, minting, FDC requests and FCC registration",
       "Cloudflare: existing local Wrangler OAuth login was sufficient; site deployed",
       "FAssets agent whitelist: Flare declined to approve new agents on 2026-08-11 and directed Signet to test the execution layer. Closed, not pending.",
-      "GCP Confidential Space: downgraded on 2026-08-14 from a submission blocker to a stretch proof. The billing account is in prepayment mode and did not open in time. No hardware-attestation claim is made anywhere, so nothing in the submission depends on it. Checklist: docs/run/GATE_A_STRETCH.md"
+      "GCP Confidential Space: downgraded 2026-08-14 to a stretch. Nothing in the submission depends on it. Checklist: docs/run/GATE_A_STRETCH.md",
+      "Shared FCC indexer: credentials supplied and working. The proxy synced against 34.38.42.208 with head 3 seconds behind wall clock. Self-hosting an indexer is not required and should not be attempted.",
+      "Public repository: created and pushed."
     ],
-    "note": "Acceptance boundary is docs/evidence/organizer-accepted-proof-boundary.md. No open external blockers. Nothing has been submitted externally; the package awaits the operator's final review."
+    "note": "Nothing has been submitted externally. The package awaits the operator's demo review."
   },
-  "gateB": {
-    "status": "deployed",
+  "fcc": {
+    "extensionRegistered": true,
     "extensionId": "66248",
     "instructionSender": "0x7e2dd9078c7d741e0cF81904264A79e70212963a",
-    "supersedes": ["66163", "66164"],
-    "evidence": "docs/evidence/gate-b.md"
+    "supersedes": ["66163", "66164", "66244"],
+    "machineRegistered": false,
+    "machineProduction": false,
+    "simulatedExecution": true,
+    "hardwareAttestation": false,
+    "machineAttemptResult": "register() reverted OwnerNotAllowed: MachineManager is gated on an owner allowlist Flare maintains. Evidence: docs/evidence/fcc-machine-attempt.md",
+    "note": "These five statuses are tracked as five separate claims and must never be collapsed."
+  },
+  "invariants": {
+    "singleDispatch": "at most one FCC instruction dispatch per (requestId, generation), enforced on chain by action.state == REQUESTED plus instructionDispatched[actionId], flag set before the external call. 14 tests including a 256-run fuzz."
   },
   "openFindings": {
-    "count": 5,
+    "count": 4,
     "highestSeverity": "high",
-    "reachableToday": 3,
-    "note": "Recorded rather than fixed: phase 14 forbids feature work and the contract half is deployed. Finding 1 is unreachable today and becomes a blocker for gate A. See docs/threat-model.md, 'Open after gate B'.",
+    "note": "Finding 1 (re-invocable authorizeRedemption) is FIXED and redeployed. Four remain, recorded rather than fixed. See docs/threat-model.md, 'Open after gate B'.",
     "location": "docs/threat-model.md"
   },
-  "updatedAt": "2026-08-14T07:35:00Z",
+  "updatedAt": "2026-08-14T19:05:00Z",
   "schemaVersion": 2,
   "acceptanceBoundary": "docs/evidence/organizer-accepted-proof-boundary.md"
 }
