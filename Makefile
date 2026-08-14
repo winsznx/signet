@@ -23,6 +23,8 @@ help:
 	@echo "  fmt lint typecheck"
 	@echo "  test-unit test-property test-contract test-race test-integration test-e2e"
 	@echo "  scan              secret and dependency scanning"
+	@echo "  doctor            read-only diagnosis of the deployed FCC surface"
+	@echo "  judge             independent verification: no wallet, funds, Docker, GCP or TEE"
 	@echo "  verify            every gate that is implemented today"
 	@echo "  verify-phase PHASE=NN"
 
@@ -43,6 +45,7 @@ verify-bootstrap:
 	node scripts/verify-source-lock.mjs
 	node scripts/verify-claim-ledger.mjs
 	node scripts/build-evidence-graph.mjs
+	node scripts/doctor.test.mjs
 	forge build --sizes >/dev/null
 	@echo "verify-bootstrap OK"
 
@@ -155,6 +158,20 @@ scan:
 	bash scripts/secret-scan.test.sh
 	bash scripts/secret-scan.sh
 	pnpm audit --prod || true
+
+# ---------------------------------------------------------------------------- operator and judge
+
+# Read-only diagnosis of the deployed FCC surface. Never mutates: recovery actions are in
+# docs/runbooks/recovery.md and are run deliberately, by hand.
+.PHONY: doctor
+doctor:
+	@node scripts/doctor.mjs
+
+# Independent verification for someone who is not us. No wallet, no funds, no Docker, no GCP, no
+# TEE, no secrets. Exits 0 on all-pass, 1 on any failure, 2 if something could not be checked.
+.PHONY: judge
+judge:
+	@node scripts/judge.mjs
 
 # ---------------------------------------------------------------------------- gates
 
