@@ -66,9 +66,9 @@ cast sig "authorizeRedemption(uint256,uint32)"
 ```bash
 # It is the sender the live registry points at.
 cast call 0x1a9C4A0f9D76c0b1D91d22E24E573a9b377618aE \
-  "getTeeExtensionInstructionsSender(uint256)(address)" 66244 \
+  "getTeeExtensionInstructionsSender(uint256)(address)" 66248 \
   --rpc-url https://coston2-api.flare.network/ext/C/rpc
-# 0x3FFA63a3bf21a626c1B391D2577b1800e67F5Be0
+# 0x7e2dd9078c7d741e0cF81904264A79e70212963a
 ```
 
 **Say:**

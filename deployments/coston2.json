@@ -93,12 +93,18 @@
         "instructionSender": "0xDd8aA7A4f43f01258A426a30d02032821De9bc6e",
         "retiredAt": "2026-08-14T06:51:34Z",
         "reason": "It checked the obligation against SignetRegistry, which is why it superseded 66163, but its authorizeRedemption still accepted a caller-authored message: the caller chose destination, amount, reference, tag and window, and the contract checked those for internal consistency rather than truth. Superseded by gate B, whose authorizeRedemption(uint256,uint32) takes a request id and a generation and resolves every payment field from FAssets itself, so no parameter exists through which a caller could express one. It never carried a live TEE machine, so no instruction was ever executed through it."
+      },
+      {
+        "extensionId": "66244",
+        "instructionSender": "0x3FFA63a3bf21a626c1B391D2577b1800e67F5Be0",
+        "retiredAt": "2026-08-14T08:15:23Z",
+        "reason": "Its authorizeRedemption gated on action.state != NONE, so an action already moved to AUTHORIZED, REFUSED or EVIDENCE_FINALIZED could be instructed again, and it kept no record of having dispatched, so repeated calls while the action was still REQUESTED each produced a fresh instruction. A 256-run fuzz over caller sequences found ten dispatches for one obligation. Superseded by a sender that admits only REQUESTED and records the dispatch on chain before the external call, giving at most one instruction per (requestId, generation). It never carried a live TEE machine, so no instruction was ever executed through it."
       }
     ],
-    "registeredAt": "2026-08-14T06:51:34Z",
+    "registeredAt": "2026-08-14T08:15:23Z",
     "flareTeeManager": "0x1a9C4A0f9D76c0b1D91d22E24E573a9b377618aE",
-    "instructionSender": "0x3FFA63a3bf21a626c1B391D2577b1800e67F5Be0",
-    "extensionId": "66244",
+    "instructionSender": "0x7e2dd9078c7d741e0cF81904264A79e70212963a",
+    "extensionId": "66248",
     "stateVerifier": "0x0000000000000000000000000000000000000000",
     "signetRegistry": "0x381bdE5961695914B28B16f405d51E8acB877f6e",
     "assetManager": "0xc1ca88b937d0b528842f95d5731ffb586f4fbdfa",
@@ -109,14 +115,14 @@
       "HEALTH_CHECK"
     ],
     "transactions": {
-      "deploy": "0x58080e620c7f584ae618a6926b24549b9c31561ec18f2f67538af6c7c5915c29",
-      "register": "0xcd36b0a8909faf0422ca741c9c9bb1924673871c22e02383901e59a827f27297",
-      "setExtensionId": "0x73de6ed4861dfdf995faeded185fd1619d75920ef0c377d1f56b43f10e0f9785"
+      "deploy": "0x60ba84a3899f5d3e040acc8798ddfe05fb4738b7eed25e562fd57a675809ee72",
+      "register": "0x8bd0c42111d1d117a52e5c56a27a7708aed095eea6877e2f9125df767ce230a5",
+      "setExtensionId": "0x430e1bace9371c68afce868e22b1e91ba57c6f99556d17ba04e22b74bd2f1f14"
     },
     "teeMachineRegistered": false,
     "teeMachineNote": "No TEE machine is registered. Registration requires a GCP Confidential Space VM: FTDC rejects simulated attestation, so a machine running with MODE=1 cannot be promoted to production. The extension is registered and the instruction sender is bound; the machine half is not.",
     "explorer": {
-      "instructionSender": "https://coston2.testnet.flarescan.com/address/0x3FFA63a3bf21a626c1B391D2577b1800e67F5Be0"
+      "instructionSender": "https://coston2.testnet.flarescan.com/address/0x7e2dd9078c7d741e0cF81904264A79e70212963a"
     }
   }
 }

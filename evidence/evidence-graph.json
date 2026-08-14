@@ -8,8 +8,8 @@
   ],
   "note": "Derived. Do not hand-edit: regenerate with `node scripts/build-evidence-graph.mjs`. The claim ledger is authoritative where they disagree.",
   "counts": {
-    "nodes": 145,
-    "edges": 198,
+    "nodes": 148,
+    "edges": 202,
     "claims": 29,
     "receipts": 12
   },
@@ -42,6 +42,12 @@
       "id": "artifact:contracts/test/fork/FAssetsSeam.t.sol",
       "type": "artifact",
       "path": "contracts/test/fork/FAssetsSeam.t.sol",
+      "exists": true
+    },
+    {
+      "id": "artifact:contracts/test/unit/AuthorizeRedemptionState.t.sol",
+      "type": "artifact",
+      "path": "contracts/test/unit/AuthorizeRedemptionState.t.sol",
       "exists": true
     },
     {
@@ -448,7 +454,7 @@
       "proofLevelLabel": "state-changing execution on a live target network",
       "wording": "The only payment-bearing entry point on Signet's deployed FCC instruction sender is authorizeRedemption(uint256 requestId, uint32 generation). It exposes no parameter through which a caller could supply a destination, amount, fee, reference, destination tag, tag mode or either underlying window bound; the contract resolves every one of them from FAssets, reading the agent from the request rather than accepting one and refusing anything FAssets does not report ACTIVE.",
       "limitationCount": 8,
-      "verifiedAt": "2026-08-14T07:20:00Z"
+      "verifiedAt": "2026-08-14T08:20:00Z"
     },
     {
       "id": "claim:claim-composed-lifecycle",
@@ -773,10 +779,11 @@
       "id": "contract:0x3ffa63a3bf21a626c1b391d2577b1800e67f5be0",
       "type": "contract",
       "key": "SignetFccInstructionSender",
-      "label": "SignetFccInstructionSender (gate B)",
+      "label": "SignetFccInstructionSender (retired, extension 66244)",
       "address": "0x3FFA63a3bf21a626c1B391D2577b1800e67F5Be0",
       "network": "coston2",
-      "explorer": "https://coston2.testnet.flarescan.com/address/0x3FFA63a3bf21a626c1B391D2577b1800e67F5Be0"
+      "explorer": "https://coston2.testnet.flarescan.com/address/0x3FFA63a3bf21a626c1B391D2577b1800e67F5Be0",
+      "retired": true
     },
     {
       "id": "contract:0x48ac463d7975828989331f4de43341627b9c5f1d",
@@ -797,6 +804,15 @@
       "network": "coston2",
       "explorer": "https://coston2.testnet.flarescan.com/address/0x6D49c54D2F75214616a0964Bd52c695384f1b6E2",
       "retired": true
+    },
+    {
+      "id": "contract:0x7e2dd9078c7d741e0cf81904264a79e70212963a",
+      "type": "contract",
+      "key": "SignetFccInstructionSender",
+      "label": "SignetFccInstructionSender (gate B)",
+      "address": "0x7e2dd9078c7d741e0cF81904264A79e70212963a",
+      "network": "coston2",
+      "explorer": "https://coston2.testnet.flarescan.com/address/0x7e2dd9078c7d741e0cF81904264A79e70212963a"
     },
     {
       "id": "contract:0x906507e0b64bcd494db73bd0459d1c667e14b933",
@@ -879,6 +895,15 @@
       "id": "extension:66244",
       "type": "fccExtension",
       "extensionId": "66244",
+      "retired": true,
+      "retiredAt": "2026-08-14T08:15:23Z",
+      "reason": "Its authorizeRedemption gated on action.state != NONE, so an action already moved to AUTHORIZED, REFUSED or EVIDENCE_FINALIZED could be instructed again, and it kept no record of having dispatched, so repeated calls while the action was still REQUESTED each produced a fresh instruction. A 256-run fuzz over caller sequences found ten dispatches for one obligation. Superseded by a sender that admits only REQUESTED and records the dispatch on chain before the external call, giving at most one instruction per (requestId, generation). It never carried a live TEE machine, so no instruction was ever executed through it.",
+      "teeMachineRegistered": false
+    },
+    {
+      "id": "extension:66248",
+      "type": "fccExtension",
+      "extensionId": "66248",
       "flareTeeManager": "0x1a9C4A0f9D76c0b1D91d22E24E573a9b377618aE",
       "opType": "SIGNET_REDEMPTION",
       "commands": [
@@ -1072,18 +1097,18 @@
       "derivedInsideFccExtension": null
     },
     {
-      "id": "tx:coston2:0x58080e620c7f584ae618a6926b24549b9c31561ec18f2f67538af6c7c5915c29",
+      "id": "tx:coston2:0x430e1bace9371c68afce868e22b1e91ba57c6f99556d17ba04e22b74bd2f1f14",
       "type": "transaction",
       "network": "coston2",
-      "hash": "0x58080e620c7f584ae618a6926b24549b9c31561ec18f2f67538af6c7c5915c29",
-      "explorer": "https://coston2.testnet.flarescan.com/tx/0x58080e620c7f584ae618a6926b24549b9c31561ec18f2f67538af6c7c5915c29"
+      "hash": "0x430e1bace9371c68afce868e22b1e91ba57c6f99556d17ba04e22b74bd2f1f14",
+      "explorer": "https://coston2.testnet.flarescan.com/tx/0x430e1bace9371c68afce868e22b1e91ba57c6f99556d17ba04e22b74bd2f1f14"
     },
     {
-      "id": "tx:coston2:0x73de6ed4861dfdf995faeded185fd1619d75920ef0c377d1f56b43f10e0f9785",
+      "id": "tx:coston2:0x60ba84a3899f5d3e040acc8798ddfe05fb4738b7eed25e562fd57a675809ee72",
       "type": "transaction",
       "network": "coston2",
-      "hash": "0x73de6ed4861dfdf995faeded185fd1619d75920ef0c377d1f56b43f10e0f9785",
-      "explorer": "https://coston2.testnet.flarescan.com/tx/0x73de6ed4861dfdf995faeded185fd1619d75920ef0c377d1f56b43f10e0f9785"
+      "hash": "0x60ba84a3899f5d3e040acc8798ddfe05fb4738b7eed25e562fd57a675809ee72",
+      "explorer": "https://coston2.testnet.flarescan.com/tx/0x60ba84a3899f5d3e040acc8798ddfe05fb4738b7eed25e562fd57a675809ee72"
     },
     {
       "id": "tx:coston2:0x7814313d1809c9200f2b1059a3829b02fff6ce53517367606cbdd3b5034f0083",
@@ -1093,18 +1118,18 @@
       "explorer": "https://coston2.testnet.flarescan.com/tx/0x7814313d1809c9200f2b1059a3829b02fff6ce53517367606cbdd3b5034f0083"
     },
     {
+      "id": "tx:coston2:0x8bd0c42111d1d117a52e5c56a27a7708aed095eea6877e2f9125df767ce230a5",
+      "type": "transaction",
+      "network": "coston2",
+      "hash": "0x8bd0c42111d1d117a52e5c56a27a7708aed095eea6877e2f9125df767ce230a5",
+      "explorer": "https://coston2.testnet.flarescan.com/tx/0x8bd0c42111d1d117a52e5c56a27a7708aed095eea6877e2f9125df767ce230a5"
+    },
+    {
       "id": "tx:coston2:0xacbce0e5b67fef34c25693074bffaae7324c7e1ce3c4bff97432196fabbfc88b",
       "type": "transaction",
       "network": "coston2",
       "hash": "0xacbce0e5b67fef34c25693074bffaae7324c7e1ce3c4bff97432196fabbfc88b",
       "explorer": "https://coston2.testnet.flarescan.com/tx/0xacbce0e5b67fef34c25693074bffaae7324c7e1ce3c4bff97432196fabbfc88b"
-    },
-    {
-      "id": "tx:coston2:0xcd36b0a8909faf0422ca741c9c9bb1924673871c22e02383901e59a827f27297",
-      "type": "transaction",
-      "network": "coston2",
-      "hash": "0xcd36b0a8909faf0422ca741c9c9bb1924673871c22e02383901e59a827f27297",
-      "explorer": "https://coston2.testnet.flarescan.com/tx/0xcd36b0a8909faf0422ca741c9c9bb1924673871c22e02383901e59a827f27297"
     },
     {
       "id": "tx:xrpl:03445ECA6C42EA46BDF2AA0CBAA348C0A889529334798126602BDC9477E3C82F",
@@ -1198,6 +1223,11 @@
       "from": "claim:claim-canonical-requestid-derivation",
       "rel": "citedBy",
       "to": "artifact:contracts/src/fcc/SignetFccInstructionSender.sol"
+    },
+    {
+      "from": "claim:claim-canonical-requestid-derivation",
+      "rel": "citedBy",
+      "to": "artifact:contracts/test/unit/AuthorizeRedemptionState.t.sol"
     },
     {
       "from": "claim:claim-canonical-requestid-derivation",
@@ -1911,21 +1941,6 @@
     },
     {
       "from": "contract:0x3ffa63a3bf21a626c1b391d2577b1800e67f5be0",
-      "rel": "createdBy:deploy",
-      "to": "tx:coston2:0x58080e620c7f584ae618a6926b24549b9c31561ec18f2f67538af6c7c5915c29"
-    },
-    {
-      "from": "contract:0x3ffa63a3bf21a626c1b391d2577b1800e67f5be0",
-      "rel": "createdBy:register",
-      "to": "tx:coston2:0xcd36b0a8909faf0422ca741c9c9bb1924673871c22e02383901e59a827f27297"
-    },
-    {
-      "from": "contract:0x3ffa63a3bf21a626c1b391d2577b1800e67f5be0",
-      "rel": "createdBy:setExtensionId",
-      "to": "tx:coston2:0x73de6ed4861dfdf995faeded185fd1619d75920ef0c377d1f56b43f10e0f9785"
-    },
-    {
-      "from": "contract:0x3ffa63a3bf21a626c1b391d2577b1800e67f5be0",
       "rel": "deployedOn",
       "to": "network:coston2"
     },
@@ -1936,6 +1951,26 @@
     },
     {
       "from": "contract:0x6d49c54d2f75214616a0964bd52c695384f1b6e2",
+      "rel": "deployedOn",
+      "to": "network:coston2"
+    },
+    {
+      "from": "contract:0x7e2dd9078c7d741e0cf81904264a79e70212963a",
+      "rel": "createdBy:deploy",
+      "to": "tx:coston2:0x60ba84a3899f5d3e040acc8798ddfe05fb4738b7eed25e562fd57a675809ee72"
+    },
+    {
+      "from": "contract:0x7e2dd9078c7d741e0cf81904264a79e70212963a",
+      "rel": "createdBy:register",
+      "to": "tx:coston2:0x8bd0c42111d1d117a52e5c56a27a7708aed095eea6877e2f9125df767ce230a5"
+    },
+    {
+      "from": "contract:0x7e2dd9078c7d741e0cf81904264a79e70212963a",
+      "rel": "createdBy:setExtensionId",
+      "to": "tx:coston2:0x430e1bace9371c68afce868e22b1e91ba57c6f99556d17ba04e22b74bd2f1f14"
+    },
+    {
+      "from": "contract:0x7e2dd9078c7d741e0cf81904264a79e70212963a",
       "rel": "deployedOn",
       "to": "network:coston2"
     },
@@ -1982,7 +2017,7 @@
     {
       "from": "extension:66163",
       "rel": "supersededBy",
-      "to": "extension:66244"
+      "to": "extension:66248"
     },
     {
       "from": "extension:66164",
@@ -1992,7 +2027,7 @@
     {
       "from": "extension:66164",
       "rel": "supersededBy",
-      "to": "extension:66244"
+      "to": "extension:66248"
     },
     {
       "from": "extension:66244",
@@ -2001,6 +2036,16 @@
     },
     {
       "from": "extension:66244",
+      "rel": "supersededBy",
+      "to": "extension:66248"
+    },
+    {
+      "from": "extension:66248",
+      "rel": "instructionSender",
+      "to": "contract:0x7e2dd9078c7d741e0cf81904264a79e70212963a"
+    },
+    {
+      "from": "extension:66248",
       "rel": "registeredOn",
       "to": "network:coston2"
     },

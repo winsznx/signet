@@ -77,7 +77,7 @@ the chain cannot know them:
 |---|---|
 | Solidity | 5 tests, including a 256-run fuzz over caller addresses asserting one request id yields one payload for every caller, and a selector assertion that `authorizeRedemption(uint256,uint32)` carries no payment field |
 | Go | 16 tests, covering schema refusal, truncation, and an override attempt on each of destination, amount, fee, reference, tag mode, tag value, both deadlines and agent. The trailing-byte case is not an assertion; see open finding 4 |
-| live | sender [`0x3FFA63a3bf21a626c1B391D2577b1800e67F5Be0`](https://coston2.testnet.flarescan.com/address/0x3FFA63a3bf21a626c1B391D2577b1800e67F5Be0), extension id `66244`, deployed and registered on the live Coston2 `FlareTeeManager`. `getTeeExtensionInstructionsSender(66244)` returns that address |
+| live | sender [`0x7e2dd9078c7d741e0cF81904264A79e70212963a`](https://coston2.testnet.flarescan.com/address/0x7e2dd9078c7d741e0cF81904264A79e70212963a), extension id `66248`, deployed and registered on the live Coston2 `FlareTeeManager`. `getTeeExtensionInstructionsSender(66248)` returns that address |
 
 **Residual, and it is not small.** The extension still runs as a local process with no attestation,
 so an operator with host access can bypass the contract path entirely by running its own binary
@@ -88,50 +88,71 @@ production.**
 
 ## Open after gate B
 
-An adversarial review of the gate B boundary on 2026-08-14 found five defects. All five are recorded
-here rather than fixed, because phase 14's completion gate forbids feature work and the contract half
+An adversarial review of the gate B boundary on 2026-08-14 found five defects. Finding 1 was fixed and redeployed; the other four are recorded
+here rather than fixed, because phase 14 forbids feature work and the contract half
 is already deployed: changing the source without redeploying would put the repository and the chain
 out of agreement, which is a worse failure than a stated defect. Each was independently reproduced
 before being written down.
 
-| # | severity | defect | reachable today? |
+| # | severity | defect | status |
 |---|---|---|---|
-| 1 | high | `authorizeRedemption` is re-invocable after a decision is recorded | **no**, see below |
+| 1 | high | `authorizeRedemption` is re-invocable after a decision is recorded | **FIXED and redeployed.** See below |
 | 2 | high | the FCC extension never populates `Prior`, so `generation > 0` is always refused | yes, fail-closed |
 | 3 | medium | a caller-authored JSON obligation decoder still exists outside the FCC path | yes, reaches no key |
 | 4 | medium | `fccinput.Decode` does not reject trailing bytes although its doc comment says it does | no |
 | 5 | low | `xrplobserve` matches only `Memos[0]` when looking for a payment reference | yes, narrows an accepted residual |
 
-### 1. `authorizeRedemption` does not gate on the action state it needs
+### 1. `authorizeRedemption` did not gate on the action state it needs — FIXED
 
-`SignetFccInstructionSender.sol:180` reads:
+**What it was.** The guard read `if (action.state == ActionState.NONE) revert NoSuchAction();`, which
+admits `REQUESTED`, `AUTHORIZED`, `REFUSED` and `EVIDENCE_FINALIZED` alike, so an action already
+decided could be instructed again. The extension cannot catch the repeat, because it sets
+`Prior: nil` (defect 2) and re-reads the XRPL account's current sequence, so a second call produces a
+second independently valid payment. `S021_PAYMENT_ALREADY_OBSERVED` only fires once the first payment
+has *validated* on the XRP ledger, which left the settlement-latency window open.
+
+It was unreachable at the time only because no TEE machine existed, and registering one is precisely
+what would have armed it. That is not an acceptable resting state for a correctness boundary, so it
+was fixed rather than deferred to gate A.
+
+**What the fix required, and what the first attempt missed.** Admitting only `REQUESTED` is
+necessary and **not sufficient**. An action stays `REQUESTED` until the extension's decision returns
+through `recordDecision`, so during that window the registry cannot distinguish a first dispatch from
+a tenth. A 256-run fuzz over caller sequences found **ten dispatches for one obligation** against the
+state guard alone. The dispatch is therefore also recorded on chain, at the point it happens:
 
 ```solidity
 if (action.state == SignetRegistry.ActionState.NONE) revert NoSuchAction();
+if (action.state != SignetRegistry.ActionState.REQUESTED) revert ActionNotRequested(action.state);
+if (instructionDispatched[actionId]) revert InstructionAlreadyDispatched(actionId);
+instructionDispatched[actionId] = true;
 ```
 
-That admits `REQUESTED`, `AUTHORIZED`, `REFUSED` and `EVIDENCE_FINALIZED` alike, so an action already
-moved to `AUTHORIZED` can be instructed again. The extension cannot catch the repeat, because it sets
-`Prior: nil` (defect 2) and re-reads the XRPL account's current sequence, so a second call would
-produce a second independently valid payment. `S021_PAYMENT_ALREADY_OBSERVED` only fires once the
-first payment has validated on the XRP ledger, which leaves the settlement-latency window open.
+The flag is set **before** the external call, so a reentrant caller cannot get underneath it.
 
-**It is not reachable in the deployed configuration.** No TEE machine is registered for extension
-`66244`, so line 211's `getRandomTeeIds(66244, 1)` reverts `0xd65ac61e` before any instruction is
-sent. Verified live:
+**Why the marker is on chain rather than in the extension or a checkpoint.** The extension holds no
+memory of a prior authorization and a restart gives it a new identity, so a marker kept off chain
+would be lost exactly when it is needed.
 
-```bash
-cast call 0x1a9C4A0f9D76c0b1D91d22E24E573a9b377618aE \
-  "getActiveTeeMachines(uint256)(address[])" 66244 --rpc-url https://coston2-api.flare.network/ext/C/rpc
-# []
-```
+**Proof.** `contracts/test/unit/AuthorizeRedemptionState.t.sol`, 12 tests, all passing:
 
-**This arms itself the moment gate A lands.** Registering a TEE machine is precisely what makes this
-path executable, so the guard must be tightened to `!= REQUESTED` with a typed error, and a Foundry
-test must assert the revert, *before* any Confidential Space deployment. It is listed as a blocker in
-[`../run/GATE_A_STRETCH.md`](../run/GATE_A_STRETCH.md). No existing test covers it: the five gate B
-Solidity tests exercise the read-only `canonicalInstructionFor` preview and the entry point's
-selector, never the state-changing function.
+| test | asserts |
+|---|---|
+| `testFuzz_atMostOneDispatchPerAction` | 256 runs over 16-caller sequences with a decision landing at an arbitrary point: at most one dispatch, and the dispatch count equals the number of successful calls |
+| `test_aSecondDispatchBeforeAnyDecisionIsRefused` | the in-flight window, which the state guard alone cannot see |
+| `test_aSecondDispatchAfterAuthorizedIsRefused` | `ActionNotRequested(AUTHORIZED)` |
+| `test_dispatchAfterRefusedIsRefused` | `ActionNotRequested(REFUSED)` |
+| `test_dispatchAfterEvidenceFinalizedIsRefused` | `ActionNotRequested(EVIDENCE_FINALIZED)` |
+| `test_aSecondAttemptIsRejectedBeforeAnyTeeLookup` | with the TEE lookup made to revert, the rejection is still `ActionNotRequested`, proving the guard runs first |
+| `test_theDispatchMarkerSurvivesAnyOffChainRestart` | new block, new timestamp, new caller, TEE registry cycled: the marker holds |
+| `test_aPausedBindingCannotDispatch`, `test_aRetiredBindingCannotDispatch` | the operational kill switches stop an otherwise admissible dispatch |
+| `test_aLaterGenerationIsItsOwnAction` | the guard does not wrongly block a legitimate replacement generation |
+
+**Deployed.** Extension `66248`, sender
+[`0x7e2dd9078c7d741e0cF81904264A79e70212963a`](https://coston2.testnet.flarescan.com/address/0x7e2dd9078c7d741e0cF81904264A79e70212963a).
+The previous gate B sender (`66244`) is retired with this defect recorded as its reason. New error
+selectors: `ActionNotRequested(uint8)` `0xb22df813`, `InstructionAlreadyDispatched(bytes32)`
+`0x020e5a5b`.
 
 ### 2. `Prior` is hardcoded to nil, so the replacement flow is dead code
 

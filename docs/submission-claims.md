@@ -12,7 +12,7 @@ either false or unproven.
   independently-disagreed payment.
 - An authorized transaction is executed on XRPL Testnet and independently provable through FDC on
   Coston2.
-- Signet's extension is registered on live Coston2 with extension id `66244`.
+- Signet's extension is registered on live Coston2 with extension id `66248`.
 - The only payment-bearing entry point on the deployed FCC instruction sender is
   `authorizeRedemption(uint256 requestId, uint32 generation)`. It exposes no parameter through which
   a caller could supply a payment field, and every field is read from FAssets by the contract.
@@ -43,7 +43,7 @@ either false or unproven.
 - **Any claim of hardware attestation, TEE-protected keys, Confidential Space execution, or a
   measured/attested runtime.** There is no TEE in this deployment.
 - **Any claim that a TEE machine is registered, or that an on-chain FCC instruction round trip has
-  completed.** `getActiveTeeMachines(66244)` returns empty.
+  completed.** `getActiveTeeMachines(66248)` returns empty.
 - **Any claim of exactly-once payment against an independent actor.**
 - **Any presentation of request 44928272 as a successful demonstration.** It is the double-payment
   incident.

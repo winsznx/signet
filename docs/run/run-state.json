@@ -16,8 +16,8 @@
   },
   "gateB": {
     "status": "deployed",
-    "extensionId": "66244",
-    "instructionSender": "0x3FFA63a3bf21a626c1B391D2577b1800e67F5Be0",
+    "extensionId": "66248",
+    "instructionSender": "0x7e2dd9078c7d741e0cF81904264A79e70212963a",
     "supersedes": ["66163", "66164"],
     "evidence": "docs/evidence/gate-b.md"
   },

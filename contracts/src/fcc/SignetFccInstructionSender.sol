@@ -90,9 +90,26 @@ contract SignetFccInstructionSender {
     error NotAContract();
     error AdapterRefused(ISignetTypes.AdapterFailure failure);
     error BindingNotActive();
+    /// @notice The action exists but is not in the one state from which an instruction may be sent.
+    /// @dev Carries the state found so a caller can tell "already authorized" from "already refused"
+    ///      without a second read. `NONE` keeps its own error, because an action that was never
+    ///      opened is a different mistake from one that has moved on.
+    error ActionNotRequested(SignetRegistry.ActionState found);
+    /// @notice One instruction has already been dispatched for this action.
+    error InstructionAlreadyDispatched(bytes32 actionId);
 
     /// @notice Schema version of the canonical instruction payload.
     uint256 public constant SCHEMA_VERSION = 2;
+
+    /// @notice Whether an instruction has already been dispatched for an action.
+    /// @dev The registry's state machine alone is not sufficient for "at most one dispatch". An
+    ///      action stays `REQUESTED` until the extension's decision comes back through
+    ///      `recordDecision`, so during that window the registry cannot distinguish a first
+    ///      dispatch from a tenth, and a caller could fan out instructions that each derive a fresh
+    ///      XRPL sequence. A fuzz over caller sequences found exactly that. The dispatch is
+    ///      therefore recorded here, at the point it happens, and the flag is set before the
+    ///      external call so a reentrant caller cannot get underneath it.
+    mapping(bytes32 actionId => bool) public instructionDispatched;
 
     /// @notice Ties an FCC instruction to the Signet action it concerns, so the on-chain record
     ///         links the obligation to the instruction without anyone having to trust the message.
@@ -177,7 +194,18 @@ contract SignetFccInstructionSender {
 
         bytes32 actionId = SIGNET_REGISTRY.actionIdFor(bindingId, _requestId, _generation);
         SignetRegistry.Action memory action = SIGNET_REGISTRY.actionFor(actionId);
+        // REQUESTED is the only state from which an instruction may be dispatched, and it is the
+        // same state SignetRegistry.recordDecision requires in order to move the action forward.
+        // An earlier version checked `!= NONE`, which admitted AUTHORIZED, REFUSED and
+        // EVIDENCE_FINALIZED alike: an already-decided action could be instructed a second time,
+        // and because the extension keeps no memory of a prior authorization it would have derived
+        // a fresh XRPL sequence and produced a second independently valid payment for one
+        // obligation. At most one dispatch per (requestId, generation) is the invariant, and it is
+        // enforced here rather than downstream, because downstream cannot see the first one.
         if (action.state == SignetRegistry.ActionState.NONE) revert NoSuchAction();
+        if (action.state != SignetRegistry.ActionState.REQUESTED) revert ActionNotRequested(action.state);
+        if (instructionDispatched[actionId]) revert InstructionAlreadyDispatched(actionId);
+        instructionDispatched[actionId] = true;
 
         CanonicalInstruction memory instruction = CanonicalInstruction({
             schemaVersion: SCHEMA_VERSION,

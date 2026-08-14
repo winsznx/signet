@@ -203,7 +203,7 @@ is registered on the live Coston2 `FlareTeeManager`, and the composed lifecycle 
 signs from the FCC ActionResult. No TEE machine is registered: FTDC rejects simulated attestation and
 `getActiveTeeMachines(66164)` returns empty.
 
-> **Superseded 2026-08-14.** Extension `66164` was retired by gate B and replaced by `66244`, sender
-> `0x3FFA63a3bf21a626c1B391D2577b1800e67F5Be0`. The paragraph above is left as written because it was
-> true when this phase ran. See [`gate-b.md`](gate-b.md). No TEE machine is registered for `66244`
+> **Superseded 2026-08-14.** Extension `66164` was retired by gate B and replaced by `66244`, then by `66248` after a dispatch-guard fix; the current sender is
+> `0x7e2dd9078c7d741e0cF81904264A79e70212963a`. The paragraph above is left as written because it was
+> true when this phase ran. See [`gate-b.md`](gate-b.md). No TEE machine is registered for `66248`
 > either, and the attestation position is unchanged.

@@ -49,7 +49,7 @@ This is the part most submissions bury. Putting it at the top is deliberate.
 |---|---|
 | Coston2 FAssets obligation | request **44928272**, created through the ordinary minter path on live Coston2 |
 | Coston2 contracts | `SignetRegistry` `0x381bdE5961695914B28B16f405d51E8acB877f6e`, `SignetInstructionSender` `0xd6cF30B6411DB8465147FfDcF0e0418030B4b9CA` |
-| FCC extension registration | extension **66244**, sender `0x3FFA63a3bf21a626c1B391D2577b1800e67F5Be0`, on the live `FlareTeeManager` |
+| FCC extension registration | extension **66248**, sender `0x7e2dd9078c7d741e0cF81904264A79e70212963a`, on the live `FlareTeeManager` |
 | Canonical requestId-only derivation | `authorizeRedemption(uint256,uint32)`, deployed and verifiable on chain |
 | XRPL Testnet payment | signed, persisted before submission, validated, reconciled across independent endpoints, refused on replay by the ledger |
 | Coston2 FDC verification | request paid to `FdcHub`, round finalized, Merkle proof, `verifyXRPPayment` accepted on chain |
@@ -105,7 +105,7 @@ The production claim, which is **architecture and not demonstrated**:
 |---|---|
 | SignetRegistry | https://coston2.testnet.flarescan.com/address/0x381bdE5961695914B28B16f405d51E8acB877f6e |
 | SignetInstructionSender | https://coston2.testnet.flarescan.com/address/0xd6cF30B6411DB8465147FfDcF0e0418030B4b9CA |
-| SignetFccInstructionSender (gate B) | https://coston2.testnet.flarescan.com/address/0x3FFA63a3bf21a626c1B391D2577b1800e67F5Be0 |
+| SignetFccInstructionSender (gate B) | https://coston2.testnet.flarescan.com/address/0x7e2dd9078c7d741e0cF81904264A79e70212963a |
 
 ---
 
@@ -129,9 +129,9 @@ And verify the deployment without trusting this repository at all:
 
 ```bash
 cast call 0x1a9C4A0f9D76c0b1D91d22E24E573a9b377618aE \
-  "getTeeExtensionInstructionsSender(uint256)(address)" 66244 \
+  "getTeeExtensionInstructionsSender(uint256)(address)" 66248 \
   --rpc-url https://coston2-api.flare.network/ext/C/rpc
-# 0x3FFA63a3bf21a626c1B391D2577b1800e67F5Be0
+# 0x7e2dd9078c7d741e0cF81904264A79e70212963a
 ```
 
 ---
@@ -157,7 +157,7 @@ periphery packages, OpenZeppelin, forge-std. All eleven are content-hashed in
 
 ## Limitations, stated plainly
 
-1. **No TEE.** The extension ran as a local process. `getActiveTeeMachines(66244)` returns `[]`.
+1. **No TEE.** The extension ran as a local process. `getActiveTeeMachines(66248)` returns `[]`.
    Nothing is hardware-attested. GCP Confidential Space was a stretch and the billing account did not
    open in time; the checklist is [`GATE_A_STRETCH.md`](GATE_A_STRETCH.md).
 2. **The positive path's obligation is on a Coston2 fork** running deployed FAssets bytecode and

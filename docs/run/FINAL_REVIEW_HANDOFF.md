@@ -9,7 +9,7 @@ Phases 00 through 14 have run. Phase 15 production expansion is out of scope and
 Two things changed after this file was first written, and both are load-bearing:
 
 1. **Gate B** closed the arbitrary-signature gap that the first version of this file led with, and is
-   deployed on Coston2 as extension `66244`. The section below is rewritten accordingly.
+   deployed on Coston2 as extension `66248`. The section below is rewritten accordingly.
 2. **GCP Confidential Space was downgraded** from a submission blocker to a stretch. It is not
    attempted here and no hardware-attestation claim is made anywhere. The checklist for doing it
    later is [`docs/run/GATE_A_STRETCH.md`](GATE_A_STRETCH.md).
@@ -51,12 +51,12 @@ standalone `cmd/signet-extension` CLI still accepts one from stdin and reaches n
 finding 3 in the threat model.
 
 Live on Coston2 as sender
-[`0x3FFA63a3bf21a626c1B391D2577b1800e67F5Be0`](https://coston2.testnet.flarescan.com/address/0x3FFA63a3bf21a626c1B391D2577b1800e67F5Be0),
-extension id `66244`. Check it yourself:
+[`0x7e2dd9078c7d741e0cF81904264A79e70212963a`](https://coston2.testnet.flarescan.com/address/0x7e2dd9078c7d741e0cF81904264A79e70212963a),
+extension id `66248`. Check it yourself:
 
 ```bash
 cast call 0x1a9C4A0f9D76c0b1D91d22E24E573a9b377618aE \
-  "getTeeExtensionInstructionsSender(uint256)(address)" 66244 \
+  "getTeeExtensionInstructionsSender(uint256)(address)" 66248 \
   --rpc-url https://coston2-api.flare.network/ext/C/rpc
 ```
 
@@ -79,7 +79,7 @@ If you read one thing and disagree with one thing, let it be the paragraph direc
 | real | the Signet contracts, deployed on Coston2 and exercised through their real entry points |
 | real | a Coston2 FAssets redemption we created as a minter, and a full minting cycle to get there |
 | real | FDC end to end: request paid to FdcHub, round finalized, Merkle proof, `verifyXRPPayment` accepted on chain |
-| real | the gate B instruction sender, deployed and registered on the live Coston2 `FlareTeeManager` as extension `66244` |
+| real | the gate B instruction sender, deployed and registered on the live Coston2 `FlareTeeManager` as extension `66248` |
 | local | the extension's execution environment. A process. **No TEE, no attestation, nothing hardware-backed, and nothing claims otherwise.** |
 
 ## Phase status
@@ -100,7 +100,7 @@ If you read one thing and disagree with one thing, let it be the paragraph direc
 | 11 Independent verifier | PASS |
 | 12 Operator and proof UI | PASS, deployed |
 | 13 Hardening | PASS, the high risk it recorded is now closed by gate B |
-| gate B Canonical requestId-only derivation | PASS, deployed on Coston2 as extension `66244` |
+| gate B Canonical requestId-only derivation | PASS, deployed on Coston2 as extension `66248` |
 | 14 Submission | PASS, package assembled; nothing submitted externally |
 
 ## The most important thing this run found
@@ -205,7 +205,7 @@ These are here because a handoff that lists only successes is not a handoff.
 |---|---|
 | SignetRegistry | [`0x381bdE5961695914B28B16f405d51E8acB877f6e`](https://coston2.testnet.flarescan.com/address/0x381bdE5961695914B28B16f405d51E8acB877f6e) |
 | SignetInstructionSender | [`0xd6cF30B6411DB8465147FfDcF0e0418030B4b9CA`](https://coston2.testnet.flarescan.com/address/0xd6cF30B6411DB8465147FfDcF0e0418030B4b9CA) |
-| SignetFccInstructionSender (gate B) | [`0x3FFA63a3bf21a626c1B391D2577b1800e67F5Be0`](https://coston2.testnet.flarescan.com/address/0x3FFA63a3bf21a626c1B391D2577b1800e67F5Be0), extension `66244` |
+| SignetFccInstructionSender (gate B) | [`0x7e2dd9078c7d741e0cF81904264A79e70212963a`](https://coston2.testnet.flarescan.com/address/0x7e2dd9078c7d741e0cF81904264A79e70212963a), extension `66248` |
 | Coston2 redemption | request 44928272 |
 | proof page | https://signet-proof.pages.dev/ |
 
@@ -229,9 +229,9 @@ work made up for it.
 | `extension/cmd/signet-fcc-extension` | implements the pinned scaffold's extension contract |
 | op-type | `SIGNET_REDEMPTION`, commands `AUTHORIZE_REDEMPTION` and `HEALTH_CHECK` |
 | no wildcard | asserted by test: a wildcard is the shape of an arbitrary signing endpoint |
-| extension id | **66244**, registered on the live Coston2 `FlareTeeManager` |
-| instruction sender | `0x3FFA63a3bf21a626c1B391D2577b1800e67F5Be0` |
-| TEE machine | **none.** `getActiveTeeMachines(66244)` returns empty |
+| extension id | **66248**, registered on the live Coston2 `FlareTeeManager` |
+| instruction sender | `0x7e2dd9078c7d741e0cF81904264A79e70212963a` |
+| TEE machine | **none.** `getActiveTeeMachines(66248)` returns empty |
 | attestation | **none.** The extension runs as a local process; FTDC rejects simulated attestation |
 | positive path | takes the payment it signs **from the FCC ActionResult**, not from the CLI |
 | superseded | `66163` and `66164`, both retired and recorded with reasons in `deployments/coston2.json`. Neither ever carried a live TEE machine, so no instruction was ever executed through either |

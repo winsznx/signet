@@ -67,9 +67,9 @@ it stays that way: see the bottom of this document.
 
 | | |
 |---|---|
-| **Extension registration** | **live Coston2** — extension id `66244` on the real `FlareTeeManager` |
+| **Extension registration** | **live Coston2** — extension id `66248` on the real `FlareTeeManager` |
 | **Extension execution** | **simulated FCC** — the extension ran as a local process, not in a Confidential Space VM |
-| **TEE machine** | **not registered.** `getActiveTeeMachines(66244)` returns `[]` |
+| **TEE machine** | **not registered.** `getActiveTeeMachines(66248)` returns `[]` |
 
 This is the part that was genuinely missing until now, and the organizer named it precisely. Before
 this work Signet's decision ran as a CLI reading stdin, which is not FCC in any sense the protocol
@@ -107,7 +107,7 @@ consistency rather than their truth.
 
 #### Gate B closes the rest of the snapshot
 
-Extension **66244** replaces 66164. `authorizeRedemption(uint256 requestId, uint32 generation)` takes
+Extension **66248** replaces 66164. `authorizeRedemption(uint256 requestId, uint32 generation)` takes
 a request id and a generation, and resolves every payment field from FAssets itself through
 `readCanonicalRedemptionById`. There is no parameter through which a caller could express a
 destination, an amount, a reference, a tag or a window. A caller-authored obligation now fails to
@@ -117,8 +117,8 @@ key in this build and is recorded as an open finding in `docs/threat-model.md`.
 
 | | |
 |---|---|
-| instruction sender | [`0x3FFA63a3bf21a626c1B391D2577b1800e67F5Be0`](https://coston2.testnet.flarescan.com/address/0x3FFA63a3bf21a626c1B391D2577b1800e67F5Be0) |
-| verified live | `getTeeExtensionInstructionsSender(66244)` returns that address; `canonicalInstructionFor(44928272, 1)` reverts `AdapterRefused(NOT_ACTIVE)` identically for unrelated callers |
+| instruction sender | [`0x7e2dd9078c7d741e0cF81904264A79e70212963a`](https://coston2.testnet.flarescan.com/address/0x7e2dd9078c7d741e0cF81904264A79e70212963a) |
+| verified live | `getTeeExtensionInstructionsSender(66248)` returns that address; `canonicalInstructionFor(44928272, 1)` reverts `AdapterRefused(NOT_ACTIVE)` identically for unrelated callers |
 | full evidence | [`gate-b.md`](gate-b.md) |
 
 No instruction was ever executed through 66163 or 66164: neither carried a live TEE machine.
@@ -182,7 +182,7 @@ no credentials.
 | FAssets obligation 44928272, minting cycle, `redeem` | live Coston2 |
 | FAssets obligation 44993990 (positive path) | Coston2 fork, deployed FAssets bytecode and state |
 | `SignetRegistry`, `SignetInstructionSender` | live Coston2 |
-| FCC extension registration, id 66244, instruction sender | live Coston2 |
+| FCC extension registration, id 66248, instruction sender | live Coston2 |
 | FCC extension execution | **simulated FCC**: local process, no attestation |
 | FCC TEE machine registration, on-chain instruction round trip | **absent** |
 | XRPL payment, signing, submission, reconciliation, replay refusal | live XRPL Testnet |

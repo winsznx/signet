@@ -22,7 +22,7 @@ mistake or a compromised coordinator is a wrong payment. Signet is the thing in 
 |---|---|
 | Coston2 FAssets obligation | request `44928272`, created through the ordinary minter path |
 | Coston2 contracts | [`SignetRegistry`](https://coston2.testnet.flarescan.com/address/0x381bdE5961695914B28B16f405d51E8acB877f6e), [`SignetInstructionSender`](https://coston2.testnet.flarescan.com/address/0xd6cF30B6411DB8465147FfDcF0e0418030B4b9CA) |
-| FCC extension registration | extension `66244`, sender [`0x3FFA63a3…5Be0`](https://coston2.testnet.flarescan.com/address/0x3FFA63a3bf21a626c1B391D2577b1800e67F5Be0), on the live `FlareTeeManager` |
+| FCC extension registration | extension `66248`, sender [`0x7e2dd907…963a`](https://coston2.testnet.flarescan.com/address/0x7e2dd9078c7d741e0cF81904264A79e70212963a), on the live `FlareTeeManager` |
 | XRPL Testnet payment | signed, persisted before submission, validated, reconciled across independent endpoints |
 | Coston2 FDC verification | `verifyXRPPayment` accepted on chain |
 
@@ -61,9 +61,9 @@ Then verify the deployment without trusting this repository at all:
 
 ```bash
 cast call 0x1a9C4A0f9D76c0b1D91d22E24E573a9b377618aE \
-  "getTeeExtensionInstructionsSender(uint256)(address)" 66244 \
+  "getTeeExtensionInstructionsSender(uint256)(address)" 66248 \
   --rpc-url https://coston2-api.flare.network/ext/C/rpc
-# 0x3FFA63a3bf21a626c1B391D2577b1800e67F5Be0
+# 0x7e2dd9078c7d741e0cF81904264A79e70212963a
 ```
 
 The composed lifecycle, which submits a real XRPL Testnet payment and needs a funded testnet account:

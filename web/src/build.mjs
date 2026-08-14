@@ -220,7 +220,7 @@ const proofBody = `
         <li>take a valid FAssets redemption obligation &mdash; <strong>live Coston2</strong> for the
         obligation evidence, <strong>Coston2 fork on deployed FAssets bytecode</strong> for the
         positive path</li>
-        <li>derive the required XRPL payment inside FCC &mdash; extension <code>66244</code>
+        <li>derive the required XRPL payment inside FCC &mdash; extension <code>66248</code>
         <strong>registered on live Coston2</strong>, extension <strong>executed as a local
         process</strong>. The caller supplies a request id and a generation; every payment field is
         read from FAssets by the contract</li>
@@ -232,7 +232,7 @@ const proofBody = `
     <article class="card">
       <h3>What is not here</h3>
       <ul class="limits">
-        <li>no TEE. <code>getActiveTeeMachines(66244)</code> returns empty, nothing is
+        <li>no TEE. <code>getActiveTeeMachines(66248)</code> returns empty, nothing is
         hardware-attested, and no on-chain FCC instruction round trip exists</li>
         <li>no settled FAssets redemption. Settlement needs an agent's own underlying signing
         authority, which Signet does not hold</li>

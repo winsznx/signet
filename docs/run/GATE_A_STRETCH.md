@@ -76,7 +76,7 @@ So the indexer is one support request, not an afternoon of running MySQL and syn
 `action.state != NONE` instead of `== REQUESTED`, so an action already moved to `AUTHORIZED` can be
 instructed a second time, and the extension cannot catch it because `Prior` is hardcoded to nil.
 
-It is harmless today only because no TEE machine exists: `getRandomTeeIds(66244, 1)` reverts
+It is harmless today only because no TEE machine exists: `getRandomTeeIds(66248, 1)` reverts
 `0xd65ac61e` before an instruction is sent. **Registering a TEE machine is exactly what arms it.**
 Doing gate A without fixing this first would take a latent defect and make it live.
 
@@ -116,7 +116,7 @@ Then the deployment, following `upstream/fce-sign/DEPLOYMENT_STEPS.md`:
       `codeHash` that is **not** `0x194844cf…`, and the correct `extensionId`.
 - [ ] Whitelist the measured code hash and register the TEE machine with FTDC (`post-build.sh`, which
       invokes `register-tee -command rRap`; the capital `R` is load-bearing for re-runs).
-- [ ] `getActiveTeeMachines(66244)` returns non-empty.
+- [ ] `getActiveTeeMachines(66248)` returns non-empty.
 
 A second route exists and needs no GCP account: hand the image to Flare devops, who run the
 Confidential Space VM themselves (`upstream/fce-sign/TESTNET_DEPLOYMENT.md:349`). It requires a human

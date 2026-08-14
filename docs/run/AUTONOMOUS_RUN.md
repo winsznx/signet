@@ -34,7 +34,7 @@ Outstanding external request: `docs/requests/fassets-agent-whitelist.md`.
 | 11 | Independent verifier and claim ledger | PASS | [phase-11.md](../evidence/phase-11.md) | | `b8845e3` |
 | 12 | Essential operator and proof UI | PASS (deployed) | [phase-12.md](../evidence/phase-12.md) | | `8310aad` |
 | 13 | Hardening | PASS (the high risk it recorded is closed by gate B) | [phase-13.md](../evidence/phase-13.md) | | `2152095` |
-| gate B | Canonical requestId-only derivation | PASS (deployed on Coston2, extension `66244`) | [gate-b.md](../evidence/gate-b.md) | | `95866e0` |
+| gate B | Canonical requestId-only derivation | PASS (deployed on Coston2, extension `66248`) | [gate-b.md](../evidence/gate-b.md) | | `95866e0` |
 | 14 | Submission | PASS (package assembled, nothing submitted externally) | [phase-14.md](../evidence/phase-14.md) | | pending |
 
 ## After the phases: schema V2

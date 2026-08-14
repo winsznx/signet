@@ -69,21 +69,21 @@ A caller must not control these and the chain cannot know them.
 
 | | |
 |---|---|
-| instruction sender | [`0x3FFA63a3bf21a626c1B391D2577b1800e67F5Be0`](https://coston2.testnet.flarescan.com/address/0x3FFA63a3bf21a626c1B391D2577b1800e67F5Be0) |
-| extension id | `66244` |
+| instruction sender | [`0x7e2dd9078c7d741e0cF81904264A79e70212963a`](https://coston2.testnet.flarescan.com/address/0x7e2dd9078c7d741e0cF81904264A79e70212963a) |
+| extension id | `66248` |
 | `FlareTeeManager` | `0x1a9C4A0f9D76c0b1D91d22E24E573a9b377618aE` |
-| deploy tx | `0x58080e620c7f584ae618a6926b24549b9c31561ec18f2f67538af6c7c5915c29` |
-| register tx | `0xcd36b0a8909faf0422ca741c9c9bb1924673871c22e02383901e59a827f27297` |
-| setExtensionId tx | `0x73de6ed4861dfdf995faeded185fd1619d75920ef0c377d1f56b43f10e0f9785` |
-| runtime size | 8819 bytes |
+| deploy tx | `0x60ba84a3899f5d3e040acc8798ddfe05fb4738b7eed25e562fd57a675809ee72` |
+| register tx | `0x8bd0c42111d1d117a52e5c56a27a7708aed095eea6877e2f9125df767ce230a5` |
+| setExtensionId tx | `0x430e1bace9371c68afce868e22b1e91ba57c6f99556d17ba04e22b74bd2f1f14` |
+| runtime size | 9088 bytes |
 
 Reproduce the binding:
 
 ```bash
 cast call 0x1a9C4A0f9D76c0b1D91d22E24E573a9b377618aE \
-  "getTeeExtensionInstructionsSender(uint256)(address)" 66244 \
+  "getTeeExtensionInstructionsSender(uint256)(address)" 66248 \
   --rpc-url https://coston2-api.flare.network/ext/C/rpc
-# 0x3FFA63a3bf21a626c1B391D2577b1800e67F5Be0
+# 0x7e2dd9078c7d741e0cF81904264A79e70212963a
 ```
 
 The deployed runtime contains the selectors `authorizeRedemption(uint256,uint32)` (`0x064267dd`),
@@ -94,7 +94,7 @@ The deployed runtime contains the selectors `authorizeRedemption(uint256,uint32)
 Request 44928272 is settled, so FAssets no longer reports it `ACTIVE`:
 
 ```bash
-cast call 0x3FFA63a3bf21a626c1B391D2577b1800e67F5Be0 \
+cast call 0x7e2dd9078c7d741e0cF81904264A79e70212963a \
   "canonicalInstructionFor(uint256,uint32)" 44928272 1 \
   --from <any address> --rpc-url https://coston2-api.flare.network/ext/C/rpc
 # reverts AdapterRefused(1) == NOT_ACTIVE
@@ -117,8 +117,8 @@ Receipt: `evidence/receipts/lifecycle-A10C7C3C6C644FB97B97F796C356F8CBFC8F58B199
 | field | value |
 |---|---|
 | `derivedInsideFccExtension` | `true` |
-| `registeredExtensionId` | `66244` |
-| `registeredInstructionSender` | `0x3FFA63a3bf21a626c1B391D2577b1800e67F5Be0` |
+| `registeredExtensionId` | `66248` |
+| `registeredInstructionSender` | `0x7e2dd9078c7d741e0cF81904264A79e70212963a` |
 | `obligationHash` / `obligationHashOnChain` | identical, `0xcfa36a2d…f8db` |
 | XRPL tx | `A10C7C3C…399D`, validated ledger 19895487, `tesSUCCESS` |
 | replay of the identical blob | `tefPAST_SEQ` |
@@ -139,6 +139,7 @@ machine, so no instruction was ever executed through either.
 |---|---|---|
 | `66163` | `0x6D49c54D2F75214616a0964Bd52c695384f1b6E2` | its `authorizeRedemption` relayed the decision input unmodified, so any caller could name an obligation that did not exist |
 | `66164` | `0xDd8aA7A4f43f01258A426a30d02032821De9bc6e` | it checked the obligation against `SignetRegistry`, which is why it superseded 66163, but still accepted a caller-authored message |
+| `66244` | `0x3FFA63a3bf21a626c1B391D2577b1800e67F5Be0` | the first gate B sender. It closed the caller-authored-payload gap, but gated on `state != NONE` and kept no record of having dispatched. See section 5 |
 
 A registration script defect was found while doing this: it hardcoded 66163's retirement reason and
 wrote it verbatim over 66164's, putting a false statement into the deployment record. The record is
@@ -153,7 +154,7 @@ The full write-up, with severities, reachability and the live checks, is in
 
 | # | defect | reachable today |
 |---|---|---|
-| 1 | `authorizeRedemption` gates on `state != NONE` instead of `== REQUESTED`, so an already-authorized action can be instructed again | **no.** No TEE machine exists, so `getRandomTeeIds(66244, 1)` reverts `0xd65ac61e` first. **It arms the moment gate A lands, and is a blocker there** |
+| 1 | `authorizeRedemption` gates on `state != NONE` instead of `== REQUESTED`, so an already-authorized action can be instructed again | **no.** No TEE machine exists, so `getRandomTeeIds(66248, 1)` reverts `0xd65ac61e` first. **It arms the moment gate A lands, and is a blocker there** |
 | 2 | the extension sets `Prior: nil`, so `generation > 0` is always refused `S018` and the replacement flow is dead code | yes, fail-closed |
 | 3 | `internal/wire` still decodes a fully caller-authored obligation for `cmd/signet-extension` | yes, reaches no key |
 | 4 | `fccinput.Decode` does not reject trailing bytes although its doc comment says it does | no |

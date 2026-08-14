@@ -111,7 +111,7 @@
       "limitations": [
         "V0 runs a simulated TEE. Simulated execution is not hardware attestation and must be labelled as simulated wherever it is shown.",
         "Requires a real GCP Confidential Space deployment, which is out of scope for this run.",
-        "Extension 66244 is registered on live Coston2, but no TEE machine is registered for it: FTDC accepts only GCP_AMD_SEV attestation, it rejects simulated attestation, and no Confidential Space VM was available. Simulated execution is labelled simulated everywhere it appears. The route to closing this is docs/run/GATE_A_STRETCH.md."
+        "Extension 66248 is registered on live Coston2, but no TEE machine is registered for it: FTDC accepts only GCP_AMD_SEV attestation, it rejects simulated attestation, and no Confidential Space VM was available. Simulated execution is labelled simulated everywhere it appears. The route to closing this is docs/run/GATE_A_STRETCH.md."
       ],
       "network": []
     },
@@ -280,7 +280,7 @@
       ],
       "verifiedAt": "2026-08-11T16:40:00Z",
       "limitations": [
-        "Superseded: the registry and instruction sender are deployed on live Coston2 (see claim-coston2-deployment), and the gate B FCC sender is deployed and registered as extension 66244. This claim's own tests remain local; the deployment is evidenced separately.",
+        "Superseded: the registry and instruction sender are deployed on live Coston2 (see claim-coston2-deployment), and the gate B FCC sender is deployed and registered as extension 66248. This claim's own tests remain local; the deployment is evidenced separately.",
         "Governance can still approve a decision signer it controls. Nothing on chain distinguishes that from an enclave key without attestation-bound registration, which is phase 03's blocked half. Recorded as accepted residual risk and pinned by a passing test.",
         "Every governance function executes immediately with no timelock. FR-004's multisig and delay are assumed to live in the governance contract, which is outside this repository and not enforced here.",
         "recordFinalEvidence is governance-gated as a placeholder rather than gated on deterministic evidence checks, which needs the phase 05 proof path.",
@@ -613,16 +613,17 @@
         "extension/internal/fccinput/canonical.go",
         "extension/internal/fccinput/override_test.go",
         "deployments/coston2.json",
-        "docs/evidence/gate-b.md"
+        "docs/evidence/gate-b.md",
+        "contracts/test/unit/AuthorizeRedemptionState.t.sol"
       ],
-      "verifiedAt": "2026-08-14T07:20:00Z",
+      "verifiedAt": "2026-08-14T08:20:00Z",
       "limitations": [
         "This constrains what the contract will instruct. It is not isolation: the extension runs as a local process with no TEE and no attestation, so an operator with host access can run its own binary against its own key and needs no instruction at all.",
         "Two inputs are supplied by the extension rather than the chain, because a caller must not control them and the chain cannot know them: the XRPL allocation, bounded downstream by the fee cap and the safety margin, and the underlying observation, taken across independently hosted endpoints that must agree.",
-        "No TEE machine is registered for extension 66244, so no on-chain FCC instruction round trip has completed. The path is proven by deployment, by the caller fuzz, and by a live eth_call that fails closed, not by an executed instruction.",
+        "No TEE machine is registered for extension 66248, so no on-chain FCC instruction round trip has completed. The path is proven by deployment, by the caller fuzz, and by a live eth_call that fails closed, not by an executed instruction.",
         "The live call evidence is a negative: canonicalInstructionFor on a settled obligation reverts AdapterRefused(NOT_ACTIVE) identically for unrelated callers. A live positive would need an ACTIVE redemption assigned to an agent Signet controls, which the whitelist decision puts out of scope.",
-        "An adversarial review on 2026-08-14 found that authorizeRedemption gates on `state != NONE` rather than `== REQUESTED`, so an action already moved to AUTHORIZED can be instructed again. It is not reachable in the deployed configuration because no TEE machine exists and getRandomTeeIds(66244,1) reverts 0xd65ac61e first, but it becomes reachable the moment a TEE machine is registered. Recorded as open finding 1 in docs/threat-model.md and as a blocker in docs/run/GATE_A_STRETCH.md.",
-        "The five Solidity tests exercise the read-only canonicalInstructionFor preview and the entry point's selector. None calls the state-changing authorizeRedemption, so the derivation is better proven than the entry point's state handling.",
+        "At most one instruction is dispatched per (requestId, generation). An adversarial review found the original guard admitted any non-NONE state, and a 256-run fuzz then found the state guard alone still allowed ten dispatches while the action sat in REQUESTED awaiting its decision. Both are fixed: only REQUESTED is admitted, and the dispatch is recorded on chain before the external call. 12 tests in contracts/test/unit/AuthorizeRedemptionState.t.sol, and the fixed sender is deployed as extension 66248.",
+        "The five gate B derivation tests exercise the read-only canonicalInstructionFor preview and the entry point selector. The state-changing authorizeRedemption is covered separately by the 12 dispatch-guard tests, added after a review found no test called it.",
         "The FCC extension sets Prior to nil unconditionally, so any request with generation > 0 is refused S018 regardless of merit and the replacement flow is dead code. Fail-closed, opens no fund-loss path, contradicts docs/evidence/phase-07.md. Open finding 2.",
         "fccinput.Decode does not reject trailing bytes although its doc comment says it does, and the corresponding test was written to accept either outcome. Not exploitable while the message bytes are built solely by abi.encode on chain. Open finding 4."
       ]

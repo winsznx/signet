@@ -174,10 +174,15 @@ check(
   /<tr><td class="mono">gate B<\/td>/.test(operator),
   "gate B is listed as its own row",
 );
+// Read from the deployment record rather than typed in. A hardcoded id in this check went stale the
+// first time the sender was redeployed, which is the drift this whole repository exists to prevent.
+const deployedExtensionId = JSON.parse(
+  readFileSync(join(REPO_ROOT, "deployments", "coston2.json"), "utf8"),
+).fcc.extensionId;
 check(
-  "the page names the deployed gate B extension",
-  operator.includes("66244") || pages.index.includes("66244"),
-  "extension 66244 appears",
+  "the page names the currently deployed FCC extension",
+  operator.includes(deployedExtensionId) || pages.index.includes(deployedExtensionId),
+  `extension ${deployedExtensionId} appears`,
 );
 
 console.log(`\n${failures === 0 ? "web checks pass" : `${failures} web checks failed`}`);

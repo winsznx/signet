@@ -27,9 +27,9 @@ It is now deployed and verified by RPC:
 
 | | |
 |---|---|
-| sender | `0x3FFA63a3bf21a626c1B391D2577b1800e67F5Be0` |
-| extension id | `66244` |
-| binding | `getTeeExtensionInstructionsSender(66244)` returns that address |
+| sender | `0x7e2dd9078c7d741e0cF81904264A79e70212963a` |
+| extension id | `66248` |
+| binding | `getTeeExtensionInstructionsSender(66248)` returns that address |
 | selectors present | `authorizeRedemption(uint256,uint32)`, `canonicalInstructionFor(uint256,uint32)`, `SCHEMA_VERSION()` |
 | retired | `66163`, `66164` |
 
@@ -72,7 +72,7 @@ source without redeploying would put the repository and the chain out of agreeme
 
 Finding 1 deserves naming here. `authorizeRedemption` gates on `state != NONE` rather than
 `== REQUESTED`, so an already-authorized action can be instructed again. It is unreachable today
-because no TEE machine exists and `getRandomTeeIds(66244, 1)` reverts `0xd65ac61e` first. **It arms
+because no TEE machine exists and `getRandomTeeIds(66248, 1)` reverts `0xd65ac61e` first. **It arms
 itself the moment a TEE machine is registered**, which is precisely what gate A does, so it is a
 blocker there rather than a note.
 
@@ -108,7 +108,7 @@ evidence graph regenerates byte-identically; and the fixture, test and check cou
 generated artefacts rather than being typed.
 
 The page was rebuilt and redeployed to production. `https://signet-proof.pages.dev/` now carries
-extension `66244` and the gate B phase row, and the strict CSP survives the hop:
+extension `66248` and the gate B phase row, and the strict CSP survives the hop:
 
 ```text
 content-security-policy: default-src 'none'; style-src 'unsafe-inline'; img-src 'self';
@@ -142,7 +142,7 @@ Four stale limitations were corrected:
 | `claim-contracts-cannot-authorize-arbitrary-fields` | "Nothing is deployed; deployment needs C2FLR" | false since phase 10; points at the deployment claim |
 | `claim-composed-lifecycle` | the arbitrary-signature gap | superseded by gate B; residual restated as isolation |
 | `claim-execution-layer` | same | same |
-| `claim-tee-hardware-attested` | referenced extension 66163 | 66244, plus the `GCP_AMD_SEV`-only constraint |
+| `claim-tee-hardware-attested` | referenced extension 66163 | 66248, plus the `GCP_AMD_SEV`-only constraint |
 
 ## 8. The indexer correction
 
