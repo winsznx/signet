@@ -27,6 +27,7 @@ const REPO_ROOT = fileURLToPath(new URL("../..", import.meta.url));
 const DIST = join(REPO_ROOT, "web", "dist");
 
 const ROUTES = {
+  notFound: "404.html",
   home: "index.html",
   operator: "operator/index.html",
   proof: "proof/index.html",
@@ -257,6 +258,7 @@ const walk = (dir, prefix = "") =>
 const emitted = walk(".").sort();
 const expected = [
   "_headers",
+  "404.html",
   "app.js",
   "index.html",
   "operator/index.html",

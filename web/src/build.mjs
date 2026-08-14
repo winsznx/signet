@@ -609,7 +609,45 @@ const incidentPage = () => {
 const DESCRIPTION =
   "Signet reads a FAssets redemption obligation from Flare, derives the XRP payment instead of accepting caller-supplied fields, checks XRPL for a prior payment, and proves the outcome through FDC. The extension runs as a local process: nothing is hardware-attested.";
 
+const notFound = () => `
+<div class="wrap">
+  <div class="hero" style="grid-template-columns:1fr;padding-bottom:0">
+    <div class="hero-copy">
+      <span class="eyebrow">404</span>
+      <h1>That page is not here.</h1>
+      <p class="lede">It may have moved when the site was reorganised. Everything lives under one of these.</p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="/">Home</a>
+        <a class="btn btn-ghost" href="/operator">Operator</a>
+        <a class="btn btn-ghost" href="/proof">Proof</a>
+      </div>
+    </div>
+  </div>
+</div>
+<section id="routes" aria-labelledby="r404-h">
+  <div class="wrap">
+    <h2 id="r404-h">Every page</h2>
+    <div class="rows">
+      ${[
+        ["/", "What Signet does, and the mechanism"],
+        ["/operator", "Inspect a redemption obligation"],
+        ["/proof", "Proof overview and the judge result"],
+        ["/proof/claims", "All claims, with every limitation"],
+        ["/proof/transactions", "Receipts and what each proves"],
+        [`/proof/incident/${incident.requestId}`, "The live duplicate-payment incident"],
+      ]
+        .map(
+          ([href, what]) =>
+            `<div class="row"><div style="padding:18px 22px"><a class="title" href="${href}">${escape(href)}</a>
+             <p class="note" style="margin:6px 0 0">${escape(what)}</p></div></div>`,
+        )
+        .join("")}
+    </div>
+  </div>
+</section>`;
+
 const routes = [
+  ["404.html", { title: "Not found — Signet", description: "That page is not here. Every Signet page is listed.", current: "home", body: notFound() }],
   ["index.html", { title: "Signet — only the XRP payment FAssets asked for", description: DESCRIPTION, current: "home", body: home(), script: "/app.js" }],
   ["operator/index.html", { title: "Operator console — Signet", description: "Inspect a Coston2 redemption obligation, observe XRPL and preview Signet's decision. Read-only, wallet optional.", current: "operator", body: operator(), script: "/app.js" }],
   ["proof/index.html", { title: "Proof — Signet", description: `${claimTotals.total} claims, each stating what it does not prove.`, current: "proof", body: proofOverview() }],
