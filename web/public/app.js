@@ -132,9 +132,9 @@ function flash(button, text, state = "notice") {
 
 /** Ask which wallet, but only when there is genuinely a choice to make. */
 async function pickProvider(button) {
-  const list = [...providers.values()];
+  const list = [...providers.entries()].map(([uuid, entry]) => ({ ...entry, uuid }));
   if (list.length === 0) return null;
-  if (list.length === 1) return list[0].provider;
+  if (list.length === 1) return list[0];
 
   const existing = $("#wallet-picker");
   if (existing) existing.remove();
@@ -156,7 +156,7 @@ async function pickProvider(button) {
       const option = event.target.closest(".wallet-option");
       if (!option) return;
       picker.remove();
-      resolve(list[Number(option.dataset.index)].provider);
+      resolve(list[Number(option.dataset.index)]);
     });
     document.addEventListener(
       "keydown",
@@ -194,17 +194,97 @@ async function switchToCoston2(provider, button) {
   return true;
 }
 
+const REMEMBERED = "signet.wallet";
+
+/**
+ * Restore an existing connection without prompting.
+ *
+ * `eth_accounts` returns what the wallet has already authorised for this origin and opens nothing,
+ * which is the difference between remembering a session and nagging on every page load. Without
+ * this, a reload looked like a disconnect and every navigation asked again. The wallet's own
+ * permission is the source of truth; localStorage only records which provider to ask.
+ */
+async function restoreSession(button) {
+  const remembered = (() => {
+    try {
+      return localStorage.getItem(REMEMBERED);
+    } catch {
+      return null;
+    }
+  })();
+  const candidates = remembered && providers.has(remembered) ? [providers.get(remembered)] : [...providers.values()];
+
+  for (const entry of candidates) {
+    try {
+      const accounts = await entry.provider.request({ method: "eth_accounts" });
+      if (Array.isArray(accounts) && accounts.length) {
+        wallet.address = accounts[0];
+        wallet.provider = entry.provider;
+        wallet.chainId = await readChain(entry.provider);
+        attachProviderEvents(entry.provider, button);
+        renderWallet(button);
+        broadcast();
+        return true;
+      }
+    } catch {
+      /* A provider that will not answer eth_accounts is simply not a restored session. */
+    }
+  }
+  return false;
+}
+
+function attachProviderEvents(provider, button) {
+  if (provider.__signetBound) return;
+  provider.__signetBound = true;
+  provider.on?.("accountsChanged", (accounts) => {
+    wallet.address = Array.isArray(accounts) && accounts.length ? accounts[0] : null;
+    if (!wallet.address) forget();
+    renderWallet(button);
+    broadcast();
+  });
+  provider.on?.("chainChanged", (hex) => {
+    wallet.chainId = Number.parseInt(hex, 16);
+    renderWallet(button);
+    broadcast();
+  });
+}
+
+const remember = (uuid) => {
+  try {
+    localStorage.setItem(REMEMBERED, uuid);
+  } catch {
+    /* Private mode. The wallet still holds the permission; only the shortcut is lost. */
+  }
+};
+const forget = () => {
+  try {
+    localStorage.removeItem(REMEMBERED);
+  } catch {
+    /* nothing to do */
+  }
+};
+
+/** Anything on the page that cares about connection state listens for this. */
+function broadcast() {
+  document.dispatchEvent(
+    new CustomEvent("signet:wallet", {
+      detail: { address: wallet.address, chainId: wallet.chainId, onCoston2: wallet.chainId === COSTON2_CHAIN_ID },
+    }),
+  );
+}
+
 function initWallet() {
   const button = $("[data-wallet-connect]");
   if (!button) return;
   discoverProviders();
 
   // Announcements can arrive a tick late, so re-check before deciding there is no wallet at all.
-  setTimeout(() => {
-    if (providers.size === 0) return;
+  setTimeout(async () => {
+    if (providers.size === 0) return broadcast();
     button.hidden = false;
     renderWallet(button);
-  }, 120);
+    await restoreSession(button);
+  }, 150);
 
   button.addEventListener("click", async () => {
     // Never on load. Only ever from this click.
@@ -214,8 +294,11 @@ function initWallet() {
       return;
     }
 
-    const provider = wallet.provider ?? (await pickProvider(button));
-    if (!provider) return renderWallet(button);
+    const chosen = wallet.provider
+      ? { provider: wallet.provider, uuid: null }
+      : await pickProvider(button);
+    if (!chosen) return renderWallet(button);
+    const provider = chosen.provider ?? chosen;
 
     walletLabel(button, "connecting", "Connecting…");
     try {
@@ -224,6 +307,7 @@ function initWallet() {
       if (!wallet.address) return flash(button, "No account shared");
       wallet.provider = provider;
       wallet.chainId = await readChain(provider);
+      if (chosen.uuid) remember(chosen.uuid);
     } catch (error) {
       wallet.address = null;
       // 4001 is the user declining, which is a normal outcome. Anything else is worth naming, so
@@ -232,16 +316,9 @@ function initWallet() {
       return;
     }
 
-    provider.on?.("accountsChanged", (accounts) => {
-      wallet.address = Array.isArray(accounts) && accounts.length ? accounts[0] : null;
-      renderWallet(button);
-    });
-    provider.on?.("chainChanged", (hex) => {
-      wallet.chainId = Number.parseInt(hex, 16);
-      renderWallet(button);
-    });
-
+    attachProviderEvents(provider, button);
     renderWallet(button);
+    broadcast();
   });
 }
 
@@ -250,6 +327,7 @@ function initWallet() {
 async function initDeploymentLiveness() {
   const cells = $$("[data-live-code]");
   if (cells.length === 0) return;
+  let checked = 0;
   for (const cell of cells) {
     const address = cell.dataset.liveCode;
     if (!/^0x[0-9a-fA-F]{40}$/.test(address)) continue;
@@ -264,6 +342,11 @@ async function initDeploymentLiveness() {
       bytes > 0
         ? `<span class="badge verified">live · ${bytes} bytes</span>`
         : `<span class="badge unavailable">no code</span>`;
+    checked += 1;
+  }
+  if (checked > 0) {
+    consoleState.deploymentChecked = true;
+    renderConsole();
   }
 }
 
@@ -365,6 +448,9 @@ async function inspect(requestIdRaw, statusEl, resultEl) {
   }
 
   if (answer.revert) {
+    // A typed refusal is a successful inspection: you asked the chain and it answered.
+    consoleState.inspected = true;
+    renderConsole();
     const human = humanRevert(answer.revert);
     statusEl.textContent = "";
     resultEl.innerHTML = `<div class="card tight">
@@ -378,6 +464,8 @@ async function inspect(requestIdRaw, statusEl, resultEl) {
     return;
   }
 
+  consoleState.inspected = true;
+  renderConsole();
   statusEl.textContent = "";
   resultEl.innerHTML = `<div class="card tight">
     <div class="badges"><span class="badge verified">Live Coston2</span><span class="badge">FAssets</span></div>
@@ -404,6 +492,78 @@ function initInspector() {
   });
 }
 
+// ---------------------------------------------------------------- operator console
+
+/**
+ * The console's job is to answer "what do I do now", continuously.
+ *
+ * Each step reports its own state, and the first one that is not yet done is marked as the current
+ * action. Connecting a wallet has to visibly change something or it feels broken, which is exactly
+ * how it felt before: the button went green and the page carried on as if nothing had happened.
+ *
+ * Read-only is a first-class path, not a fallback. Nothing on this page needs a wallet, and a step
+ * list that stalls at "connect" would imply otherwise.
+ */
+const consoleState = { readOnly: false, connected: false, onCoston2: false, deploymentChecked: false, inspected: false };
+
+function renderConsole() {
+  const steps = $$("[data-step]");
+  if (steps.length === 0) return;
+
+  const done = {
+    connect: consoleState.connected || consoleState.readOnly,
+    network: consoleState.connected ? consoleState.onCoston2 : consoleState.readOnly,
+    deployment: consoleState.deploymentChecked,
+    inspect: consoleState.inspected,
+  };
+
+  let currentFound = false;
+  for (const step of steps) {
+    const key = step.dataset.step;
+    const isDone = done[key] === true;
+    const isCurrent = !isDone && !currentFound;
+    if (isCurrent) currentFound = true;
+
+    step.dataset.state = isDone ? "done" : isCurrent ? "current" : "todo";
+    const badge = $("[data-step-status]", step);
+    if (badge) {
+      badge.textContent = isDone ? "Done" : isCurrent ? "Do this next" : "Waiting";
+      badge.className = `badge ${isDone ? "verified" : isCurrent ? "simulated" : ""}`;
+    }
+  }
+
+  const summary = $("#console-summary");
+  if (summary) {
+    if (consoleState.connected && consoleState.onCoston2) {
+      summary.innerHTML = `<span class="badge verified">Connected · Coston2</span> You can inspect any redemption obligation below. Nothing here spends anything or signs.`;
+    } else if (consoleState.connected) {
+      summary.innerHTML = `<span class="badge simulated">Wrong network</span> Switch to Coston2 from the button in the header. Everything below still works read-only.`;
+    } else if (consoleState.readOnly) {
+      summary.innerHTML = `<span class="badge">Read-only</span> Everything on this page works without a wallet. Connect one only if you want your address shown.`;
+    } else {
+      summary.innerHTML = `<span class="badge">Start here</span> Connect a wallet, or continue read-only. A wallet is optional and never implies you operate a FAssets agent.`;
+    }
+  }
+}
+
+function initConsole() {
+  if ($$("[data-step]").length === 0) return;
+
+  $("[data-read-only]")?.addEventListener("click", () => {
+    consoleState.readOnly = true;
+    renderConsole();
+    $("#inspector-panel")?.scrollIntoView({ behavior: "smooth", block: "center" });
+  });
+
+  document.addEventListener("signet:wallet", (event) => {
+    consoleState.connected = Boolean(event.detail.address);
+    consoleState.onCoston2 = event.detail.onCoston2 === true;
+    renderConsole();
+  });
+
+  renderConsole();
+}
+
 // ---------------------------------------------------------------- copy buttons
 
 function initCopy() {
@@ -427,6 +587,7 @@ function initCopy() {
 
 function boot() {
   initWallet();
+  initConsole();
   initCopy();
   initInspector();
   initDeploymentLiveness();

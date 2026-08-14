@@ -263,26 +263,35 @@ const operator = () => `
 
 <section id="onboarding" aria-labelledby="onb-h">
   <div class="wrap">
-    <h2 id="onb-h">First run</h2>
-    <p class="note">Seven steps. Nothing here spends anything, and nothing signs.</p>
-    <ol class="rows" style="list-style:none;margin:0;padding:0" id="onboarding-list">
+    <h2 id="onb-h">Start here</h2>
+    <p class="note" id="console-summary"><span class="badge">Start here</span> Connect a wallet, or continue
+    read-only. A wallet is optional and never implies you operate a FAssets agent.</p>
+    <div class="cta-row" style="margin:0 0 24px">
+      <button class="btn btn-ghost" type="button" data-read-only>Continue read-only</button>
+      <a class="btn btn-quiet" href="#inspector">Skip to the inspector</a>
+    </div>
+    <ol class="rows steps" style="list-style:none;margin:0;padding:0">
       ${[
-        ["Connect or continue read-only", "A wallet is optional. Everything below works without one."],
-        ["Check the network", "Coston2, chain id 114. The console offers a switch if your wallet is elsewhere."],
-        ["Review deployment state", "Registry, sender, extension and the five FCC statuses."],
-        ["Enter a redemption request id", "The only thing a caller supplies."],
-        ["Inspect the canonical obligation", "Every field carries where it came from."],
-        ["Observe XRPL", "Independent endpoints must agree."],
-        ["Preview the decision", "Authorization, or a typed refusal with its reason code."],
+        ["connect", "Connect a wallet, or continue read-only", "Everything on this page works without one."],
+        ["network", "Be on Coston2", "Chain id 114. The header button switches, and adds the network if your wallet does not know it."],
+        ["deployment", "See the deployment", "Signet's contracts are checked live below, byte count and all."],
+        ["inspect", "Inspect a redemption obligation", "Put in a request id. The chain answers with the payment FAssets requires, or a typed refusal."],
       ]
         .map(
-          ([t, d], i) =>
-            `<li class="row"><div style="padding:18px 22px"><span class="badge">${String(i + 1).padStart(2, "0")}</span>
-             <span class="title" style="margin-left:10px">${escape(t)}</span>
-             <p class="note" style="margin:8px 0 0">${escape(d)}</p></div></li>`,
+          ([key, title, detail], i) =>
+            `<li class="row step-row" data-step="${escape(key)}">
+              <div style="padding:18px 22px">
+                <span class="badge">${String(i + 1).padStart(2, "0")}</span>
+                <span class="title" style="margin-left:10px">${escape(title)}</span>
+                <span class="badge" data-step-status style="margin-left:8px">Waiting</span>
+                <p class="note" style="margin:8px 0 0">${escape(detail)}</p>
+              </div>
+            </li>`,
         )
         .join("")}
     </ol>
+    <p class="note" style="margin-top:16px">There is no step five. Signet cannot authorize a payment here: no TEE
+    machine is registered, so the FCC path stops before dispatch. That boundary is the product's, not the page's.</p>
   </div>
 </section>
 

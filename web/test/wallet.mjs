@@ -121,6 +121,74 @@ check("a single wallet connects without a picker", !(await p2.locator("#wallet-p
 check("wrong chain offers the switch", (await p2.locator("#wallet-button").innerText()).includes("Coston2"));
 await single.close();
 
+// ---- the session survives a refresh ----
+// eth_accounts returns what the wallet has already authorised and prompts nothing, so a reload
+// should restore the connection rather than asking again. It did not, and every navigation looked
+// like a disconnect.
+const persist = await browser.newContext();
+const p4 = await persist.newPage();
+await p4.addInitScript(() => {
+  // The wallet's own permission survives a reload, so the mock has to as well. An earlier version
+  // reset on every load and therefore could not tell a restored session from a fresh one.
+  const acct = ["0x88f61BcDC3C0Cfe4E12dc0576960bcF3ECa88F7d"];
+  window.__prompts = Number(sessionStorage.getItem("mock.prompts") ?? "0");
+  let authorised = sessionStorage.getItem("mock.authorised") === "1";
+  const wallet = {
+    request: async ({ method }) => {
+      if (method === "eth_requestAccounts") {
+        window.__prompts += 1;
+        sessionStorage.setItem("mock.prompts", String(window.__prompts));
+        authorised = true;
+        sessionStorage.setItem("mock.authorised", "1");
+        return acct;
+      }
+      if (method === "eth_accounts") return authorised ? acct : [];
+      if (method === "eth_chainId") return "0x72";
+      return null;
+    },
+    on: () => {},
+  };
+  window.addEventListener("eip6963:requestProvider", () => {
+    window.dispatchEvent(
+      new CustomEvent("eip6963:announceProvider", { detail: { info: { uuid: "u-persist", name: "Solo" }, provider: wallet } }),
+    );
+  });
+});
+await p4.goto(`${BASE}/operator`, { waitUntil: "networkidle" });
+await p4.waitForTimeout(350);
+await p4.locator("#wallet-button").click();
+await p4.waitForTimeout(500);
+check("connects on the operator page", (await p4.locator("#wallet-button").innerText()).includes("0x88f6"));
+check(
+  "connecting advances the console rather than doing nothing visible",
+  (await p4.locator('[data-step="connect"]').getAttribute("data-state")) === "done",
+);
+// innerText returns text after CSS transforms, and the badge is uppercased, so compare case-insensitively.
+check(
+  "the summary reflects the connection",
+  /connected/i.test(await p4.locator("#console-summary").innerText()),
+  await p4.locator("#console-summary").innerText(),
+);
+
+await p4.reload({ waitUntil: "networkidle" });
+await p4.waitForTimeout(600);
+check(
+  "the session survives a refresh",
+  (await p4.locator("#wallet-button").innerText()).includes("0x88f6"),
+  await p4.locator("#wallet-button").innerText(),
+);
+check("restoring never re-prompts", (await p4.evaluate(() => window.__prompts)) === 1, `${await p4.evaluate(() => window.__prompts)} prompts`);
+await persist.close();
+
+// ---- read-only is a real path ----
+const ro = await browser.newContext();
+const p5 = await ro.newPage();
+await p5.goto(`${BASE}/operator`, { waitUntil: "networkidle" });
+await p5.locator("[data-read-only]").click();
+await p5.waitForTimeout(200);
+check("read-only advances the console without a wallet", (await p5.locator('[data-step="connect"]').getAttribute("data-state")) === "done");
+await ro.close();
+
 // ---- no wallet at all ----
 const none = await browser.newContext();
 const p3 = await none.newPage();

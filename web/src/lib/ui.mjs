@@ -165,6 +165,11 @@ section:last-of-type{padding-bottom:80px}
 
 /* ---------------------------------------------------------------- disclosure rows */
 .rows{border:1px solid var(--cloud);border-radius:24px;overflow:hidden;background:var(--snow)}
+/* The current step is the only one that draws attention. Colour is never the only signal: the
+   status badge next to it says Done, Do this next or Waiting in words. */
+.step-row[data-state="current"]{background:var(--snow);box-shadow:inset 3px 0 0 var(--ember)}
+.step-row[data-state="done"] .title{color:var(--steel)}
+.step-row[data-state="todo"]{opacity:.72}
 .row{border-bottom:1px solid var(--cloud)}
 .row:last-child{border-bottom:none}
 .row>summary{cursor:pointer;padding:18px 22px;display:flex;gap:14px;align-items:baseline;flex-wrap:wrap;list-style:none}
