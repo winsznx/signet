@@ -376,6 +376,23 @@ const operator = () => `
   </div>
 </section>
 
+<section id="authority" aria-labelledby="auth-h">
+  <div class="wrap">
+    <h2 id="auth-h">What your address can do here</h2>
+    <p class="note">Connecting a wallet is not a permission. This reads Signet's registry on Coston2 and tells you what,
+    if anything, the connected address is authorised to do. For almost everyone the answer is nothing, which is the point:
+    a connected wallet is not an FAssets agent and not a Signet signer.</p>
+    <noscript><p class="noscript">JavaScript is off, so this live check is unavailable. The roles it reads are
+    <code>governance()</code> and <code>approvedSigner(address)</code> on <code>SignetRegistry</code>.</p></noscript>
+    <div class="card" id="authority-panel" data-authority hidden>
+      <div class="badges">${badge("Live Coston2", "verified")}${badge("Read-only")}</div>
+      <p class="note" id="authority-status" role="status" aria-live="polite" style="margin:0 0 12px">Connect a wallet to
+      check an address, or continue without one.</p>
+      <div id="authority-result"></div>
+    </div>
+  </div>
+</section>
+
 <section id="inspector" aria-labelledby="ins-h">
   <div class="wrap">
     <h2 id="ins-h">Request inspector</h2>

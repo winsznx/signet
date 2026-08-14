@@ -180,6 +180,40 @@ check(
 check("restoring never re-prompts", (await p4.evaluate(() => window.__prompts)) === 1, `${await p4.evaluate(() => window.__prompts)} prompts`);
 await persist.close();
 
+// ---- the one thing a wallet actually unlocks ----
+// Signet has no user-signed action, so the wallet's only genuine job is telling an operator what
+// their address is authorised to do. For nearly everyone that is nothing, and showing it is the
+// point: it demonstrates the "a wallet is not agent authority" claim instead of asserting it.
+const auth = await browser.newContext();
+const p6 = await auth.newPage();
+await p6.addInitScript(() => {
+  const w = {
+    request: async ({ method }) => {
+      if (method === "eth_requestAccounts") return ["0x000000000000000000000000000000000000dEaD"];
+      if (method === "eth_accounts") return [];
+      if (method === "eth_chainId") return "0x72";
+      return null;
+    },
+    on: () => {},
+  };
+  window.addEventListener("eip6963:requestProvider", () => {
+    window.dispatchEvent(new CustomEvent("eip6963:announceProvider", { detail: { info: { uuid: "u-auth", name: "Solo" }, provider: w } }));
+  });
+});
+await p6.goto(`${BASE}/operator`, { waitUntil: "networkidle" });
+await p6.waitForTimeout(350);
+check("authority panel invites a connection before one exists", (await p6.locator("#authority-status").innerText()).includes("Connect a wallet"));
+await p6.locator("#wallet-button").click();
+await p6.waitForTimeout(2500);
+const authText = await p6.locator("#authority-result").innerText();
+check(
+  "connecting reports what the address may do",
+  /holds no role|holds a role|not checked/i.test(authText),
+  authText.split("\n")[0] ?? "",
+);
+check("an unrelated address is shown as holding nothing", /holds no role/i.test(authText) || /Unavailable/i.test(authText));
+await auth.close();
+
 // ---- read-only is a real path ----
 const ro = await browser.newContext();
 const p5 = await ro.newPage();

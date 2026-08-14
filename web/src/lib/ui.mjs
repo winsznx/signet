@@ -347,7 +347,7 @@ export function page({ title, description, current, body, script = null, ogImage
 <link rel="apple-touch-icon" href="/brand/mark-180.png">
 <style>${CSS}</style>
 </head>
-<body data-demo-tx="${escape(demoTx ?? "")}" data-fcc-sender="${escape(deployment.fccSender ?? "")}" data-extension-id="${escape(deployment.extensionId ?? "")}" data-chain-id="${escape(deployment.chainId ?? "")}">
+<body data-registry="${escape(deployment.registry ?? "")}" data-demo-tx="${escape(demoTx ?? "")}" data-fcc-sender="${escape(deployment.fccSender ?? "")}" data-extension-id="${escape(deployment.extensionId ?? "")}" data-chain-id="${escape(deployment.chainId ?? "")}">
 <a class="skip" href="#main">Skip to content</a>
 <nav class="nav" aria-label="Primary">
   <div class="nav-inner">

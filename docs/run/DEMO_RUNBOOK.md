@@ -27,79 +27,96 @@ no install.
 
 ---
 
-## 0:00 — 0:15 · What this is
+## 0:00 — 0:15 · Hero
 
-**Screen:** the homepage hero.
+**Screen:** homepage, top. Do not mention the wallet. It is there to show the console is live.
 
-> FAssets creates redemption obligations on Flare, but the actual XRP payment happens outside Flare.
-> Signet turns that obligation into the authorization policy.
+> FAssets lets you mint XRP onto Flare. When someone redeems, an agent has to make a real XRP
+> payment on the XRP ledger, outside Flare.
+>
+> The problem is that the thing deciding what to pay and the thing holding the key are usually the
+> same process. Signet splits them.
 
-The strip under the CTAs already says Coston2 live, extension 66248 registered, execution simulated.
-Do not read it out. Let it sit there.
+## 0:15 — 0:35 · The input
 
-## 0:15 — 0:35 · The caller supplies only a request id
+**Action:** scroll to **Try to break it**. Point at the two bordered boxes.
 
-**Screen:** scroll to **Try to break it**.
+> Here's a real redemption. Everything a caller supplies is on the left: a request ID, and a
+> generation. That's the entire input.
 
-> This is a real redemption. Everything a caller supplies is on the left: a request id and a
-> generation. That is the entire input.
+## 0:35 — 0:50 · The derivation
 
-Point at the two bordered fields.
+**Screen:** stay put. Point at the dashed fields.
 
-## 0:35 — 0:50 · Everything else comes from FAssets
+This is the load-bearing sentence for a non-expert. Say it slowly.
 
-> Below it, the destination, the amount, the reference, the window and the agent. Every one of them
-> carries a FAssets badge, and every one is a readout rather than a field. You cannot type the
-> recipient, because there is no parameter for it.
+> Everything else comes from FAssets. Destination, amount, payment reference, the window, the agent.
+> Each one is a readout rather than a field, and each carries a badge saying where it came from.
+> Every payment field says FAssets.
+>
+> You can't type the recipient. There's no parameter for it.
 
-## 0:50 — 1:10 · Try to change it
+## 0:50 — 1:10 · Try to break it
 
-**Click:** *Change the destination*. Then *Change the amount*.
+**Action:** click **Change the destination**, then **Change the amount**.
 
-> Not refused by a policy check that could be misconfigured. Not representable: the entry point is
-> authorizeRedemption(requestId, generation), and there is no destination argument.
+> So let's try to break it. Change the destination. Change the amount.
+>
+> These aren't policy checks that could be misconfigured. The entry point is
+> `authorizeRedemption(requestId, generation)`. There is no destination argument to pass.
 
 ## 1:10 — 1:25 · Observe before signing
 
-**Click:** *Pay an obligation someone already paid*.
+**Action:** click **Pay an obligation someone already paid**.
 
-> Before authorizing, Signet checks the XRP ledger itself, across independent endpoints that must
-> agree. If the obligation was already paid, it refuses with S021.
+> One more. What if it's already been paid?
+>
+> Before authorizing anything, Signet checks the XRP ledger itself, across independent endpoints
+> that have to agree. If a payment carrying this reference already exists, it refuses. S021.
 
-## 1:25 — 1:45 · This was not theoretical
+## 1:25 — 1:45 · The incident
 
-**Click:** *See this fail for real*, or the Incident nav item.
+**Action:** click **See this fail for real**. Point at `19825006` and `19825042`.
 
-> Our first model failed live. The agent had already paid on XRPL. Flare still said ACTIVE, because
-> ACTIVE means not yet confirmed, not unpaid. Signet paid the same obligation again, thirty-six
-> ledgers later.
+This is the beat for the expert. Everyone demos a happy path; almost nobody shows a live failure
+they caused. Do not rush it and do not apologise for it.
 
-Point at the two ledger numbers.
-
-> No third party lost funds. That is luck about the test setup, not a property of the system.
+> That check exists because we got it wrong live.
+>
+> The agent had already paid on XRPL. Flare still reported the request ACTIVE, because ACTIVE means
+> not yet confirmed, not unpaid. Signet paid the same obligation again, thirty-six ledgers later.
+>
+> No third party lost funds. That's luck about the test setup, not a property of the system. The fix
+> is a protocol change, not a patch.
 
 ## 1:45 — 2:05 · The evidence
 
-**Screen:** Proof → Transactions. Open the top receipt.
+**Action:** nav to **Proof** → **Transactions**, open the top receipt.
 
-> The payment, validated on XRPL Testnet. Replaying the identical blob is refused by the ledger
-> itself. And an XRPPayment attestation for it was accepted by FDC on Coston2.
+> Here's an execution. Signed, submitted once, validated on XRPL Testnet. Resubmitting the identical
+> blob is refused by the ledger itself.
+>
+> And an XRPPayment attestation for it was accepted on chain by FDC on Coston2. So the outcome is
+> provable on Flare without trusting us.
 
 ## 2:05 — 2:25 · What we did not prove
 
-**Screen:** /proof.
+**Action:** nav to **Proof**.
 
-> Thirteen pass, zero fail, two unverifiable. We report missing evidence as unverifiable rather than
-> pretending it passed. One XRPL node has pruned the ledger; the other check needs the Merkle proof
-> re-encoded, which the receipt verifier does and this command does not.
+> Thirteen pass, zero fail, two unverifiable.
+>
+> We report missing evidence as unverifiable rather than pretending it passed. One XRPL node has
+> pruned the ledger holding that payment. The other needs the Merkle proof re-encoded, which the
+> receipt verifier does and this command doesn't.
 
-## 2:25 — 2:46 · The boundary, and the line
+## 2:25 — 2:44 · The boundary, then the line
 
-**Screen:** homepage, scroll to **What this deployment is not**.
+**Action:** back to the homepage, scroll to **What this deployment is not**.
 
-> The extension ran as a local process. No TEE machine is registered, nothing is hardware-attested,
-> and Signet has never operated a whitelisted FAssets agent. Five separate statuses, none of them
-> blurred.
+Stop after the last line. Do not add a summary.
+
+> And the limits, stated as five separate things. The extension is registered. No TEE machine is
+> registered. Nothing is hardware-attested. Signet has never operated a whitelisted FAssets agent.
 >
 > FAssets decides what is owed. Signet decides whether that exact XRP payment may exist. FDC proves
 > what happened.
@@ -110,9 +127,11 @@ Point at the two ledger numbers.
 
 - Do not open the repository. The product carries the whole story now.
 - Do not run the lifecycle live: it submits a real payment and takes minutes.
-- The word "attested" appears once, in the closing sentence saying there is none.
-- If a click fails on camera, keep the take and say what failed.
-- If you are over 2:55, cut the transactions beat, not the incident or the boundary.
+- Say "attested" exactly once, in the closing denial. It is the word judges scan for, and the
+  discipline is part of the pitch.
+- If a click misfires on camera, keep the take and say what happened. This project's whole argument
+  is that it reports what actually occurred.
+- If you run long, cut the transactions beat at 1:45. Never cut the incident or the boundary.
 
 ## Shot list
 

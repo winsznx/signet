@@ -669,6 +669,93 @@ function initConsole() {
   renderConsole();
 }
 
+// ---------------------------------------------------------------- what this address can do
+
+const REGISTRY = () => document.body.dataset.registry || "";
+const SEL_GOVERNANCE = "0x5aa6e675"; // governance()
+const SEL_APPROVED_SIGNER = "0xc9a61a12"; // approvedSigner(address)
+
+/**
+ * The one thing a connected wallet genuinely unlocks: finding out it grants you nothing.
+ *
+ * The product says a wallet is not agent authority. Saying it is cheap; reading the registry and
+ * showing an operator that their own address holds no role is the version that lands. It is also
+ * the only wallet-dependent read that exists, because Signet has no user-signed action at all.
+ */
+async function checkAuthority(address, statusEl, resultEl) {
+  const registry = REGISTRY();
+  if (!/^0x[0-9a-fA-F]{40}$/.test(registry)) {
+    statusEl.textContent = "No registry address is configured in this build.";
+    return;
+  }
+  statusEl.textContent = "Reading SignetRegistry on Coston2…";
+  resultEl.innerHTML = "";
+
+  const padded = address.replace(/^0x/, "").toLowerCase().padStart(64, "0");
+  const [gov, signer] = await Promise.all([
+    rpcCall("eth_call", [{ to: registry, data: SEL_GOVERNANCE }, "latest"]),
+    rpcCall("eth_call", [{ to: registry, data: SEL_APPROVED_SIGNER + padded }, "latest"]),
+  ]);
+
+  if (gov.transport || signer.transport) {
+    statusEl.textContent = "";
+    resultEl.innerHTML = `<div class="card tight"><div class="badges"><span class="badge unavailable">Unavailable</span></div>
+      <p class="note" style="margin:0">No pinned Coston2 endpoint answered, so this was not checked. Nothing is assumed either way.</p></div>`;
+    return;
+  }
+
+  const isGovernance = gov.ok && String(gov.result).toLowerCase().endsWith(address.replace(/^0x/, "").toLowerCase());
+  const isSigner = signer.ok && /1$/.test(String(signer.result));
+
+  const roles = [
+    ["Governance", isGovernance, "Can bind agents, approve code hashes and approve result signers."],
+    ["Approved result signer", isSigner, "Decisions signed by this address are accepted by the registry."],
+  ];
+
+  statusEl.textContent = "";
+  resultEl.innerHTML = `<div class="derived">
+    ${roles
+      .map(
+        ([name, held, what]) => `<div class="derived-field">
+        <span class="derived-label">${esc(name)}</span>
+        <span class="derived-value">${esc(what)}</span>
+        <span class="badge ${held ? "verified" : "unavailable"}">${held ? "Yes" : "No"}</span>
+      </div>`,
+      )
+      .join("")}
+  </div>
+  <div class="outcome">
+    <p class="outcome-head ${roles.some(([, held]) => held) ? "impossible" : "refused"}">${
+      roles.some(([, held]) => held)
+        ? "This address holds a role in this deployment"
+        : "This address holds no role in Signet"
+    }</p>
+    <p class="note" style="margin:0">${
+      roles.some(([, held]) => held)
+        ? "Governance and signer roles are testnet-only for this deployment."
+        : "Which is expected. Connecting a wallet does not make anyone an FAssets agent or a Signet signer, and nothing on this page needs one."
+    }</p>
+  </div>`;
+}
+
+function initAuthority() {
+  const panel = $("[data-authority]");
+  if (!panel) return;
+  panel.hidden = false;
+  const statusEl = $("#authority-status", panel);
+  const resultEl = $("#authority-result", panel);
+
+  document.addEventListener("signet:wallet", (event) => {
+    const address = event.detail.address;
+    if (!address) {
+      statusEl.textContent = "Connect a wallet to check an address, or continue without one.";
+      resultEl.innerHTML = "";
+      return;
+    }
+    checkAuthority(address, statusEl, resultEl);
+  });
+}
+
 // ---------------------------------------------------------------- xrpl observation
 
 const XRPL_ENDPOINTS = ["https://s.altnet.rippletest.net:51234", "https://testnet.xrpl-labs.com"];
@@ -789,6 +876,7 @@ function boot() {
   initWallet();
   initConsole();
   initObserve();
+  initAuthority();
   initCopy();
   initInspector();
   initDeploymentLiveness();
