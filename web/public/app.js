@@ -504,42 +504,102 @@ function initInspector() {
  * Read-only is a first-class path, not a fallback. Nothing on this page needs a wallet, and a step
  * list that stalls at "connect" would imply otherwise.
  */
-const consoleState = { readOnly: false, connected: false, onCoston2: false, deploymentChecked: false, inspected: false };
+const TOUR_KEY = "signet.tour";
+const STEP_ORDER = ["connect", "network", "deployment", "request", "inspect", "observe", "decision", "verify"];
 
-function renderConsole() {
-  const steps = $$("[data-step]");
-  if (steps.length === 0) return;
+const consoleState = {
+  readOnly: false,
+  connected: false,
+  onCoston2: false,
+  deploymentChecked: false,
+  requestEntered: false,
+  inspected: false,
+  observed: false,
+  decided: false,
+  verified: false,
+  cursor: 0,
+  skipped: false,
+};
 
-  const done = {
+const loadTour = () => {
+  try {
+    return JSON.parse(localStorage.getItem(TOUR_KEY) ?? "{}");
+  } catch {
+    return {};
+  }
+};
+const saveTour = () => {
+  try {
+    localStorage.setItem(TOUR_KEY, JSON.stringify({ skipped: consoleState.skipped, cursor: consoleState.cursor }));
+  } catch {
+    /* private mode: the tour simply does not persist */
+  }
+};
+
+/** Which steps are satisfied. Read-only counts for the first two, because a wallet is optional. */
+function stepDone() {
+  return {
     connect: consoleState.connected || consoleState.readOnly,
     network: consoleState.connected ? consoleState.onCoston2 : consoleState.readOnly,
     deployment: consoleState.deploymentChecked,
+    request: consoleState.requestEntered,
     inspect: consoleState.inspected,
+    observe: consoleState.observed,
+    decision: consoleState.decided,
+    verify: consoleState.verified,
   };
+}
 
-  let currentFound = false;
-  for (const step of steps) {
-    const key = step.dataset.step;
+function renderConsole() {
+  const rows = $$("[data-step]");
+  if (rows.length === 0) return;
+  const done = stepDone();
+
+  // The cursor follows the work: the first unfinished step is where you are, unless you have paged
+  // ahead with Next, which is a deliberate choice the tour should respect.
+  const firstUnfinished = STEP_ORDER.findIndex((key) => !done[key]);
+  if (firstUnfinished !== -1 && consoleState.cursor < firstUnfinished) consoleState.cursor = firstUnfinished;
+  if (firstUnfinished === -1) consoleState.cursor = STEP_ORDER.length - 1;
+
+  for (const row of rows) {
+    const key = row.dataset.step;
+    const index = STEP_ORDER.indexOf(key);
     const isDone = done[key] === true;
-    const isCurrent = !isDone && !currentFound;
-    if (isCurrent) currentFound = true;
-
-    step.dataset.state = isDone ? "done" : isCurrent ? "current" : "todo";
-    const badge = $("[data-step-status]", step);
+    const isCurrent = !consoleState.skipped && index === consoleState.cursor && !isDone;
+    row.dataset.state = isDone ? "done" : isCurrent ? "current" : "todo";
+    const badge = $("[data-step-status]", row);
     if (badge) {
       badge.textContent = isDone ? "Done" : isCurrent ? "Do this next" : "Waiting";
       badge.className = `badge ${isDone ? "verified" : isCurrent ? "simulated" : ""}`;
     }
   }
 
+  const nav = $("[data-tour-nav]");
+  if (nav) {
+    nav.hidden = consoleState.skipped;
+    const position = $("[data-tour-position]");
+    if (position) position.textContent = `Step ${consoleState.cursor + 1} of ${STEP_ORDER.length}`;
+    const prev = $("[data-tour-prev]");
+    const next = $("[data-tour-next]");
+    if (prev) prev.disabled = consoleState.cursor === 0;
+    if (next) next.disabled = consoleState.cursor >= STEP_ORDER.length - 1;
+  }
+  const skip = $("[data-tour-skip]");
+  const restart = $("[data-tour-restart]");
+  if (skip) skip.hidden = consoleState.skipped;
+  if (restart) restart.hidden = !consoleState.skipped;
+
   const summary = $("#console-summary");
   if (summary) {
-    if (consoleState.connected && consoleState.onCoston2) {
-      summary.innerHTML = `<span class="badge verified">Connected · Coston2</span> You can inspect any redemption obligation below. Nothing here spends anything or signs.`;
+    const doneCount = STEP_ORDER.filter((k) => done[k]).length;
+    if (consoleState.skipped) {
+      summary.innerHTML = `<span class="badge">Tour skipped</span> Everything below still works. Restart the tour any time.`;
+    } else if (consoleState.connected && consoleState.onCoston2) {
+      summary.innerHTML = `<span class="badge verified">Connected &middot; Coston2</span> ${doneCount} of ${STEP_ORDER.length} done. Inspect any redemption below; nothing signs.`;
     } else if (consoleState.connected) {
-      summary.innerHTML = `<span class="badge simulated">Wrong network</span> Switch to Coston2 from the button in the header. Everything below still works read-only.`;
+      summary.innerHTML = `<span class="badge simulated">Wrong network</span> Switch to Coston2 from the header. Everything below still works read-only.`;
     } else if (consoleState.readOnly) {
-      summary.innerHTML = `<span class="badge">Read-only</span> Everything on this page works without a wallet. Connect one only if you want your address shown.`;
+      summary.innerHTML = `<span class="badge">Read-only</span> ${doneCount} of ${STEP_ORDER.length} done. No wallet needed for anything here.`;
     } else {
       summary.innerHTML = `<span class="badge">Start here</span> Connect a wallet, or continue read-only. A wallet is optional and never implies you operate a FAssets agent.`;
     }
@@ -549,10 +609,36 @@ function renderConsole() {
 function initConsole() {
   if ($$("[data-step]").length === 0) return;
 
+  const saved = loadTour();
+  consoleState.skipped = saved.skipped === true;
+  consoleState.cursor = Number.isInteger(saved.cursor) ? Math.min(saved.cursor, STEP_ORDER.length - 1) : 0;
+
   $("[data-read-only]")?.addEventListener("click", () => {
     consoleState.readOnly = true;
     renderConsole();
     $("#inspector-panel")?.scrollIntoView({ behavior: "smooth", block: "center" });
+  });
+  $("[data-tour-prev]")?.addEventListener("click", () => {
+    consoleState.cursor = Math.max(0, consoleState.cursor - 1);
+    saveTour();
+    renderConsole();
+  });
+  $("[data-tour-next]")?.addEventListener("click", () => {
+    consoleState.cursor = Math.min(STEP_ORDER.length - 1, consoleState.cursor + 1);
+    saveTour();
+    renderConsole();
+  });
+  $("[data-tour-skip]")?.addEventListener("click", () => {
+    consoleState.skipped = true;
+    saveTour();
+    renderConsole();
+  });
+  $("[data-tour-restart]")?.addEventListener("click", () => {
+    consoleState.skipped = false;
+    consoleState.cursor = 0;
+    saveTour();
+    renderConsole();
+    $("#onboarding")?.scrollIntoView({ behavior: "smooth", block: "start" });
   });
 
   document.addEventListener("signet:wallet", (event) => {
@@ -561,10 +647,121 @@ function initConsole() {
     renderConsole();
   });
 
+  $("#request-id")?.addEventListener("input", () => {
+    consoleState.requestEntered = true;
+    renderConsole();
+  });
+  for (const node of $$("[data-decision]")) {
+    node.addEventListener("toggle", () => {
+      if (!node.open) return;
+      consoleState.decided = true;
+      renderConsole();
+    });
+  }
+  // The last step is reading the evidence, so reaching the evidence links is what completes it.
+  for (const link of $$('a[href^="/proof"]')) {
+    link.addEventListener("click", () => {
+      consoleState.verified = true;
+      saveTour();
+    });
+  }
+
   renderConsole();
 }
 
+// ---------------------------------------------------------------- xrpl observation
+
+const XRPL_ENDPOINTS = ["https://s.altnet.rippletest.net:51234", "https://testnet.xrpl-labs.com"];
+
+/**
+ * Ask every endpoint, not the first one that answers.
+ *
+ * The observer this mirrors refuses to treat one node's silence as absence, and it would be a
+ * strange thing to relax in the surface that explains it. Disagreement is shown as disagreement:
+ * it is a real reason code, not an error to smooth over.
+ */
+async function observeLedger(txHash) {
+  const answers = await Promise.all(
+    XRPL_ENDPOINTS.map(async (endpoint) => {
+      try {
+        const response = await fetch(endpoint, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ method: "tx", params: [{ transaction: txHash }] }),
+          signal: AbortSignal.timeout(12000),
+        });
+        const body = await response.json();
+        if (body?.result && !body.result.error) {
+          return { endpoint, found: true, result: body.result.meta?.TransactionResult, ledger: body.result.ledger_index };
+        }
+        return { endpoint, found: false, why: body?.result?.error ?? "no answer" };
+      } catch (error) {
+        return { endpoint, found: false, why: error?.name === "TimeoutError" ? "timed out" : "unreachable" };
+      }
+    }),
+  );
+  return answers;
+}
+
+function initObserve() {
+  const panel = $("[data-observe]");
+  if (!panel) return;
+  panel.hidden = false;
+  const statusEl = $("#observe-status");
+  const resultEl = $("#observe-result");
+  const txHash = document.body.dataset.demoTx ?? "";
+
+  $("[data-observe-run]", panel)?.addEventListener("click", async () => {
+    if (!/^[0-9A-Fa-f]{64}$/.test(txHash)) {
+      statusEl.textContent = "No example transaction is configured in this build.";
+      return;
+    }
+    statusEl.textContent = "Asking both XRPL endpoints…";
+    resultEl.innerHTML = `<div class="card tight"><p class="note" style="margin:0">Two independent endpoints, in parallel…</p></div>`;
+
+    const answers = await observeLedger(txHash);
+    const found = answers.filter((a) => a.found);
+    consoleState.observed = true;
+    renderConsole();
+    statusEl.textContent = "";
+
+    const rows = answers
+      .map(
+        (a) => `<div class="derived-field">
+          <span class="derived-label">${esc(new URL(a.endpoint).host)}</span>
+          <span class="derived-value">${a.found ? `found &middot; ${esc(a.result ?? "validated")} &middot; ledger ${esc(a.ledger ?? "?")}` : `no answer &middot; ${esc(a.why)}`}</span>
+          <span class="badge ${a.found ? "verified" : "unavailable"}">${a.found ? "XRPL" : "unavailable"}</span>
+        </div>`,
+      )
+      .join("");
+
+    let verdict;
+    if (found.length === 0) {
+      verdict = `<p class="outcome-head refused">No endpoint could answer</p><p class="note" style="margin:0">Signet refuses here rather than guessing: this is <code>S022_UNDERLYING_STATE_UNAVAILABLE</code>. An observation nobody could make is not an observation.</p>`;
+    } else if (found.length === 1) {
+      verdict = `<p class="outcome-head refused">Only one endpoint answered</p><p class="note" style="margin:0">One source is not agreement. A node that has pruned the ledger cannot testify to absence, so this counts as too few sources: <code>S022_UNDERLYING_STATE_UNAVAILABLE</code>.</p>`;
+    } else if (new Set(found.map((a) => a.result)).size > 1) {
+      verdict = `<p class="outcome-head refused">Endpoints disagree</p><p class="note" style="margin:0">Fails closed as <code>S023_UNDERLYING_STATE_DISAGREEMENT</code>, and deliberately never retried automatically.</p>`;
+    } else {
+      verdict = `<p class="outcome-head impossible">Both endpoints agree</p><p class="note" style="margin:0">The payment exists and is validated. For a fresh obligation this is what a prior payment would look like, and the decision would refuse with <code>S021_PAYMENT_ALREADY_OBSERVED</code> rather than paying twice.</p>`;
+    }
+
+    resultEl.innerHTML = `<div class="card tight"><div class="derived">${rows}</div><div class="outcome">${verdict}</div></div>`;
+  });
+}
+
 // ---------------------------------------------------------------- copy buttons
+
+function toast(message) {
+  const existing = $(".toast");
+  if (existing) existing.remove();
+  const node = document.createElement("div");
+  node.className = "toast";
+  node.setAttribute("role", "status");
+  node.textContent = message;
+  document.body.appendChild(node);
+  setTimeout(() => node.remove(), 2200);
+}
 
 function initCopy() {
   for (const node of $$("[data-copy]")) {
@@ -573,11 +770,14 @@ function initCopy() {
         await navigator.clipboard.writeText(node.dataset.copy ?? "");
         const previous = node.textContent;
         node.textContent = "Copied";
+        toast("Copied to clipboard");
         setTimeout(() => {
           node.textContent = previous;
         }, 1400);
       } catch {
-        /* Clipboard denied is not worth an error state; the text is visible anyway. */
+        // Clipboard permission is commonly denied and the text is visible anyway, so say what to do
+        // rather than failing silently.
+        toast("Copy blocked by the browser. Select the text instead.");
       }
     });
   }
@@ -588,6 +788,7 @@ function initCopy() {
 function boot() {
   initWallet();
   initConsole();
+  initObserve();
   initCopy();
   initInspector();
   initDeploymentLiveness();

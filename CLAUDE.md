@@ -114,6 +114,40 @@ The coordinator is untrusted for payment authority.
 - Do not add upgradeable proxies, arbitrary external calls or `delegatecall`.
 - Do not add AI, tokens, governance, markets or analytics unless the PRD phase admits them.
 
+## Product surface completeness
+
+Product surface completeness is a release requirement, not presentation work that follows the
+protocol. This project has twice built strong protocol machinery and then treated the frontend as a
+documentation renderer, and both times the result was a thing nobody could use without being told
+which button to press.
+
+A capability is not done until a user can reach it. For every core capability, the implementation
+plan must name:
+
+- entry point, explanation, action
+- loading, success, failure and empty states
+- recovery path when it fails
+- visible provenance for anything shown
+- the next action
+
+Every serious build's plan must additionally cover: landing, information architecture, route map,
+onboarding, wallet or account handling where applicable, the primary action flow, history and proof,
+responsive behaviour, accessibility, and a two to three minute demo journey through the product
+itself.
+
+Three failure modes are each incomplete on their own:
+
+- a protocol with no usable workflow;
+- a dashboard that only dumps technical state;
+- a landing page with no path into the product.
+
+Internal concepts stay behind progressive disclosure. A first-run user must not need to understand
+obligation hashes, FDC voting rounds, TEE ids, schema versions, evidence filenames, ADR numbers,
+receipt JSON or RPC provider details before using the product. Those remain available to experts
+under Proof and Details.
+
+The UI adapts to the protocol. The protocol never becomes weaker to make a button work.
+
 ## Evidence rules
 
 Every public claim must exist in `evidence/claim-ledger.json`.

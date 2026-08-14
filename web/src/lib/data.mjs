@@ -287,6 +287,63 @@ export const incident = {
   regression: "scripts/lifecycle/incident-44928272.test.mjs",
 };
 
+/**
+ * The examples the safe demo offers.
+ *
+ * Two, chosen because they answer different questions. The first shows what derivation produces
+ * when an obligation is live. The second is the incident, now settled, which is the fail-closed
+ * answer: a caller cannot resurrect a finished obligation by asking nicely.
+ *
+ * Every field carries where it came from, because "you cannot type the recipient" is the whole
+ * pitch and a field with no stated origin is just a field.
+ */
+export const EXAMPLES = [
+  {
+    id: "live-derivation",
+    label: "A redemption Signet paid",
+    blurb: "The obligation from the composed run: what FAssets required, and what Signet derived from it.",
+    source: "Deterministic demo",
+    requestId: demoReceipt?.requestId ?? "45430134",
+    generation: demoReceipt?.generation ?? 0,
+    status: "ACTIVE at the time of the run",
+    fields: [
+      ["Destination", demoReceipt?.destination, "FAssets"],
+      ["Amount", demoReceipt?.amountDrops ? `${demoReceipt.amountDrops} drops` : null, "FAssets"],
+      ["Payment reference", "Derived from the request id by the protocol", "FAssets"],
+      ["Destination tag", "Not required for this obligation", "FAssets"],
+      ["Payment window", demoReceipt ? `${demoReceipt.firstUnderlyingBlock} → ${demoReceipt.lastUnderlyingBlock}` : null, "FAssets"],
+      ["Agent vault", demoReceipt?.agentVault, "FAssets"],
+      ["Source account", demoReceipt?.source, "Signet"],
+      ["XRPL result", demoReceipt?.engineResult, "XRPL"],
+    ].filter(([, value]) => value),
+    outcome: {
+      tone: "verified",
+      headline: "Authorized, executed, and proven",
+      detail: `Signed, submitted once, validated on XRPL Testnet, refused on replay by the ledger itself, and accepted by the FDC verifier on Coston2.`,
+    },
+  },
+  {
+    id: "settled",
+    label: "A redemption already settled",
+    blurb: "Request 44928272, the incident. It is finished, so the contract refuses to build a payment for it.",
+    source: "Live Coston2",
+    requestId: INCIDENT_REQUEST_ID,
+    generation: 1,
+    status: "No longer ACTIVE",
+    fields: [
+      ["Destination", "Not produced", "FAssets"],
+      ["Amount", "Not produced", "FAssets"],
+      ["Payment window", "Not produced", "FAssets"],
+    ],
+    outcome: {
+      tone: "unavailable",
+      headline: "Refused before any payment exists",
+      detail:
+        "FAssets does not report this request ACTIVE, so readCanonicalRedemptionById refuses and no instruction is built. Settled and expired obligations fail closed.",
+    },
+  },
+];
+
 export const REASON_CODES = [
   ["S021_PAYMENT_ALREADY_OBSERVED", "A validated payment already carries this reference to this destination."],
   ["S022_UNDERLYING_STATE_UNAVAILABLE", "No observation, an unavailable one, or too few agreeing sources."],

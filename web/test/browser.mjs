@@ -109,7 +109,7 @@ check("hero illustration loads", await page.evaluate(() => {
   return Boolean(img && img.complete && img.naturalWidth > 0);
 }));
 check("primary CTA points at the operator", (await page.locator('a.btn-primary[href="/operator"]').count()) > 0);
-check("nav reaches proof", (await page.locator('.nav-links a[href="/proof"]').count()) > 0);
+check("nav reaches proof", (await page.locator('.nav-menu-panel a[href="/proof"]').count()) > 0);
 
 // The attack demo: pick a move, get the right answer.
 await page.locator('label[for="attack-paid"]').click();
@@ -227,6 +227,98 @@ check("inspector never claims live data it did not get", !/Live Coston2/.test(un
 
 await context.close();
 
+// ---------------------------------------------------------------- the whole journey, as a stranger
+
+const journey = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+const j = await journey.newPage();
+const journeyErrors = [];
+j.on("pageerror", (e) => journeyErrors.push(String(e)));
+
+// 1-4: land, understand, find the way in
+await j.goto(`${BASE}/`, { waitUntil: "networkidle" });
+check("journey: the promise is above the fold", (await j.locator("h1").innerText()).includes("Only the XRP payment"));
+check("journey: who it is for is stated", (await j.locator("body").innerText()).includes("FASSETS AGENTS"));
+check("journey: the deployment strip is present", (await j.locator(".strip div").count()) >= 5);
+
+// 5-10: try it, see derivation, attack it
+await j.locator('a[href="/operator"]').first().click();
+await j.waitForLoadState("networkidle");
+check("journey: Open operator reaches the console", j.url().includes("/operator"));
+await j.goBack({ waitUntil: "networkidle" });
+await j.locator("#try").scrollIntoViewIfNeeded();
+check("journey: the demo names what a caller supplies", (await j.locator("#try").innerText()).includes("What the caller supplies"));
+check("journey: derived fields carry provenance", (await j.locator("#try .derived-field .badge").count()) >= 5);
+await j.locator('label[for="attack-destination"]').click();
+check("journey: altering the destination is impossible", (await j.locator("#outcome-destination").innerText()).includes("Impossible"));
+await j.locator('label[for="attack-paid"]').click();
+check("journey: an already-paid obligation refuses with S021", (await j.locator("#outcome-paid").innerText()).includes("S021"));
+await j.locator('label[for="attack-expired"]').click();
+check("journey: an expired obligation refuses", (await j.locator("#outcome-expired").innerText()).length > 40);
+
+// the second example is the settled one, and it must refuse
+await j.locator('label[for="pick-settled"]').click();
+check("journey: the settled example shows a refusal", (await j.locator("#example-settled").innerText()).includes("Refused"));
+
+// 13: the incident
+await j.locator('a[href="/proof/incident/44928272"]').first().click();
+await j.waitForLoadState("networkidle");
+check("journey: the incident page opens", j.url().includes("44928272"));
+check("journey: the incident names S021", (await j.locator("body").innerText()).includes("S021_PAYMENT_ALREADY_OBSERVED"));
+
+// 14-16: verification, and what was not proven
+await j.goto(`${BASE}/proof`, { waitUntil: "networkidle" });
+const proofText = await j.locator("body").innerText();
+check("journey: the judge result is visible", proofText.includes("13") && /unverifiable/i.test(proofText));
+check("journey: unverifiable is explained", proofText.toLowerCase().includes("could not be performed"));
+await j.goto(`${BASE}/proof/claims`, { waitUntil: "networkidle" });
+await j.locator('label[for="filter-unavailable"]').click();
+const visibleRows = await j.locator(".claim-row:visible").count();
+check("journey: filtering to unavailable hides verified claims", visibleRows > 0 && visibleRows < 34, `${visibleRows} rows`);
+check("journey: no errors anywhere in the journey", journeyErrors.length === 0, journeyErrors.slice(0, 2).join(" | "));
+await journey.close();
+
+// ---------------------------------------------------------------- operator tour
+
+const tourCtx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+const t = await tourCtx.newPage();
+await t.goto(`${BASE}/operator`, { waitUntil: "networkidle" });
+check("tour: eight steps are listed", (await t.locator("[data-step]").count()) === 8);
+check("tour: the first step is the current one", (await t.locator('[data-step="connect"]').getAttribute("data-state")) === "current");
+check("tour: position is shown", (await t.locator("[data-tour-position]").innerText()).includes("of 8"));
+await t.locator("[data-tour-next]").click();
+check("tour: next advances", (await t.locator("[data-tour-position]").innerText()).includes("Step 2"));
+await t.locator("[data-tour-prev]").click();
+check("tour: back returns", (await t.locator("[data-tour-position]").innerText()).includes("Step 1"));
+await t.locator("[data-tour-skip]").click();
+check("tour: skip hides the navigation", await t.locator("[data-tour-nav]").isHidden());
+await t.reload({ waitUntil: "networkidle" });
+check("tour: skipping persists across a reload", await t.locator("[data-tour-nav]").isHidden());
+await t.locator("[data-tour-restart]").click();
+check("tour: restart brings it back", await t.locator("[data-tour-nav]").isVisible());
+await t.locator("[data-read-only]").click();
+check("tour: read-only completes the first step", (await t.locator('[data-step="connect"]').getAttribute("data-state")) === "done");
+check("tour: the decision preview is present", (await t.locator("[data-decision]").count()) >= 5);
+// The read-only click starts a smooth scroll; let it settle before clicking something else.
+await t.waitForTimeout(600);
+await t.locator("[data-decision] summary").first().click();
+await t.waitForTimeout(200);
+check("tour: opening a decision completes that step", (await t.locator('[data-step="decision"]').getAttribute("data-state")) === "done");
+await tourCtx.close();
+
+// ---------------------------------------------------------------- mobile menu
+
+const mob = await browser.newContext({ viewport: { width: 390, height: 844 } });
+const m = await mob.newPage();
+await m.goto(`${BASE}/`, { waitUntil: "networkidle" });
+check("mobile: the menu is collapsed behind a toggle", await m.locator(".nav-menu-toggle").isVisible());
+check("mobile: links are hidden until opened", !(await m.locator('.nav-menu-panel a[href="/proof"]').isVisible()));
+await m.locator(".nav-menu-toggle").click();
+check("mobile: opening the menu reveals navigation", await m.locator('.nav-menu-panel a[href="/proof"]').isVisible());
+await m.locator('.nav-menu-panel a[href="/proof"]').click();
+await m.waitForLoadState("networkidle");
+check("mobile: menu navigation works", m.url().includes("/proof"));
+await mob.close();
+
 // ---------------------------------------------------------------- with javascript disabled
 
 const noJs = await browser.newContext({ javaScriptEnabled: false, viewport: { width: 1440, height: 900 } });
@@ -240,9 +332,9 @@ for (const route of ROUTES) {
 }
 await noJsPage.goto(`${BASE}/proof/transactions`, { waitUntil: "domcontentloaded" });
 check(
-  "no-js: the transaction table renders every receipt row",
-  (await noJsPage.locator("tbody tr").count()) >= 8,
-  `${await noJsPage.locator("tbody tr").count()} rows`,
+  "no-js: every receipt is listed",
+  (await noJsPage.locator("#tx .row").count()) >= 8,
+  `${await noJsPage.locator("#tx .row").count()} receipts`,
 );
 await noJsPage.goto(`${BASE}/`, { waitUntil: "domcontentloaded" });
 check("no-js: the mechanism is readable", (await noJsPage.locator("text=One request in").count()) > 0);

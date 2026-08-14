@@ -15,7 +15,7 @@ import { mkdirSync, writeFileSync, copyFileSync, readdirSync, existsSync, rmSync
 import { join } from "node:path";
 import {
   REPO_ROOT, ledger, deployment, fccStatuses, homeCards, claimGroups, claimTotals, transactions,
-  demoReceipt, incident, REASON_CODES, judge, ENDPOINTS, CONNECT_SRC, claimById,
+  demoReceipt, incident, REASON_CODES, judge, ENDPOINTS, CONNECT_SRC, claimById, EXAMPLES,
 } from "./lib/data.mjs";
 import { page, escape, short, badge, CSP, MARK } from "./lib/ui.mjs";
 
@@ -73,58 +73,88 @@ const ATTACKS = [
   ["noobs", "Authorize without observing XRPL", "Refused · S022_UNDERLYING_STATE_UNAVAILABLE", `Refusing is the default. There is no input that authorizes without an observation, and too few agreeing sources counts as no observation.`, "refused"],
   ["disagree", "Feed disagreeing endpoints", "Refused · S023_UNDERLYING_STATE_DISAGREEMENT", `Endpoints that disagree fail closed, and this one is deliberately never retried automatically.`, "refused"],
   ["stale", "Use a stale observation", "Refused · S024_UNDERLYING_OBSERVATION_STALE", `An observation too old to rely on is refused rather than accepted with a warning.`, "refused"],
+  ["expired", "Use an obligation past its window", "Refused &middot; the obligation is not ACTIVE", `FAssets stops reporting a settled or expired request as <code>ACTIVE</code>, and <code>readCanonicalRedemptionById</code> refuses anything it does not. No instruction is built, so there is nothing to sign.`, "refused"],
   ["replay", "Replay the signed payment", "Refused by the XRP ledger itself", `The identical signed blob resubmitted returns <code>tefPAST_SEQ</code>: the account sequence is already consumed. Signet does not have to be trusted for this one.`, "refused"],
 ];
+
+const provenance = (source) =>
+  badge(source, source === "FAssets" ? "verified" : source === "XRPL" ? "" : source === "Signet" ? "" : "");
+
+const exampleCard = (example, index) => `
+<div class="example" id="example-${escape(example.id)}">
+  <div class="badges">${badge(example.source, example.source === "Live Coston2" ? "verified" : "")}</div>
+  <p class="note" style="margin:0 0 16px">${escape(example.blurb)}</p>
+
+  <h4>What the caller supplies</h4>
+  <dl class="kv caller-supplied">
+    <dt>Request id</dt><dd class="mono">${escape(example.requestId)}</dd>
+    <dt>Generation</dt><dd class="mono">${escape(example.generation)}</dd>
+  </dl>
+
+  <h4 style="margin-top:22px">What FAssets determines</h4>
+  <p class="note" style="margin:0 0 10px">You cannot type any of these. There is no parameter for them.</p>
+  <div class="derived">
+    ${example.fields
+      .map(
+        ([label, value, source]) => `<div class="derived-field">
+        <span class="derived-label">${escape(label)}</span>
+        <span class="derived-value mono">${escape(value)}</span>
+        ${provenance(source)}
+      </div>`,
+      )
+      .join("")}
+  </div>
+
+  <div class="outcome ${escape(example.outcome.tone)}">
+    <p class="outcome-head ${example.outcome.tone === "verified" ? "impossible" : "refused"}">${escape(example.outcome.headline)}</p>
+    <p class="note" style="margin:0">${escape(example.outcome.detail)}</p>
+  </div>
+</div>`;
 
 const demoSection = () => `
 <section id="try" aria-labelledby="try-h">
   <div class="wrap">
-    <span class="eyebrow">Try it · deterministic demo</span>
+    <span class="eyebrow">Try it &middot; no wallet, no funds</span>
     <h2 id="try-h">Try to break it</h2>
-    <p class="note">A representative obligation, and every way a caller might try to bend it. This runs from a committed
-    fixture and makes no network call, so it is labelled a deterministic demo rather than live. The reason codes are the
-    real ones the policy returns.</p>
-    <div class="grid-2">
-      <article class="card">
-        <div class="badges">${badge("FAssets", "verified")}${badge("Deterministic demo")}</div>
-        <h3>The request</h3>
-        <p class="note" style="margin-bottom:14px">This is all a caller supplies.</p>
-        <dl class="kv">
-          <dt>requestId</dt><dd class="mono">${escape(demoReceipt?.requestId ?? "—")}</dd>
-          <dt>generation</dt><dd class="mono">${escape(demoReceipt?.generation ?? 0)}</dd>
-        </dl>
-        <h4 style="margin-top:24px">Derived by the contract, from FAssets</h4>
-        <p class="note" style="margin-bottom:12px">Read-only. There is no parameter through which these could be supplied.</p>
-        <dl class="kv">
-          <dt>destination</dt><dd class="mono">${escape(demoReceipt?.destination ?? "—")}</dd>
-          <dt>amount</dt><dd class="mono">${escape(demoReceipt?.amountDrops ?? "—")} drops</dd>
-          <dt>agent vault</dt><dd class="mono">${escape(short(demoReceipt?.agentVault ?? "—"))}</dd>
-          <dt>window</dt><dd class="mono">${escape(demoReceipt?.firstUnderlyingBlock ?? "—")} → ${escape(demoReceipt?.lastUnderlyingBlock ?? "—")}</dd>
-        </dl>
-      </article>
-      <article class="card">
-        <div class="badges">${badge("Signet policy")}</div>
-        <h3>Attack it</h3>
-        <p class="note" style="margin-bottom:14px">Pick a move. The outcome is what the deployed contract and the policy actually do.</p>
-        <div class="attack-panel">
-          ${ATTACKS.map(([id], i) => `<input class="attack-radio" type="radio" name="attack" id="attack-${id}"${i === 0 ? " checked" : ""}>`).join("")}
-          <div class="attacks" role="group" aria-label="Attack to attempt">
-            ${ATTACKS.map(([id, label]) => `<label class="attack-chip" for="attack-${id}">${escape(label)}</label>`).join("")}
+    <p class="note">Pick a redemption, see what FAssets determines, then try to change it. Every outcome below is what the
+    deployed contract and the policy actually do.</p>
+
+    <div class="example-picker" role="group" aria-label="Choose an example redemption">
+      ${EXAMPLES.map((e, i) => `<input class="example-radio" type="radio" name="example" id="pick-${escape(e.id)}"${i === 0 ? " checked" : ""}>`).join("")}
+      <div class="example-tabs">
+        ${EXAMPLES.map((e) => `<label class="example-tab" for="pick-${escape(e.id)}">${escape(e.label)}</label>`).join("")}
+      </div>
+      <div class="grid-2" style="margin-top:20px">
+        <article class="card">
+          ${EXAMPLES.map((e, i) => exampleCard(e, i)).join("")}
+        </article>
+        <article class="card">
+          <div class="badges">${badge("Signet policy")}</div>
+          <h3>Now try to change it</h3>
+          <p class="note" style="margin-bottom:14px">Pick a move.</p>
+          <div class="attack-panel">
+            ${ATTACKS.map(([id], i) => `<input class="attack-radio" type="radio" name="attack" id="attack-${id}"${i === 0 ? " checked" : ""}>`).join("")}
+            <div class="attacks" role="group" aria-label="Attack to attempt">
+              ${ATTACKS.map(([id, label]) => `<label class="attack-chip" for="attack-${id}">${escape(label)}</label>`).join("")}
+            </div>
+            <div class="attack-outcomes" aria-live="polite">
+              ${ATTACKS.map(
+                ([id, , headline, detail, kind]) => `
+                <div class="attack-outcome" id="outcome-${id}">
+                  <p class="outcome-head ${kind === "impossible" ? "impossible" : "refused"}">${headline}</p>
+                  <p class="note" style="margin:0">${detail}</p>
+                </div>`,
+              ).join("")}
+            </div>
           </div>
-          <div class="attack-outcomes" aria-live="polite">
-            ${ATTACKS.map(
-              ([id, , headline, detail, kind]) => `
-              <div class="attack-outcome" id="outcome-${id}">
-                <p class="outcome-head ${kind === "impossible" ? "impossible" : "refused"}">${escape(headline)}</p>
-                <p class="note" style="margin:0">${detail}</p>
-              </div>`,
-            ).join("")}
-          </div>
-        </div>
-      </article>
+        </article>
+      </div>
     </div>
-    <p class="note" style="margin-top:20px">Reason codes: ${REASON_CODES.map(([c]) => `<code>${escape(c)}</code>`).join(", ")}.
-    <a href="/proof/claims#claim-v2-underlying-observation">What each one means</a>.</p>
+
+    <div class="cta-row">
+      <a class="btn btn-primary" href="/operator">Open the operator console</a>
+      <a class="btn btn-quiet" href="/proof/incident/${escape(incident.requestId)}">See this fail for real &rarr;</a>
+    </div>
   </div>
 </section>`;
 
@@ -263,35 +293,59 @@ const operator = () => `
 
 <section id="onboarding" aria-labelledby="onb-h">
   <div class="wrap">
-    <h2 id="onb-h">Start here</h2>
-    <p class="note" id="console-summary"><span class="badge">Start here</span> Connect a wallet, or continue
-    read-only. A wallet is optional and never implies you operate a FAssets agent.</p>
-    <div class="cta-row" style="margin:0 0 24px">
-      <button class="btn btn-ghost" type="button" data-read-only>Continue read-only</button>
-      <a class="btn btn-quiet" href="#inspector">Skip to the inspector</a>
+    <div class="tour-head">
+      <div>
+        <h2 id="onb-h">Run through it once</h2>
+        <p class="note" id="console-summary" style="margin:0"><span class="badge">Start here</span> Eight steps.
+        Nothing signs, nothing spends, and a wallet is optional throughout.</p>
+      </div>
+      <div class="tour-actions">
+        <button class="btn btn-quiet" type="button" data-tour-skip hidden>Skip tour</button>
+        <button class="btn btn-quiet" type="button" data-tour-restart hidden>Restart tour</button>
+      </div>
     </div>
+
     <ol class="rows steps" style="list-style:none;margin:0;padding:0">
       ${[
-        ["connect", "Connect a wallet, or continue read-only", "Everything on this page works without one."],
-        ["network", "Be on Coston2", "Chain id 114. The header button switches, and adds the network if your wallet does not know it."],
-        ["deployment", "See the deployment", "Signet's contracts are checked live below, byte count and all."],
-        ["inspect", "Inspect a redemption obligation", "Put in a request id. The chain answers with the payment FAssets requires, or a typed refusal."],
+        ["connect", "Connect a wallet, or continue read-only", "Everything here works without one. Connecting never implies you operate a FAssets agent.", "connect"],
+        ["network", "Be on Coston2", "Chain id 114. The header button switches, and offers to add the network if your wallet does not know it.", null],
+        ["deployment", "Check the deployment is live", "Signet's contracts are read from the chain below, byte count and all.", "deployment"],
+        ["request", "Enter a redemption request id", "The only thing a caller ever supplies. One is filled in for you.", "inspector"],
+        ["inspect", "Inspect the obligation", "FAssets answers with the payment it requires, or a typed refusal. Both are useful.", "inspector"],
+        ["observe", "See the XRPL observation", "Before authorizing, Signet checks independent endpoints for a payment already made.", "observe"],
+        ["decision", "Preview the decision", "Authorization, or a refusal with its reason code. No signature exists at this stage.", "decision"],
+        ["verify", "Verify the evidence", "Every executed payment has a receipt anyone can re-check without trusting us.", null],
       ]
         .map(
-          ([key, title, detail], i) =>
+          ([key, title, detail, anchor], i) =>
             `<li class="row step-row" data-step="${escape(key)}">
-              <div style="padding:18px 22px">
-                <span class="badge">${String(i + 1).padStart(2, "0")}</span>
-                <span class="title" style="margin-left:10px">${escape(title)}</span>
-                <span class="badge" data-step-status style="margin-left:8px">Waiting</span>
+              <div class="step-body">
+                <div class="step-line">
+                  <span class="badge step-num">${String(i + 1).padStart(2, "0")}</span>
+                  <span class="title">${escape(title)}</span>
+                  <span class="badge" data-step-status>Waiting</span>
+                </div>
                 <p class="note" style="margin:8px 0 0">${escape(detail)}</p>
+                ${anchor ? `<p style="margin:12px 0 0"><a class="btn btn-ghost btn-sm" href="#${escape(anchor)}">Take me there</a></p>` : ""}
               </div>
             </li>`,
         )
         .join("")}
     </ol>
-    <p class="note" style="margin-top:16px">There is no step five. Signet cannot authorize a payment here: no TEE
-    machine is registered, so the FCC path stops before dispatch. That boundary is the product's, not the page's.</p>
+
+    <div class="tour-nav" data-tour-nav hidden>
+      <button class="btn btn-ghost" type="button" data-tour-prev>Back</button>
+      <span class="tour-position" data-tour-position aria-live="polite"></span>
+      <button class="btn btn-primary" type="button" data-tour-next>Next</button>
+    </div>
+
+    <div class="cta-row" style="margin-top:20px">
+      <button class="btn btn-ghost" type="button" data-read-only>Continue read-only</button>
+      <a class="btn btn-quiet" href="#inspector">Skip to the inspector</a>
+    </div>
+
+    <p class="note" style="margin-top:20px">There is no ninth step. Signet cannot authorize a payment from this console:
+    no TEE machine is registered, so the FCC path stops before dispatch. That is the product's boundary, not the page's.</p>
   </div>
 </section>
 
@@ -357,6 +411,49 @@ const operator = () => `
   </div>
 </section>
 
+<section id="observe" aria-labelledby="obs-h">
+  <div class="wrap">
+    <h2 id="obs-h">XRPL observation</h2>
+    <p class="note">Before authorizing anything, Signet looks at the XRP ledger itself, across independently hosted
+    endpoints that have to agree. This runs the same check from your browser.</p>
+    <noscript><p class="noscript">JavaScript is off, so the live observation is unavailable. The committed evidence on
+    <a href="/proof/transactions">the transactions page</a> shows what it returns.</p></noscript>
+    <div class="card" id="observe-panel" data-observe hidden>
+      <div class="badges">${badge("Live XRPL Testnet", "verified")}${badge("Two endpoints must agree")}</div>
+      <p class="note" style="margin-bottom:14px">Checks whether the payment behind the worked example is on the ledger, and
+      whether independent endpoints tell the same story.</p>
+      <button class="btn btn-primary" type="button" data-observe-run>Observe the ledger</button>
+      <p class="note" id="observe-status" role="status" aria-live="polite" style="margin:14px 0 0"></p>
+      <div id="observe-result"></div>
+    </div>
+  </div>
+</section>
+
+<section id="decision" aria-labelledby="dec-h">
+  <div class="wrap">
+    <h2 id="dec-h">Preview the decision</h2>
+    <p class="note">What the policy would answer for this obligation, and why. No signature exists at this stage, and
+    none can: no TEE machine is registered.</p>
+    <div class="rows">
+      <details class="row" data-decision><summary>
+        <span class="title">If the obligation is ACTIVE and unpaid</span>
+        ${badge("Authorize", "verified")}
+      </summary><div class="body">The canonical instruction is built from FAssets, the XRPL observation shows no prior
+      payment carrying this reference, and the decision authorizes exactly that payment. Nothing about it is caller-chosen.</div></details>
+      ${REASON_CODES.map(
+        ([code, when]) =>
+          `<details class="row" data-decision><summary><span class="title mono">${escape(code)}</span>${badge("Refuse", "unavailable")}</summary>
+           <div class="body">${escape(when)}</div></details>`,
+      ).join("")}
+      <details class="row" data-decision><summary>
+        <span class="title">If the obligation is settled or expired</span>
+        ${badge("Refuse", "unavailable")}
+      </summary><div class="body">FAssets stops reporting it ACTIVE, the adapter refuses, and no instruction is built.
+      Try request ${escape(incident.requestId)} in the inspector above to see this happen against the live chain.</div></details>
+    </div>
+  </div>
+</section>
+
 <section id="actions" aria-labelledby="act-h">
   <div class="wrap">
     <h2 id="act-h">What this console can and cannot do</h2>
@@ -407,12 +504,13 @@ const proofOverview = () => `
     <h2 id="v-h">Verify it yourself</h2>
     <p class="note">No wallet, no funds, no Docker, no GCP, no secrets.</p>
     <p class="chain">git clone ${escape(ENDPOINTS.repository)}<br>make judge</p>
+    <p style="margin:12px 0 0"><button class="btn btn-ghost btn-sm" type="button" data-copy="make judge">Copy command</button></p>
     <dl class="strip">
       <div><dt>Pass</dt><dd class="tone-verified"><span class="dot"></span>${judge.pass}</dd></div>
       <div><dt>Fail</dt><dd class="tone-verified"><span class="dot"></span>${judge.fail}</dd></div>
       <div><dt>Unverifiable</dt><dd class="tone-simulated"><span class="dot"></span>${judge.unverifiable}</dd></div>
     </dl>
-    <details class="row" style="margin-top:16px;border:1px solid var(--cloud);border-radius:24px;background:var(--snow)">
+    <details class="row" open style="margin-top:16px;border:1px solid var(--cloud);border-radius:24px;background:var(--snow)">
       <summary><span class="title">What UNVERIFIABLE means, and why it is not a failure</span></summary>
       <div class="body">
         <p>It means the check could not be performed from where it ran, and it is never folded into a pass. Today there are two.
@@ -463,53 +561,73 @@ const proofOverview = () => `
 
 // ---------------------------------------------------------------- /proof/claims
 
+const FILTERS = [
+  ["all", "All"],
+  ["verified", "Verified"],
+  ["unavailable", "Unavailable"],
+];
+
 const claimsPage = () => `
 <div class="wrap">
   <div class="hero" style="grid-template-columns:1fr;padding-bottom:0">
     <div class="hero-copy">
-      <span class="eyebrow">Proof · full ledger</span>
+      <nav class="crumbs" aria-label="Breadcrumb"><a href="/proof">Proof</a> <span>/</span> <span>Claims</span></nav>
+      <span class="eyebrow">Full ledger</span>
       <h1>Every claim, and what it does not prove.</h1>
-      <p class="lede">Generated from <code>evidence/claim-ledger.json</code>. A claim with no limitations listed is a claim
-      that has not been examined hard enough, so they are shown first-class.</p>
+      <p class="lede">Generated from the repository's claim ledger. A claim with no limitations listed is a claim that has
+      not been examined hard enough, so they are shown first-class.</p>
     </div>
   </div>
 </div>
-${claimGroups
-  .map(
-    ([group, claims]) => `
-<section id="group-${escape(group.toLowerCase())}" aria-labelledby="g-${escape(group.toLowerCase())}">
-  <div class="wrap">
-    <h2 id="g-${escape(group.toLowerCase())}">${escape(group)}</h2>
-    <div class="rows">
-      ${claims
+<section id="ledger" aria-labelledby="l-h">
+  <div class="wrap filterable">
+    <h2 id="l-h">${claimTotals.total} claims</h2>
+    ${FILTERS.map((f, i) => `<input class="filter-radio" type="radio" name="claim-filter" id="filter-${f[0]}"${i === 0 ? " checked" : ""}>`).join("")}
+    <div class="filters" role="group" aria-label="Filter claims by status">
+      ${FILTERS.map(
+        ([key, label]) =>
+          `<label class="filter-chip" for="filter-${key}">${escape(label)}${key === "verified" ? ` <span class="count">${claimTotals.verified}</span>` : key === "unavailable" ? ` <span class="count">${claimTotals.unavailable}</span>` : ` <span class="count">${claimTotals.total}</span>`}</label>`,
+      ).join("")}
+    </div>
+    <div class="filter-body">
+      ${claimGroups
         .map(
-          (c) => `<details class="row" id="${escape(c.id)}"><summary>
-        <span class="title">${escape(c.title)}</span>
-        ${badge(c.status, c.status === "verified" ? "verified" : "unavailable")}
-        ${badge(`level ${c.proofLevel}`)}
-        ${(c.network ?? []).map((n) => badge(n)).join("")}
-      </summary><div class="body">
-        <h4>The claim</h4><p>${escape(c.wording)}</p>
-        <h4>What it does not prove</h4>
-        <ul>${(c.limitations ?? []).map((l) => `<li>${escape(l)}</li>`).join("")}</ul>
-        <h4>Evidence</h4>
-        <ul>${(c.evidence ?? []).map((e) => `<li><code>${escape(e)}</code></li>`).join("")}</ul>
-      </div></details>`,
+          ([group, claims]) => `
+        <h3 class="group-head" style="margin-top:32px">${escape(group)}</h3>
+        <div class="rows">
+          ${claims
+            .map(
+              (c) => `<details class="row claim-row" data-status="${escape(c.status)}" id="${escape(c.id)}"><summary>
+            <span class="title">${escape(c.title)}</span>
+            ${badge(c.status, c.status === "verified" ? "verified" : "unavailable")}
+            ${badge(`level ${c.proofLevel}`)}
+            ${(c.network ?? []).map((n) => badge(n)).join("")}
+          </summary><div class="body">
+            <h4>The claim</h4><p>${escape(c.wording)}</p>
+            <h4>What it does not prove</h4>
+            <ul>${(c.limitations ?? []).map((l) => `<li>${escape(l)}</li>`).join("")}</ul>
+            <h4>Evidence</h4>
+            <ul>${(c.evidence ?? []).map((e) => `<li><code>${escape(e)}</code></li>`).join("")}</ul>
+          </div></details>`,
+            )
+            .join("")}
+        </div>`,
         )
         .join("")}
     </div>
   </div>
-</section>`,
-  )
-  .join("")}`;
+</section>`;
 
 // ---------------------------------------------------------------- /proof/transactions
+
+const ROLE_TONE = { Incident: "simulated", "Successful demo": "verified", "FDC proof": "verified" };
 
 const transactionsPage = () => `
 <div class="wrap">
   <div class="hero" style="grid-template-columns:1fr;padding-bottom:0">
     <div class="hero-copy">
-      <span class="eyebrow">Proof · transactions</span>
+      <nav class="crumbs" aria-label="Breadcrumb"><a href="/proof">Proof</a> <span>/</span> <span>Transactions</span></nav>
+      <span class="eyebrow">Evidence explorer</span>
       <h1>Every receipt, and what it is evidence of.</h1>
       <p class="lede">A receipt that only proves a seam says so. One of these is an incident, not a demonstration.</p>
     </div>
@@ -517,29 +635,36 @@ const transactionsPage = () => `
 </div>
 <section id="tx" aria-labelledby="tx-h">
   <div class="wrap">
-    <h2 id="tx-h">Receipts</h2>
-    <div class="scroll"><table>
-      <thead><tr>
-        <th scope="col">Transaction</th><th scope="col">Request</th><th scope="col">Network</th>
-        <th scope="col">Ledger</th><th scope="col">Result</th><th scope="col">Role</th>
-      </tr></thead>
-      <tbody>
-        ${transactions
-          .map(
-            (t) => `<tr>
-          <td>${t.explorer ? `<a class="mono" href="${escape(t.explorer)}" rel="noreferrer noopener">${escape(short(t.hash, 12, 6))}</a>` : `<span class="mono">${escape(short(t.hash, 12, 6))}</span>`}</td>
-          <td class="mono">${escape(t.requestId ?? "—")}</td>
-          <td>${escape(t.network)}</td>
-          <td class="mono">${escape(t.ledgerIndex ?? "—")}</td>
-          <td>${escape(t.result ?? "—")}</td>
-          <td>${badge(t.role, t.role === "Incident" ? "simulated" : "")}${t.settles === false ? badge("seam only") : ""}</td>
-        </tr>`,
-          )
-          .join("")}
-      </tbody>
-    </table></div>
-    <p class="note" style="margin-top:16px">Evidence files are listed inside each claim on
-    <a href="/proof/claims">the claims page</a> rather than used as the primary label here.</p>
+    <h2 id="tx-h">${transactions.length} receipts</h2>
+    <div class="rows">
+      ${transactions
+        .map(
+          (t) => `<details class="row"><summary>
+        <span class="title mono">${escape(short(t.hash, 12, 6))}</span>
+        ${badge(t.role, ROLE_TONE[t.role] ?? "")}
+        ${badge(t.network)}
+        ${t.result ? badge(t.result, t.result === "tesSUCCESS" || t.result === "VALID" ? "verified" : "") : ""}
+        ${t.settles === false ? badge("seam only") : ""}
+        <span class="sub">${t.requestId ? `Request ${escape(t.requestId)}` : "No request id"}${t.ledgerIndex ? ` &middot; ledger ${escape(t.ledgerIndex)}` : ""}</span>
+      </summary><div class="body">
+        <dl class="kv">
+          <dt>Transaction</dt><dd class="mono">${escape(t.hash)}</dd>
+          <dt>Network</dt><dd>${escape(t.network)}</dd>
+          ${t.requestId ? `<dt>Request</dt><dd class="mono">${escape(t.requestId)}</dd>` : ""}
+          ${t.ledgerIndex ? `<dt>Ledger</dt><dd class="mono">${escape(t.ledgerIndex)}</dd>` : ""}
+          ${t.result ? `<dt>Result</dt><dd class="mono">${escape(t.result)}</dd>` : ""}
+          ${t.fdcStatus ? `<dt>FDC</dt><dd class="mono">${escape(t.fdcStatus)}</dd>` : ""}
+          ${t.flareChain ? `<dt>Flare state</dt><dd>${escape(t.flareChain)}</dd>` : ""}
+          ${t.attestation ? `<dt>Attestation</dt><dd>${escape(t.attestation)}</dd>` : ""}
+          <dt>Evidence file</dt><dd><code>evidence/receipts/${escape(t.file)}</code></dd>
+        </dl>
+        ${t.explorer ? `<p style="margin:16px 0 0"><a class="btn btn-ghost btn-sm" href="${escape(t.explorer)}" rel="noreferrer noopener">Open in XRPL explorer &#8599;</a></p>` : ""}
+      </div></details>`,
+        )
+        .join("")}
+    </div>
+    <p class="note" style="margin-top:20px">Roles are what a receipt is evidence <em>of</em>. Request
+    ${escape(incident.requestId)} is the incident and is never presented as a successful demonstration.</p>
   </div>
 </section>`;
 

@@ -13,7 +13,9 @@
  * Status is never colour alone. Every tone carries a word, because a reader who cannot separate
  * ember from graphite still has to be able to separate simulated from live.
  */
-import { CONNECT_SRC, ENDPOINTS, deployment } from "./data.mjs";
+import { CONNECT_SRC, ENDPOINTS, deployment, demoReceipt } from "./data.mjs";
+
+const demoTx = demoReceipt?.txHash ?? "";
 
 export const escape = (value) =>
   String(value).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
@@ -59,14 +61,19 @@ a:hover{text-decoration-color:var(--ember)}
 
 /* ---------------------------------------------------------------- nav */
 .nav{position:sticky;top:0;z-index:15;background:rgba(244,244,245,.88);backdrop-filter:blur(8px);border-bottom:1px solid var(--cloud)}
-.nav-inner{max-width:var(--wrap);margin:0 auto;padding:14px 24px;display:flex;align-items:center;gap:28px}
+.nav-inner{max-width:var(--wrap);margin:0 auto;padding:14px 24px;display:flex;align-items:center;gap:28px;position:relative}
 .brand{display:inline-flex;align-items:center;gap:10px;text-decoration:none;color:var(--obsidian);flex:0 0 auto}
 .brand svg{width:74px;height:20px;display:block}
 .brand .word{font-size:16px;font-weight:600;letter-spacing:-.01em}
-.nav-links{display:flex;gap:4px;flex:1 1 auto}
-.nav-links a{font-size:14px;color:var(--iron);text-decoration:none;padding:8px 12px;border-radius:10000px}
-.nav-links a:hover{background:var(--snow);color:var(--obsidian)}
-.nav-links a[aria-current="page"]{background:var(--snow);color:var(--obsidian);border:1px solid var(--cloud)}
+/* A checkbox rather than <details>: details collapses its own content whatever display the child
+   is given, which hid the desktop navigation entirely. */
+.nav-toggle-input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.nav-menu-toggle{display:none;cursor:pointer;font-size:14px;color:var(--iron);padding:8px 14px;border:1px solid var(--cloud);border-radius:10000px;background:var(--snow);user-select:none}
+.nav-toggle-input:focus-visible+.nav-menu-toggle{outline:2px solid var(--ember);outline-offset:3px}
+.nav-menu-panel{display:flex;gap:4px;flex:1 1 auto;min-width:0}
+.nav-menu-panel a{font-size:14px;color:var(--iron);text-decoration:none;padding:8px 12px;border-radius:10000px;white-space:nowrap}
+.nav-menu-panel a:hover{background:var(--snow);color:var(--obsidian)}
+.nav-menu-panel a[aria-current="page"]{background:var(--snow);color:var(--obsidian);border:1px solid var(--cloud)}
 .nav-right{display:flex;align-items:center;gap:10px;flex:0 0 auto;position:relative}
 /* Shown only when more than one wallet announces itself, which is the case this exists for. */
 .wallet-picker{position:absolute;top:calc(100% + 8px);right:0;z-index:30;background:var(--snow);border:1px solid var(--cloud);border-radius:24px;padding:14px;min-width:220px;box-shadow:var(--shadow-md);display:flex;flex-direction:column;gap:6px}
@@ -74,9 +81,11 @@ a:hover{text-decoration-color:var(--ember)}
 .wallet-option{justify-content:flex-start;width:100%}
 .nav-toggle{display:none}
 @media (max-width:900px){
-  .nav-inner{flex-wrap:wrap;gap:12px}
-  .nav-links{order:3;flex-basis:100%;overflow-x:auto;padding-bottom:2px;-webkit-overflow-scrolling:touch}
-  .nav-links a{white-space:nowrap}
+  .nav-inner{gap:12px}
+  .nav-menu-toggle{display:inline-block}
+  .nav-menu-panel{display:none;position:absolute;left:0;right:0;top:100%;flex-direction:column;gap:2px;background:var(--snow);border-bottom:1px solid var(--cloud);padding:12px 24px 16px;z-index:20}
+  .nav-toggle-input:checked~.nav-menu-panel{display:flex}
+  .nav-menu-panel a{padding:12px;min-height:44px;display:flex;align-items:center}
 }
 
 /* ---------------------------------------------------------------- type */
@@ -185,6 +194,31 @@ section:last-of-type{padding-bottom:80px}
 .row .body li{margin:6px 0}
 .row .body li::marker{color:var(--ember)}
 
+
+/* ---------------------------------------------------------------- safe demo
+   Example selection and attack selection are both radio groups driven by CSS. The demo is the
+   thing most people will actually touch, so it must not depend on a script having loaded. */
+.example-picker{position:relative}
+.example-radio{position:absolute;width:1px;height:1px;margin:0;opacity:0;pointer-events:none}
+.example-tabs{display:flex;flex-wrap:wrap;gap:8px}
+.example-tab{font-size:14px;font-weight:500;padding:10px 18px;border-radius:10000px;border:1px solid var(--cloud);background:var(--snow);color:var(--iron);cursor:pointer;user-select:none}
+.example-tab:hover{border-color:var(--mist);color:var(--obsidian)}
+.example{display:none}
+#pick-live-derivation:checked~.grid-2 #example-live-derivation{display:block}
+#pick-settled:checked~.grid-2 #example-settled{display:block}
+#pick-live-derivation:checked~.example-tabs label[for="pick-live-derivation"],
+#pick-settled:checked~.example-tabs label[for="pick-settled"]{background:var(--obsidian);border-color:var(--obsidian);color:var(--snow)}
+#pick-live-derivation:focus-visible~.example-tabs label[for="pick-live-derivation"],
+#pick-settled:focus-visible~.example-tabs label[for="pick-settled"]{outline:2px solid var(--ember);outline-offset:3px}
+
+/* Caller input looks like input. Derived values look like readouts. That contrast is the argument. */
+.caller-supplied dd{background:var(--snow);border:1px solid var(--mist);border-radius:10px;padding:6px 10px}
+.derived{display:flex;flex-direction:column;gap:8px}
+.derived-field{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;background:var(--paper);border:1px dashed var(--mist);border-radius:12px;padding:10px 12px}
+.derived-label{font-size:12px;color:var(--fog);text-transform:uppercase;letter-spacing:.04em;flex:0 0 130px}
+.derived-value{color:var(--graphite);flex:1 1 160px;min-width:0;overflow-wrap:anywhere}
+.outcome{margin-top:20px;padding-top:18px;border-top:1px solid var(--cloud)}
+
 /* ---------------------------------------------------------------- attack demo
    Radio inputs and sibling selectors, not a JS toggle. The demo is the clearest thing on the page
    and it has to survive scripting being off, so the radios carry the state and CSS does the work.
@@ -201,7 +235,7 @@ section:last-of-type{padding-bottom:80px}
 .outcome-head{font-size:15px;font-weight:600;margin:0 0 8px}
 .outcome-head.impossible{color:var(--obsidian)}
 .outcome-head.refused{color:var(--ember)}
-${["destination", "amount", "reference", "paid", "noobs", "disagree", "stale", "replay"]
+${["destination", "amount", "reference", "paid", "noobs", "disagree", "stale", "expired", "replay"]
   .map(
     (id) =>
       `#attack-${id}:checked~.attacks label[for="attack-${id}"]{background:var(--obsidian);border-color:var(--obsidian);color:var(--snow)}\n` +
@@ -209,9 +243,43 @@ ${["destination", "amount", "reference", "paid", "noobs", "disagree", "stale", "
   )
   .join("\n")}
 .attack-radio:focus-visible~.attacks label{box-shadow:none}
-${["destination", "amount", "reference", "paid", "noobs", "disagree", "stale", "replay"]
+${["destination", "amount", "reference", "paid", "noobs", "disagree", "stale", "expired", "replay"]
   .map((id) => `#attack-${id}:focus-visible~.attacks label[for="attack-${id}"]{outline:2px solid var(--ember);outline-offset:3px}`)
   .join("\n")}
+
+.tour-head{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;flex-wrap:wrap;margin:0 0 24px}
+.tour-actions{display:flex;gap:6px}
+.tour-nav{display:flex;align-items:center;gap:14px;margin:20px 0 0}
+.tour-position{font-size:13px;color:var(--steel);font-family:var(--mono)}
+.step-body{padding:18px 22px}
+.step-line{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.step-num{font-family:var(--mono)}
+.toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:var(--obsidian);color:var(--snow);font-size:14px;padding:12px 20px;border-radius:14px;z-index:40;box-shadow:var(--shadow-md)}
+
+/* ---------------------------------------------------------------- filters, breadcrumbs
+   Filtering is radio inputs and sibling selectors so it survives scripting being off, same as the
+   demo. Counts are rendered server-side from the ledger rather than computed in the browser. */
+.filterable{position:relative}
+.filter-radio{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 8px}
+.filter-chip{font-size:13px;padding:8px 16px;border-radius:10000px;border:1px solid var(--cloud);background:var(--snow);color:var(--iron);cursor:pointer;user-select:none}
+.filter-chip .count{color:var(--fog);font-family:var(--mono);font-size:11px;margin-left:4px}
+#filter-all:checked~.filters label[for="filter-all"],
+#filter-verified:checked~.filters label[for="filter-verified"],
+#filter-unavailable:checked~.filters label[for="filter-unavailable"]{background:var(--obsidian);border-color:var(--obsidian);color:var(--snow)}
+#filter-all:checked~.filters label .count,
+#filter-verified:checked~.filters label[for="filter-verified"] .count,
+#filter-unavailable:checked~.filters label[for="filter-unavailable"] .count{color:var(--mist)}
+#filter-verified:checked~.filter-body .claim-row:not([data-status="verified"]),
+#filter-unavailable:checked~.filter-body .claim-row:not([data-status="unavailable"]){display:none}
+/* A heading with nothing under it is worse than no heading, so empty groups collapse with them. */
+#filter-verified:checked~.filter-body .rows:not(:has(.claim-row[data-status="verified"])),
+#filter-verified:checked~.filter-body .rows:not(:has(.claim-row[data-status="verified"]))+.group-head,
+#filter-unavailable:checked~.filter-body .rows:not(:has(.claim-row[data-status="unavailable"])){display:none}
+.crumbs{font-size:13px;color:var(--steel);margin:0 0 14px}
+.crumbs a{color:var(--steel)}
+.crumbs span{color:var(--ash);margin:0 4px}
+.btn-sm{padding:8px 14px;font-size:13px}
 
 /* ---------------------------------------------------------------- tables */
 .scroll{overflow-x:auto;border:1px solid var(--cloud);border-radius:24px;background:var(--snow)}
@@ -279,12 +347,14 @@ export function page({ title, description, current, body, script = null, ogImage
 <link rel="apple-touch-icon" href="/brand/mark-180.png">
 <style>${CSS}</style>
 </head>
-<body data-fcc-sender="${escape(deployment.fccSender ?? "")}" data-extension-id="${escape(deployment.extensionId ?? "")}" data-chain-id="${escape(deployment.chainId ?? "")}">
+<body data-demo-tx="${escape(demoTx ?? "")}" data-fcc-sender="${escape(deployment.fccSender ?? "")}" data-extension-id="${escape(deployment.extensionId ?? "")}" data-chain-id="${escape(deployment.chainId ?? "")}">
 <a class="skip" href="#main">Skip to content</a>
 <nav class="nav" aria-label="Primary">
   <div class="nav-inner">
     <a class="brand" href="/" aria-label="Signet home">${MARK}<span class="word">Signet</span></a>
-    <div class="nav-links">
+    <input class="nav-toggle-input" type="checkbox" id="nav-toggle">
+    <label class="nav-menu-toggle" for="nav-toggle">Menu</label>
+    <div class="nav-menu-panel">
       ${NAV.map(([label, href, key]) => `<a href="${href}"${key && key === current ? ' aria-current="page"' : ""}>${escape(label)}</a>`).join("")}
       <a href="${ENDPOINTS.repository}" rel="noreferrer noopener">GitHub ↗</a>
     </div>
