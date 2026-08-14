@@ -67,9 +67,9 @@ it stays that way: see the bottom of this document.
 
 | | |
 |---|---|
-| **Extension registration** | **live Coston2** — extension id `66164` on the real `FlareTeeManager` |
+| **Extension registration** | **live Coston2** — extension id `66244` on the real `FlareTeeManager` |
 | **Extension execution** | **simulated FCC** — the extension ran as a local process, not in a Confidential Space VM |
-| **TEE machine** | **not registered.** `getActiveTeeMachines(66164)` returns `[]` |
+| **TEE machine** | **not registered.** `getActiveTeeMachines(66244)` returns `[]` |
 
 This is the part that was genuinely missing until now, and the organizer named it precisely. Before
 this work Signet's decision ran as a CLI reading stdin, which is not FCC in any sense the protocol
@@ -95,17 +95,38 @@ signing-decision relay: any caller could name an obligation that did not exist a
 machine existed, receive a signature for it. The contract also carried a comment claiming the
 opposite, which was worse than the code.
 
-Extension **66164** replaces it. `authorizeRedemption` now takes the obligation identity as
-parameters and checks it against `SignetRegistry`, where an action can only exist if the pinned
+Extension **66164** replaced it. `authorizeRedemption` took the obligation identity as parameters and
+checked it against `SignetRegistry`, where an action can only exist if the pinned
 `SignetInstructionSender` opened it after reading FAssets. Verified live by `eth_call`: a fabricated
-obligation reverts `NoSuchAction` (`0x4a45b124`) before any TEE lookup, while real obligation
-44928272 passes the binding and stops only at the absent machine (`0xd65ac61e`).
+obligation reverted `NoSuchAction` (`0x4a45b124`) before any TEE lookup, while real obligation
+44928272 passed the binding and stopped only at the absent machine (`0xd65ac61e`).
 
-No instruction was ever executed through 66163: it never carried a live TEE machine.
+That fixed the obligation's *identity* and left its *contents* alone. Destination, amount and window
+still arrived from whoever built the decision input, and `decide()` checked their internal
+consistency rather than their truth.
 
-What this does **not** fix is the rest of the snapshot. Destination, amount and window still arrive
-from whoever built the decision input, and `decide()` checks their internal consistency rather than
-their truth. That is recorded in `docs/threat-model.md` and is not closed.
+#### Gate B closes the rest of the snapshot
+
+Extension **66244** replaces 66164. `authorizeRedemption(uint256 requestId, uint32 generation)` takes
+a request id and a generation, and resolves every payment field from FAssets itself through
+`readCanonicalRedemptionById`. There is no parameter through which a caller could express a
+destination, an amount, a reference, a tag or a window. A caller-authored obligation now fails to
+*decode* on the FCC path, which the FCC test asserts, because a policy refusal would mean the path
+still existed. The standalone `cmd/signet-extension` CLI still accepts one from stdin; it reaches no
+key in this build and is recorded as an open finding in `docs/threat-model.md`.
+
+| | |
+|---|---|
+| instruction sender | [`0x3FFA63a3bf21a626c1B391D2577b1800e67F5Be0`](https://coston2.testnet.flarescan.com/address/0x3FFA63a3bf21a626c1B391D2577b1800e67F5Be0) |
+| verified live | `getTeeExtensionInstructionsSender(66244)` returns that address; `canonicalInstructionFor(44928272, 1)` reverts `AdapterRefused(NOT_ACTIVE)` identically for unrelated callers |
+| full evidence | [`gate-b.md`](gate-b.md) |
+
+No instruction was ever executed through 66163 or 66164: neither carried a live TEE machine.
+
+What gate B does **not** fix is isolation. The extension runs as a local process with no attestation,
+so an operator with host access can bypass the contract path entirely. Recorded in
+`docs/threat-model.md` as a medium residual, and the route to closing it is
+[`../run/GATE_A_STRETCH.md`](../run/GATE_A_STRETCH.md).
 
 ### 3. Signing and executing that exact payment
 
@@ -161,7 +182,7 @@ no credentials.
 | FAssets obligation 44928272, minting cycle, `redeem` | live Coston2 |
 | FAssets obligation 44993990 (positive path) | Coston2 fork, deployed FAssets bytecode and state |
 | `SignetRegistry`, `SignetInstructionSender` | live Coston2 |
-| FCC extension registration, id 66164, instruction sender | live Coston2 |
+| FCC extension registration, id 66244, instruction sender | live Coston2 |
 | FCC extension execution | **simulated FCC**: local process, no attestation |
 | FCC TEE machine registration, on-chain instruction round trip | **absent** |
 | XRPL payment, signing, submission, reconciliation, replay refusal | live XRPL Testnet |

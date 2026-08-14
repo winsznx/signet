@@ -1,19 +1,34 @@
 {
   "product": "Signet",
-  "status": "ready_for_final_review",
-  "currentPhase": "13",
-  "lastPassingPhase": "13",
-  "validation": "pending",
+  "status": "ready_for_submission",
+  "currentPhase": "14",
+  "lastPassingPhase": "14",
+  "validation": "passed",
   "blocker": {
     "kind": "none",
     "resolved": [
       "C2FLR funding received and spent on deployment, minting, FDC requests and FCC registration",
       "Cloudflare: existing local Wrangler OAuth login was sufficient; site deployed",
-      "FAssets agent whitelist: Flare declined to approve new agents on 2026-08-11 and directed Signet to test the execution layer. Closed, not pending."
+      "FAssets agent whitelist: Flare declined to approve new agents on 2026-08-11 and directed Signet to test the execution layer. Closed, not pending.",
+      "GCP Confidential Space: downgraded on 2026-08-14 from a submission blocker to a stretch proof. The billing account is in prepayment mode and did not open in time. No hardware-attestation claim is made anywhere, so nothing in the submission depends on it. Checklist: docs/run/GATE_A_STRETCH.md"
     ],
-    "note": "Acceptance boundary is docs/evidence/organizer-accepted-proof-boundary.md. No open external blockers."
+    "note": "Acceptance boundary is docs/evidence/organizer-accepted-proof-boundary.md. No open external blockers. Nothing has been submitted externally; the package awaits the operator's final review."
   },
-  "updatedAt": "2026-08-11T22:48:10Z",
+  "gateB": {
+    "status": "deployed",
+    "extensionId": "66244",
+    "instructionSender": "0x3FFA63a3bf21a626c1B391D2577b1800e67F5Be0",
+    "supersedes": ["66163", "66164"],
+    "evidence": "docs/evidence/gate-b.md"
+  },
+  "openFindings": {
+    "count": 5,
+    "highestSeverity": "high",
+    "reachableToday": 3,
+    "note": "Recorded rather than fixed: phase 14 forbids feature work and the contract half is deployed. Finding 1 is unreachable today and becomes a blocker for gate A. See docs/threat-model.md, 'Open after gate B'.",
+    "location": "docs/threat-model.md"
+  },
+  "updatedAt": "2026-08-14T07:35:00Z",
   "schemaVersion": 2,
   "acceptanceBoundary": "docs/evidence/organizer-accepted-proof-boundary.md"
 }

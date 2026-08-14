@@ -8,7 +8,9 @@
  * instruction sender, and stops there.
  *
  * What that buys is a real extension id on the real registry, and an on-chain instruction sender
- * whose only payment-bearing entry point takes a Signet decision input and no payment fields.
+ * whose only payment-bearing entry point is authorizeRedemption(uint256,uint32): a request id and a
+ * generation. Every payment field is resolved from FAssets by the contract, so there is no parameter
+ * through which a caller could express one.
  */
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
@@ -76,13 +78,21 @@ if (bindTx.status !== "0x1") throw new Error("setExtensionId reverted");
 const extensionId = cast(["call", sender, "extensionId()(uint256)"]).split(" ")[0];
 console.log(`extension id ${extensionId}`);
 
+// The reason a specific extension was retired is a fact about that extension, and this script does
+// not know it. An earlier version hardcoded one sender's reason and then wrote it verbatim over the
+// next one, which put a false statement into the deployment record. Supply it or get a placeholder
+// that is obviously unfinished rather than a plausible lie.
+const supersedeReason = process.env.SIGNET_FCC_SUPERSEDE_REASON?.trim();
 const superseded = record.fcc ? [...(record.fcc.superseded ?? []), {
   extensionId: record.fcc.extensionId,
   instructionSender: record.fcc.instructionSender,
   retiredAt: new Date().toISOString().replace(/\.\d+Z$/, "Z"),
-  reason:
-    "Its authorizeRedemption took the decision input alone and relayed it unmodified, which a security review correctly called an unauthenticated signing-decision relay: any caller could name an obligation that did not exist. Superseded by a sender that checks the obligation against SignetRegistry. It never carried a live TEE machine, so no instruction was ever executed through it.",
+  reason: supersedeReason ||
+    "UNRECORDED: set SIGNET_FCC_SUPERSEDE_REASON when re-registering to state why this extension was retired.",
 }] : [];
+if (record.fcc && !supersedeReason) {
+  console.warn(`warning: retiring extension ${record.fcc.extensionId} with no reason recorded`);
+}
 
 record.fcc = {
   superseded,

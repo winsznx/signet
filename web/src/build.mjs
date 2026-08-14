@@ -220,9 +220,10 @@ const proofBody = `
         <li>take a valid FAssets redemption obligation &mdash; <strong>live Coston2</strong> for the
         obligation evidence, <strong>Coston2 fork on deployed FAssets bytecode</strong> for the
         positive path</li>
-        <li>derive the required XRPL payment inside FCC &mdash; extension <code>66164</code>
+        <li>derive the required XRPL payment inside FCC &mdash; extension <code>66244</code>
         <strong>registered on live Coston2</strong>, extension <strong>executed as a local
-        process</strong></li>
+        process</strong>. The caller supplies a request id and a generation; every payment field is
+        read from FAssets by the contract</li>
         <li>sign and execute that exact payment &mdash; <strong>live XRPL Testnet</strong></li>
         <li>prove the payment back through FDC &mdash; <strong>live Coston2</strong>,
         <code>verifyXRPPayment</code> accepted on chain</li>
@@ -231,7 +232,7 @@ const proofBody = `
     <article class="card">
       <h3>What is not here</h3>
       <ul class="limits">
-        <li>no TEE. <code>getActiveTeeMachines(66164)</code> returns empty, nothing is
+        <li>no TEE. <code>getActiveTeeMachines(66244)</code> returns empty, nothing is
         hardware-attested, and no on-chain FCC instruction round trip exists</li>
         <li>no settled FAssets redemption. Settlement needs an agent's own underlying signing
         authority, which Signet does not hold</li>
@@ -313,13 +314,22 @@ const proofBody = `
 
 // ---------------------------------------------------------------- operator page
 
+// The row label is not always a two-digit phase number: gate B is a row too. An earlier version
+// matched /^\| \d\d \|/ and silently dropped it, which is the second time this table has lost
+// content without anything failing. Match any row whose first cell is not the header or separator,
+// and assert below that nothing was dropped.
 const phaseRows = (() => {
   const doc = readFileSync(join(REPO_ROOT, "docs", "run", "AUTONOMOUS_RUN.md"), "utf8");
-  return doc
-    .split("\n")
-    .filter((line) => /^\| \d\d \|/.test(line))
+  const section = doc.split(/^## /m).find((s) => s.startsWith("Phase index"));
+  if (!section) throw new Error("AUTONOMOUS_RUN.md has no 'Phase index' section");
+  const table = section.split("\n").filter((line) => /^\|/.test(line) && !/^\|\s*-+/.test(line));
+  const rows = table
     .map((line) => line.split("|").map((cell) => cell.trim()))
+    .filter((cells) => cells[1] && cells[1] !== "Phase")
     .map((cells) => ({ phase: cells[1], name: cells[2], status: cells[3] || "pending" }));
+  const dropped = table.length - 1 - rows.length;
+  if (dropped !== 0) throw new Error(`phase table parse dropped ${dropped} rows; the parser and the table disagree`);
+  return rows;
 })();
 
 const blocker = runState.blocker ?? {};
@@ -385,8 +395,11 @@ writeFileSync(
   join(OUT, "index.html"),
   page({
     title: "What Signet has actually proven",
+    // "Attested external execution layer" is the product's category name, and in a search result or
+    // a share preview it would appear stripped of the page that qualifies it. On the one page whose
+    // job is precision about what is proven, the summary says what is true instead.
     description:
-      "Attested external execution for FAssets agents. Every claim below is paired with what it does not prove, and every figure traces to a committed file you can verify yourself.",
+      "An external execution layer for FAssets agents: obligation in, constrained XRP signature out, FDC proof back on chain. The extension runs as a local process with no TEE and nothing is hardware-attested. Every claim is paired with what it does not prove, and every figure traces to a committed file you can verify yourself.",
     current: "proof",
     body: proofBody,
   }),

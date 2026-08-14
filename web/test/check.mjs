@@ -158,12 +158,26 @@ check("the page tells a reader how to check it themselves", /verify:receipt/.tes
  * failure mode that survives longest, so it is now a build failure.
  */
 const operator = pages.operator;
-const phaseRows = (operator.match(/<tr><td class="mono">\d\d<\/td>/g) ?? []).length;
-check("the operator page lists the phases", phaseRows >= 14, `${phaseRows} phase rows`);
+// Counting only /\d\d/ was the same mistake as the generator's: it cannot see a row whose label is
+// not a two-digit number, so it could not detect the gate B row going missing. Count every row.
+const phaseRows = (operator.match(/<tr><td class="mono">[^<]+<\/td>/g) ?? []).length;
+check("the operator page lists the phases", phaseRows >= 15, `${phaseRows} phase rows`);
 check(
   "every phase row carries a result rather than an empty cell",
-  !/<tr><td class="mono">\d\d<\/td><td>[^<]*<\/td>\s*<td><\/td>/.test(operator),
+  !/<tr><td class="mono">[^<]+<\/td><td>[^<]*<\/td>\s*<td><\/td>/.test(operator),
   "no blank status cells",
+);
+// Named rather than counted. A count is satisfied by any fifteen rows; this asserts the specific
+// row that the previous parser dropped is present, along with the deployment it exists to report.
+check(
+  "the gate B row survives the phase-table parse",
+  /<tr><td class="mono">gate B<\/td>/.test(operator),
+  "gate B is listed as its own row",
+);
+check(
+  "the page names the deployed gate B extension",
+  operator.includes("66244") || pages.index.includes("66244"),
+  "extension 66244 appears",
 );
 
 console.log(`\n${failures === 0 ? "web checks pass" : `${failures} web checks failed`}`);

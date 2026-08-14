@@ -62,11 +62,15 @@ completion"). F1 is stronger and is the preferred fallback if C2FLR arrives.
 | FCC contracts live on Coston2 | OPEN | `FlareTeeManager` diamond `0x1a9C4A0f9D76c0b1D91d22E24E573a9b377618aE`; `sendInstructions` routes to `InstructionsFacet` `0xe0958…62Ff`, matching the pinned scaffold manifest |
 | Official normal/FTDC proxy | OPEN (unauthenticated read) | `https://tee-proxy-coston2-1.flare.rocks` named in the pinned scaffold `.env.example` |
 | Public reachability for our extension proxy | OPEN | The scaffold ships a Cloudflare tunnel path (`docker-compose.cloudflared.yaml`, `--tunnel`) that needs no account. This also satisfies Signet's Cloudflare-only hosting rule |
-| **C-chain indexer database for the extension proxy** | SELF_SERVICE_PATH_IDENTIFIED | Scaffold docs require "VPN access to Flare's indexer DB (`35.241.249.150:3306`)" and credentials from the Flare team; the shipped example config contains placeholders only. However `flare-foundation/flare-system-c-chain-indexer` is public and MIT licensed, runs in `fsp` mode against any C-chain RPC, and ships its own MySQL compose file. Signet can populate its own indexer DB from the public Coston2 RPC instead of requesting credentials |
-| Real hardware attestation (GCP Confidential Space) | NOT_REQUIRED_V0 | PRD section 7.1 admits a clearly labelled simulated TEE for V0. `SIMULATED_TEE=true` yields code hash `0x194844cf…` and platform `TEST_PLATFORM`, which must be labelled everywhere it is shown |
+| **C-chain indexer database for the extension proxy** | EXTERNAL, one support request | **Corrected 2026-08-14.** The current official Coston2 guide names Flare's read-only indexer directly: `34.38.42.208:3306`, database `indexer`, credentials from Flare support. See `upstream/developer-hub/docs/fcc/guides/00-getting-started.mdx:314`, repeated in `01-sign.mdx` and `02-weather-insurance.mdx`. Chain id 114 and the Coston2 system addresses are pre-filled in the shipped examples |
+| Real hardware attestation (GCP Confidential Space) | NOT_REQUIRED_V0 | PRD section 7.1 admits a clearly labelled simulated TEE for V0. `SIMULATED_TEE=true` yields code hash `0x194844cf…` and platform `TEST_PLATFORM`, which must be labelled everywhere it is shown. FTDC accepts only `GCP_AMD_SEV`; see `docs/run/GATE_A_STRETCH.md` |
 
-The indexer path is deliberately **not** recorded as a blocker. It becomes one only if the
-self-hosted indexer fails to satisfy the proxy in Phase 03, and that attempt has not run yet.
+> **This row previously read `SELF_SERVICE_PATH_IDENTIFIED`**, on the reasoning that
+> `flare-system-c-chain-indexer` is public and could be run against the public Coston2 RPC, and it
+> cited an older host (`35.241.249.150`) from the scaffold docs. That was a workaround for a problem
+> the current official guide does not have, and acting on it would have meant running MySQL and
+> syncing a chain to replace one support email. Self-hosting is not required and should not be
+> attempted. The indexer is needed only for the FCC extension proxy, which is gate A work.
 
 ## 4. XRPL Testnet
 

@@ -42,6 +42,7 @@ verify-bootstrap:
 	node scripts/fetch-upstream.mjs
 	node scripts/verify-source-lock.mjs
 	node scripts/verify-claim-ledger.mjs
+	node scripts/build-evidence-graph.mjs
 	forge build --sizes >/dev/null
 	@echo "verify-bootstrap OK"
 

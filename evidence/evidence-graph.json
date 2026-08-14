@@ -1,0 +1,2183 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-14T07:20:00Z",
+  "generatedFrom": [
+    "evidence/claim-ledger.json",
+    "deployments/coston2.json",
+    "evidence/receipts/*.json"
+  ],
+  "note": "Derived. Do not hand-edit: regenerate with `node scripts/build-evidence-graph.mjs`. The claim ledger is authoritative where they disagree.",
+  "counts": {
+    "nodes": 145,
+    "edges": 198,
+    "claims": 29,
+    "receipts": 12
+  },
+  "nodes": [
+    {
+      "id": "artifact:contracts/src/adapters/FAssetsAdapter.sol",
+      "type": "artifact",
+      "path": "contracts/src/adapters/FAssetsAdapter.sol",
+      "exists": true
+    },
+    {
+      "id": "artifact:contracts/src/fcc/SignetFccInstructionSender.sol",
+      "type": "artifact",
+      "path": "contracts/src/fcc/SignetFccInstructionSender.sol",
+      "exists": true
+    },
+    {
+      "id": "artifact:contracts/src/SignetInstructionSender.sol",
+      "type": "artifact",
+      "path": "contracts/src/SignetInstructionSender.sol",
+      "exists": true
+    },
+    {
+      "id": "artifact:contracts/src/SignetRegistry.sol",
+      "type": "artifact",
+      "path": "contracts/src/SignetRegistry.sol",
+      "exists": true
+    },
+    {
+      "id": "artifact:contracts/test/fork/FAssetsSeam.t.sol",
+      "type": "artifact",
+      "path": "contracts/test/fork/FAssetsSeam.t.sol",
+      "exists": true
+    },
+    {
+      "id": "artifact:contracts/test/unit/CanonicalInstruction.t.sol",
+      "type": "artifact",
+      "path": "contracts/test/unit/CanonicalInstruction.t.sol",
+      "exists": true
+    },
+    {
+      "id": "artifact:contracts/test/unit/ObligationHashParity.t.sol",
+      "type": "artifact",
+      "path": "contracts/test/unit/ObligationHashParity.t.sol",
+      "exists": true
+    },
+    {
+      "id": "artifact:contracts/test/unit/SignetRegistry.t.sol",
+      "type": "artifact",
+      "path": "contracts/test/unit/SignetRegistry.t.sol",
+      "exists": true
+    },
+    {
+      "id": "artifact:coordinator/migrations/0001_initial.sql",
+      "type": "artifact",
+      "path": "coordinator/migrations/0001_initial.sql",
+      "exists": true
+    },
+    {
+      "id": "artifact:coordinator/test/durability.test.mjs",
+      "type": "artifact",
+      "path": "coordinator/test/durability.test.mjs",
+      "exists": true
+    },
+    {
+      "id": "artifact:deployments/coston2.json",
+      "type": "artifact",
+      "path": "deployments/coston2.json",
+      "exists": true
+    },
+    {
+      "id": "artifact:docs/adr/0001-canonical-encoding.md",
+      "type": "artifact",
+      "path": "docs/adr/0001-canonical-encoding.md",
+      "exists": true
+    },
+    {
+      "id": "artifact:docs/adr/0002-policy-semantics.md",
+      "type": "artifact",
+      "path": "docs/adr/0002-policy-semantics.md",
+      "exists": true
+    },
+    {
+      "id": "artifact:docs/adr/0003-underlying-payment-precheck.md",
+      "type": "artifact",
+      "path": "docs/adr/0003-underlying-payment-precheck.md",
+      "exists": true
+    },
+    {
+      "id": "artifact:docs/evidence-schema.md",
+      "type": "artifact",
+      "path": "docs/evidence-schema.md",
+      "exists": true
+    },
+    {
+      "id": "artifact:docs/evidence/artifacts/lifecycle-run.json",
+      "type": "artifact",
+      "path": "docs/evidence/artifacts/lifecycle-run.json",
+      "exists": true
+    },
+    {
+      "id": "artifact:docs/evidence/gate-b.md",
+      "type": "artifact",
+      "path": "docs/evidence/gate-b.md",
+      "exists": true
+    },
+    {
+      "id": "artifact:docs/evidence/organizer-accepted-proof-boundary.md",
+      "type": "artifact",
+      "path": "docs/evidence/organizer-accepted-proof-boundary.md",
+      "exists": true
+    },
+    {
+      "id": "artifact:docs/evidence/phase-00.md",
+      "type": "artifact",
+      "path": "docs/evidence/phase-00.md",
+      "exists": true
+    },
+    {
+      "id": "artifact:docs/evidence/phase-01.md",
+      "type": "artifact",
+      "path": "docs/evidence/phase-01.md",
+      "exists": true
+    },
+    {
+      "id": "artifact:docs/evidence/phase-02.md",
+      "type": "artifact",
+      "path": "docs/evidence/phase-02.md",
+      "exists": true
+    },
+    {
+      "id": "artifact:docs/evidence/phase-04.md",
+      "type": "artifact",
+      "path": "docs/evidence/phase-04.md",
+      "exists": true
+    },
+    {
+      "id": "artifact:docs/evidence/phase-05.md",
+      "type": "artifact",
+      "path": "docs/evidence/phase-05.md",
+      "exists": true
+    },
+    {
+      "id": "artifact:docs/evidence/phase-06.md",
+      "type": "artifact",
+      "path": "docs/evidence/phase-06.md",
+      "exists": true
+    },
+    {
+      "id": "artifact:docs/evidence/phase-07.md",
+      "type": "artifact",
+      "path": "docs/evidence/phase-07.md",
+      "exists": true
+    },
+    {
+      "id": "artifact:docs/evidence/phase-08.md",
+      "type": "artifact",
+      "path": "docs/evidence/phase-08.md",
+      "exists": true
+    },
+    {
+      "id": "artifact:docs/evidence/phase-09.md",
+      "type": "artifact",
+      "path": "docs/evidence/phase-09.md",
+      "exists": true
+    },
+    {
+      "id": "artifact:docs/evidence/phase-10.md",
+      "type": "artifact",
+      "path": "docs/evidence/phase-10.md",
+      "exists": true
+    },
+    {
+      "id": "artifact:docs/evidence/phase-11.md",
+      "type": "artifact",
+      "path": "docs/evidence/phase-11.md",
+      "exists": true
+    },
+    {
+      "id": "artifact:docs/evidence/phase-12.md",
+      "type": "artifact",
+      "path": "docs/evidence/phase-12.md",
+      "exists": true
+    },
+    {
+      "id": "artifact:docs/evidence/phase-13.md",
+      "type": "artifact",
+      "path": "docs/evidence/phase-13.md",
+      "exists": true
+    },
+    {
+      "id": "artifact:docs/guarantee.md",
+      "type": "artifact",
+      "path": "docs/guarantee.md",
+      "exists": true
+    },
+    {
+      "id": "artifact:docs/protocol-seams/fassets-access-probe.json",
+      "type": "artifact",
+      "path": "docs/protocol-seams/fassets-access-probe.json",
+      "exists": true
+    },
+    {
+      "id": "artifact:docs/protocol-seams/fassets-seam-evidence.json",
+      "type": "artifact",
+      "path": "docs/protocol-seams/fassets-seam-evidence.json",
+      "exists": true
+    },
+    {
+      "id": "artifact:docs/protocol-seams/fassets.md",
+      "type": "artifact",
+      "path": "docs/protocol-seams/fassets.md",
+      "exists": true
+    },
+    {
+      "id": "artifact:docs/protocol-seams/fdc.md",
+      "type": "artifact",
+      "path": "docs/protocol-seams/fdc.md",
+      "exists": true
+    },
+    {
+      "id": "artifact:docs/protocol-seams/xrpl.md",
+      "type": "artifact",
+      "path": "docs/protocol-seams/xrpl.md",
+      "exists": true
+    },
+    {
+      "id": "artifact:docs/runbooks/recovery.md",
+      "type": "artifact",
+      "path": "docs/runbooks/recovery.md",
+      "exists": true
+    },
+    {
+      "id": "artifact:docs/source-lock.json",
+      "type": "artifact",
+      "path": "docs/source-lock.json",
+      "exists": true
+    },
+    {
+      "id": "artifact:docs/threat-model.md",
+      "type": "artifact",
+      "path": "docs/threat-model.md",
+      "exists": true
+    },
+    {
+      "id": "artifact:extension/cmd/signet-fcc-extension/main.go",
+      "type": "artifact",
+      "path": "extension/cmd/signet-fcc-extension/main.go",
+      "exists": true
+    },
+    {
+      "id": "artifact:extension/internal/canonical/encoding.go",
+      "type": "artifact",
+      "path": "extension/internal/canonical/encoding.go",
+      "exists": true
+    },
+    {
+      "id": "artifact:extension/internal/conformance/fixtures_test.go",
+      "type": "artifact",
+      "path": "extension/internal/conformance/fixtures_test.go",
+      "exists": true
+    },
+    {
+      "id": "artifact:extension/internal/fccinput/canonical.go",
+      "type": "artifact",
+      "path": "extension/internal/fccinput/canonical.go",
+      "exists": true
+    },
+    {
+      "id": "artifact:extension/internal/fccinput/override_test.go",
+      "type": "artifact",
+      "path": "extension/internal/fccinput/override_test.go",
+      "exists": true
+    },
+    {
+      "id": "artifact:extension/internal/policy/fuzz_test.go",
+      "type": "artifact",
+      "path": "extension/internal/policy/fuzz_test.go",
+      "exists": true
+    },
+    {
+      "id": "artifact:extension/internal/policy/policy.go",
+      "type": "artifact",
+      "path": "extension/internal/policy/policy.go",
+      "exists": true
+    },
+    {
+      "id": "artifact:extension/internal/wire/fuzz_test.go",
+      "type": "artifact",
+      "path": "extension/internal/wire/fuzz_test.go",
+      "exists": true
+    },
+    {
+      "id": "artifact:reference/src/decide.ts",
+      "type": "artifact",
+      "path": "reference/src/decide.ts",
+      "exists": true
+    },
+    {
+      "id": "artifact:reference/test-vectors/decision-fixtures-v1-historical.json",
+      "type": "artifact",
+      "path": "reference/test-vectors/decision-fixtures-v1-historical.json",
+      "exists": true
+    },
+    {
+      "id": "artifact:reference/test-vectors/decision-fixtures-v2.json",
+      "type": "artifact",
+      "path": "reference/test-vectors/decision-fixtures-v2.json",
+      "exists": true
+    },
+    {
+      "id": "artifact:reference/test-vectors/decision-fixtures.json",
+      "type": "artifact",
+      "path": "reference/test-vectors/decision-fixtures.json",
+      "exists": true
+    },
+    {
+      "id": "artifact:reference/test/property/observation.property.test.ts",
+      "type": "artifact",
+      "path": "reference/test/property/observation.property.test.ts",
+      "exists": true
+    },
+    {
+      "id": "artifact:reference/test/v1-historical.test.ts",
+      "type": "artifact",
+      "path": "reference/test/v1-historical.test.ts",
+      "exists": true
+    },
+    {
+      "id": "artifact:scripts/deploy-coston2.mjs",
+      "type": "artifact",
+      "path": "scripts/deploy-coston2.mjs",
+      "exists": true
+    },
+    {
+      "id": "artifact:scripts/fcc/extension.test.mjs",
+      "type": "artifact",
+      "path": "scripts/fcc/extension.test.mjs",
+      "exists": true
+    },
+    {
+      "id": "artifact:scripts/fdc/prove.mjs",
+      "type": "artifact",
+      "path": "scripts/fdc/prove.mjs",
+      "exists": true
+    },
+    {
+      "id": "artifact:scripts/fetch-upstream.mjs",
+      "type": "artifact",
+      "path": "scripts/fetch-upstream.mjs",
+      "exists": true
+    },
+    {
+      "id": "artifact:scripts/lifecycle/incident-44928272.test.mjs",
+      "type": "artifact",
+      "path": "scripts/lifecycle/incident-44928272.test.mjs",
+      "exists": true
+    },
+    {
+      "id": "artifact:scripts/lifecycle/run.mjs",
+      "type": "artifact",
+      "path": "scripts/lifecycle/run.mjs",
+      "exists": true
+    },
+    {
+      "id": "artifact:scripts/lifecycle/target-chain.mjs",
+      "type": "artifact",
+      "path": "scripts/lifecycle/target-chain.mjs",
+      "exists": true
+    },
+    {
+      "id": "artifact:scripts/resolve-coston2.mjs",
+      "type": "artifact",
+      "path": "scripts/resolve-coston2.mjs",
+      "exists": true
+    },
+    {
+      "id": "artifact:scripts/verify-source-lock.mjs",
+      "type": "artifact",
+      "path": "scripts/verify-source-lock.mjs",
+      "exists": true
+    },
+    {
+      "id": "artifact:scripts/xrpl/observe.mjs",
+      "type": "artifact",
+      "path": "scripts/xrpl/observe.mjs",
+      "exists": true
+    },
+    {
+      "id": "artifact:scripts/xrpl/observe.test.mjs",
+      "type": "artifact",
+      "path": "scripts/xrpl/observe.test.mjs",
+      "exists": true
+    },
+    {
+      "id": "artifact:scripts/xrpl/reconcile.test.mjs",
+      "type": "artifact",
+      "path": "scripts/xrpl/reconcile.test.mjs",
+      "exists": true
+    },
+    {
+      "id": "artifact:scripts/xrpl/submit.mjs",
+      "type": "artifact",
+      "path": "scripts/xrpl/submit.mjs",
+      "exists": true
+    },
+    {
+      "id": "artifact:verifier/src/verify.ts",
+      "type": "artifact",
+      "path": "verifier/src/verify.ts",
+      "exists": true
+    },
+    {
+      "id": "artifact:verifier/test/corruption.test.ts",
+      "type": "artifact",
+      "path": "verifier/test/corruption.test.ts",
+      "exists": true
+    },
+    {
+      "id": "artifact:web/src/build.mjs",
+      "type": "artifact",
+      "path": "web/src/build.mjs",
+      "exists": true
+    },
+    {
+      "id": "artifact:web/test/check.mjs",
+      "type": "artifact",
+      "path": "web/test/check.mjs",
+      "exists": true
+    },
+    {
+      "id": "claim:claim-canonical-requestid-derivation",
+      "type": "claim",
+      "status": "verified",
+      "proofLevel": 3,
+      "proofLevelLabel": "state-changing execution on a live target network",
+      "wording": "The only payment-bearing entry point on Signet's deployed FCC instruction sender is authorizeRedemption(uint256 requestId, uint32 generation). It exposes no parameter through which a caller could supply a destination, amount, fee, reference, destination tag, tag mode or either underlying window bound; the contract resolves every one of them from FAssets, reading the agent from the request rather than accepting one and refusing anything FAssets does not report ACTIVE.",
+      "limitationCount": 8,
+      "verifiedAt": "2026-08-14T07:20:00Z"
+    },
+    {
+      "id": "claim:claim-composed-lifecycle",
+      "type": "claim",
+      "status": "verified",
+      "proofLevel": 2,
+      "proofLevelLabel": "read-only verification against a live target network",
+      "wording": "One command runs a Signet redemption end to end: real FAssets code on a Coston2 fork produces the obligation, the run asserts field by field that every obligation value reaching the decision is the one FAssets emitted, three independent implementations agree on the obligation hash, and the authorized payment is signed, persisted before submission, executed on XRPL Testnet, reconciled to validated, refused on replay by the ledger itself, and accepted by the FDC verifier. Twelve attack lifecycles in the V1 run, and more in the V2 rerun, produce the exact reason codes the specification requires, three malformed inputs are rejected identically by both deciders, and the Go and TypeScript implementations agree on every case.",
+      "limitationCount": 8,
+      "verifiedAt": "2026-08-11T17:05:00Z"
+    },
+    {
+      "id": "claim:claim-contracts-cannot-authorize-arbitrary-fields",
+      "type": "claim",
+      "status": "verified",
+      "proofLevel": 1,
+      "proofLevelLabel": "executed locally against pinned source or fixtures",
+      "wording": "Signet's contracts expose no path by which a caller supplies a payment field, the instruction sender is pinned so a binding cannot be detached from the FAssets adapter, and the on-chain obligation hash matches the reference model byte for byte for a real Coston2 obligation.",
+      "limitationCount": 6,
+      "verifiedAt": "2026-08-11T16:40:00Z"
+    },
+    {
+      "id": "claim:claim-coordinator-durability",
+      "type": "claim",
+      "status": "verified",
+      "proofLevel": 1,
+      "proofLevelLabel": "executed locally against pinned source or fixtures",
+      "wording": "Signet's coordinator state schema makes duplicate authority impossible by database constraint: a duplicate event, a concurrent worker, a stale fencing token and a restart between signing and submission were each attempted against a real PostgreSQL and each failed to create a second authority.",
+      "limitationCount": 4,
+      "verifiedAt": "2026-08-11T17:30:00Z"
+    },
+    {
+      "id": "claim:claim-core-lifecycle",
+      "type": "claim",
+      "status": "unavailable",
+      "proofLevel": 0,
+      "proofLevelLabel": "not executed",
+      "wording": "One Coston2 FAssets redemption was paid on XRPL Testnet and completed with FDC evidence.",
+      "limitationCount": 2,
+      "verifiedAt": null
+    },
+    {
+      "id": "claim:claim-coston2-addresses-verified",
+      "type": "claim",
+      "status": "verified",
+      "proofLevel": 2,
+      "proofLevelLabel": "read-only verification against a live target network",
+      "wording": "Every Coston2 address Signet depends on was resolved from an authoritative source and proven by RPC, cross-checked against a second independent endpoint, to hold code that exposes the exact function selectors Signet depends on.",
+      "limitationCount": 4,
+      "verifiedAt": "2026-08-11T13:06:49Z"
+    },
+    {
+      "id": "claim:claim-coston2-deployment",
+      "type": "claim",
+      "status": "verified",
+      "proofLevel": 3,
+      "proofLevelLabel": "state-changing execution on a live target network",
+      "wording": "The Signet registry and instruction sender are deployed on Flare Coston2 at 0x381bdE5961695914B28B16f405d51E8acB877f6e and 0xd6cF30B6411DB8465147FfDcF0e0418030B4b9CA, with the instruction sender pinned one-shot, the extension binary's measurement approved as the code hash, and a result signer that is provably not governance.",
+      "limitationCount": 2,
+      "verifiedAt": "2026-08-11T17:00:00Z"
+    },
+    {
+      "id": "claim:claim-duplicate-payment-gap",
+      "type": "claim",
+      "status": "verified",
+      "proofLevel": 3,
+      "proofLevelLabel": "state-changing execution on a live target network",
+      "wording": "A FAssets redemption status of ACTIVE does not mean the obligation is unpaid; it means the underlying payment has not yet been confirmed on Flare. Signet paid a live Coston2 obligation that the agent had already paid 36 ledgers earlier. Schema V2 corrects this: the decision now requires the signing boundary's own XRP ledger observation, refuses when a matching validated payment already exists, refuses when the observation is missing, unavailable, insufficiently sourced, contradictory or stale, and binds the observation into the authorization commitment. The incident is replayed against both implementations as a permanent regression test, which also proves no V2 input reproduces the original authorization.",
+      "limitationCount": 3,
+      "verifiedAt": "2026-08-11T20:15:00Z"
+    },
+    {
+      "id": "claim:claim-execution-layer",
+      "type": "claim",
+      "status": "verified",
+      "proofLevel": 3,
+      "proofLevelLabel": "state-changing execution on a live target network",
+      "wording": "Given a valid FAssets redemption obligation, Signet derives the exact required XRP payment through its FCC policy path and will authorize no altered, expired, replayed, stale, already-observed or independently-disagreed payment. An authorized transaction is executed on XRPL Testnet and independently provable through FDC on Coston2. This hackathon deployment demonstrates the execution layer; it does not claim to operate or replace a whitelisted FAssets agent.",
+      "limitationCount": 5,
+      "verifiedAt": "2026-08-11T23:30:00Z"
+    },
+    {
+      "id": "claim:claim-fassets-fxrp-live",
+      "type": "claim",
+      "status": "verified",
+      "proofLevel": 2,
+      "proofLevelLabel": "read-only verification against a live target network",
+      "wording": "The Coston2 FXRP AssetManager is live, exposes both memo-mode and destination-tag redemption entry points, and has agents with free collateral.",
+      "limitationCount": 2,
+      "verifiedAt": "2026-08-11T13:06:49Z"
+    },
+    {
+      "id": "claim:claim-fassets-seam-proven",
+      "type": "claim",
+      "status": "verified",
+      "proofLevel": 2,
+      "proofLevelLabel": "read-only verification against a live target network",
+      "wording": "Signet reads a real Coston2 FAssets redemption in both memo and destination-tag mode and reproduces its payment reference independently in TypeScript and Solidity, matching what the chain recorded.",
+      "limitationCount": 4,
+      "verifiedAt": "2026-08-11T15:05:00Z"
+    },
+    {
+      "id": "claim:claim-fdc-proof-on-chain",
+      "type": "claim",
+      "status": "verified",
+      "proofLevel": 3,
+      "proofLevelLabel": "state-changing execution on a live target network",
+      "wording": "An XRPL Testnet payment made by Signet was attested by the Flare Data Connector end to end: the request was paid for and submitted to FdcHub, the voting round finalized, the Merkle proof was retrieved from a DA Layer operator, and FdcVerification accepted that proof on Coston2 against the root Flare's validators signed.",
+      "limitationCount": 3,
+      "verifiedAt": "2026-08-11T17:15:00Z"
+    },
+    {
+      "id": "claim:claim-fdc-request-and-response-proven",
+      "type": "claim",
+      "status": "verified",
+      "proofLevel": 2,
+      "proofLevelLabel": "read-only verification against a live target network",
+      "wording": "The FDC verifier confirms Signet's XRPL Testnet payment and reports source, destination, amount and memo that satisfy every rule FAssets applies when confirming a redemption.",
+      "limitationCount": 4,
+      "verifiedAt": "2026-08-11T16:05:00Z"
+    },
+    {
+      "id": "claim:claim-go-matches-reference-model",
+      "type": "claim",
+      "status": "verified",
+      "proofLevel": 1,
+      "proofLevelLabel": "executed locally against pinned source or fixtures",
+      "wording": "The Go extension policy produces byte-identical decisions to the TypeScript reference model on all 62 frozen fixtures, including the authorization commitment and the transaction template.",
+      "limitationCount": 4,
+      "verifiedAt": "2026-08-11T17:10:00Z"
+    },
+    {
+      "id": "claim:claim-hardening",
+      "type": "claim",
+      "status": "verified",
+      "proofLevel": 1,
+      "proofLevelLabel": "executed locally against pinned source or fixtures",
+      "wording": "The dependency scan is clean, the decision boundary survives 6,271,288 fuzz executions across two targets (1,690,429 on the wire decoder and 4,580,859 on the policy) without a panic or an untyped refusal, eighteen threats are closed with the mechanism and proof for each, five medium risks are accepted with stated reasons, and the whole suite passes from a fresh clone built only from the lockfile.",
+      "limitationCount": 4,
+      "verifiedAt": "2026-08-11T17:20:00Z"
+    },
+    {
+      "id": "claim:claim-independent-verifier",
+      "type": "claim",
+      "status": "verified",
+      "proofLevel": 2,
+      "proofLevelLabel": "read-only verification against a live target network",
+      "wording": "An independent verifier runs from a fresh clone with no credentials and checks a Signet receipt against sources this repository does not control: it asks every XRPL endpoint and requires agreement, reads the obligation from the Coston2 AssetManager over plain eth_call, recomputes the FAssets payment reference and the authorization commitment rather than believing the recorded ones, and reports UNVERIFIABLE with its own exit code for anything it cannot check. Ten deliberately corrupted bundles are each caught.",
+      "limitationCount": 5,
+      "verifiedAt": "2026-08-11T17:05:00Z"
+    },
+    {
+      "id": "claim:claim-production-exclusive-authority",
+      "type": "claim",
+      "status": "unavailable",
+      "proofLevel": 0,
+      "proofLevelLabel": "not executed",
+      "wording": "When Signet is installed as the exclusive legitimate signing authority for an agent-controlled underlying account, the same mechanism can enforce the agent-side payment boundary.",
+      "limitationCount": 3,
+      "verifiedAt": null
+    },
+    {
+      "id": "claim:claim-proof-surface",
+      "type": "claim",
+      "status": "verified",
+      "proofLevel": 1,
+      "proofLevelLabel": "executed locally against pinned source or fixtures",
+      "wording": "A static proof page and operator view are generated from the repository's own evidence, with no server to trust. Build-failing checks assert that every claim and every limitation in the ledger is rendered, that unverified claims appear as prominently as verified ones, and that a receipt which only proves a seam is visibly labelled as one. Accessibility is checked structurally and by computed colour contrast.",
+      "limitationCount": 5,
+      "verifiedAt": "2026-08-14T07:55:00Z"
+    },
+    {
+      "id": "claim:claim-reference-model-frozen",
+      "type": "claim",
+      "status": "verified",
+      "proofLevel": 1,
+      "proofLevelLabel": "executed locally against pinned source or fixtures",
+      "wording": "Signet's authorization decision is specified by a network-free executable model whose canonical commitment encoding and decision fixtures are frozen and machine-checked on every build.",
+      "limitationCount": 3,
+      "verifiedAt": "2026-08-11T14:30:00Z"
+    },
+    {
+      "id": "claim:claim-source-lock",
+      "type": "claim",
+      "status": "verified",
+      "proofLevel": 1,
+      "proofLevelLabel": "executed locally against pinned source or fixtures",
+      "wording": "Every external protocol dependency Signet uses is pinned to a specific upstream commit and verified by content hash on every build.",
+      "limitationCount": 2,
+      "verifiedAt": "2026-08-11T13:06:49Z"
+    },
+    {
+      "id": "claim:claim-target-chain-lifecycle",
+      "type": "claim",
+      "status": "verified",
+      "proofLevel": 3,
+      "proofLevelLabel": "state-changing execution on a live target network",
+      "wording": "Against a genuine Coston2 redemption that anyone can read, Signet opened an action on its deployed instruction sender, produced a decision whose obligation hash matches the deployed contract and both independent implementations, signed and persisted a payment before submitting it, reached validated success on XRPL Testnet, was refused by the ledger on replay, and had the payment attested by FDC and accepted on chain. An independent verifier run from a fresh clone with no credentials confirmed all of it, including recomputing the authorization commitment, at the time it was produced.",
+      "limitationCount": 6,
+      "verifiedAt": "2026-08-11T17:30:00Z"
+    },
+    {
+      "id": "claim:claim-tee-hardware-attested",
+      "type": "claim",
+      "status": "unavailable",
+      "proofLevel": 0,
+      "proofLevelLabel": "not executed",
+      "wording": "Signet's signing key was protected from the host by hardware attestation.",
+      "limitationCount": 3,
+      "verifiedAt": null
+    },
+    {
+      "id": "claim:claim-unauthorized-refused",
+      "type": "claim",
+      "status": "unavailable",
+      "proofLevel": 0,
+      "proofLevelLabel": "not executed",
+      "wording": "An arbitrary XRP payment request received no signature.",
+      "limitationCount": 2,
+      "verifiedAt": null
+    },
+    {
+      "id": "claim:claim-upstream-reproducible",
+      "type": "claim",
+      "status": "verified",
+      "proofLevel": 1,
+      "proofLevelLabel": "executed locally against pinned source or fixtures",
+      "wording": "Every pinned upstream source reproduces byte-identically from an empty checkout, verified by content hash on every build.",
+      "limitationCount": 3,
+      "verifiedAt": "2026-08-11T15:35:00Z"
+    },
+    {
+      "id": "claim:claim-v1-preserved",
+      "type": "claim",
+      "status": "verified",
+      "proofLevel": 1,
+      "proofLevelLabel": "executed locally against pinned source or fixtures",
+      "wording": "The 62 V1 decision fixtures are preserved byte-for-byte with the hash the phase 01 gate froze, and a test holds them to it, so every authorization commitment Signet published under V1 remains checkable even though the model no longer accepts V1 inputs.",
+      "limitationCount": 2,
+      "verifiedAt": "2026-08-11T20:15:00Z"
+    },
+    {
+      "id": "claim:claim-v2-underlying-observation",
+      "type": "claim",
+      "status": "verified",
+      "proofLevel": 2,
+      "proofLevelLabel": "read-only verification against a live target network",
+      "wording": "Signet's decision schema V2 refuses to authorize a redemption payment unless the signing boundary has itself observed the XRP ledger across at least two separately hosted public XRPL Testnet endpoints that agreed, no more than the policy's ledger budget ago, and seen no validated payment already carrying that obligation's reference to that destination. The observation is bound into the authorization commitment, so an independent verifier recomputes it from public data. Go and TypeScript agree on all 76 V2 fixtures, and V1 inputs are refused rather than interpreted.",
+      "limitationCount": 4,
+      "verifiedAt": "2026-08-11T20:15:00Z"
+    },
+    {
+      "id": "claim:claim-xrpl-exact-payment-validated",
+      "type": "claim",
+      "status": "verified",
+      "proofLevel": 3,
+      "proofLevelLabel": "state-changing execution on a live target network",
+      "wording": "A transaction template produced by the Signet reference model was signed by a rotatable RegularKey and reached validated success on XRPL Testnet, unmodified, carrying the FAssets payment reference of a real Coston2 obligation.",
+      "limitationCount": 4,
+      "verifiedAt": "2026-08-11T15:50:00Z"
+    },
+    {
+      "id": "claim:claim-xrpl-key-lifecycle",
+      "type": "claim",
+      "status": "verified",
+      "proofLevel": 3,
+      "proofLevelLabel": "state-changing execution on a live target network",
+      "wording": "The agent's XRPL account is controlled by a rotatable RegularKey while the master key stays offline as the recovery path.",
+      "limitationCount": 4,
+      "verifiedAt": "2026-08-11T15:50:00Z"
+    },
+    {
+      "id": "claim:claim-xrpl-reliable-submission",
+      "type": "claim",
+      "status": "verified",
+      "proofLevel": 3,
+      "proofLevelLabel": "state-changing execution on a live target network",
+      "wording": "Signet persists a signed XRPL transaction before first submission, never treats a provisional response as final, and reports a transaction definitively absent only when an endpoint that was itself asked for the transaction can prove it sees the entire payment window.",
+      "limitationCount": 5,
+      "verifiedAt": "2026-08-11T15:50:00Z"
+    },
+    {
+      "id": "contract:0x191a1282ac700ede65c5b0aaf313bacc3ea7fc7e",
+      "type": "contract",
+      "key": "fdc-request-fee-configurations",
+      "label": "FdcRequestFeeConfigurations",
+      "address": "0x191a1282ac700ede65c5b0aaf313bacc3ea7fc7e",
+      "network": "coston2",
+      "upstream": true,
+      "explorer": "https://coston2.testnet.flarescan.com/address/0x191a1282ac700ede65c5b0aaf313bacc3ea7fc7e"
+    },
+    {
+      "id": "contract:0x1a9c4a0f9d76c0b1d91d22e24e573a9b377618ae",
+      "type": "contract",
+      "key": "fcc-flare-tee-manager",
+      "label": "FlareTeeManager",
+      "address": "0x1a9C4A0f9D76c0b1D91d22E24E573a9b377618aE",
+      "network": "coston2",
+      "upstream": true,
+      "explorer": "https://coston2.testnet.flarescan.com/address/0x1a9C4A0f9D76c0b1D91d22E24E573a9b377618aE"
+    },
+    {
+      "id": "contract:0x1c772f700308af4c13897cc7b9c41effb82c50c0",
+      "type": "contract",
+      "key": "asset-manager-controller",
+      "label": "AssetManagerController",
+      "address": "0x1c772f700308af4c13897cc7b9c41effb82c50c0",
+      "network": "coston2",
+      "upstream": true,
+      "explorer": "https://coston2.testnet.flarescan.com/address/0x1c772f700308af4c13897cc7b9c41effb82c50c0"
+    },
+    {
+      "id": "contract:0x381bde5961695914b28b16f405d51e8acb877f6e",
+      "type": "contract",
+      "key": "SignetRegistry",
+      "label": "SignetRegistry",
+      "address": "0x381bdE5961695914B28B16f405d51E8acB877f6e",
+      "network": "coston2",
+      "explorer": "https://coston2.testnet.flarescan.com/address/0x381bdE5961695914B28B16f405d51E8acB877f6e"
+    },
+    {
+      "id": "contract:0x3ffa63a3bf21a626c1b391d2577b1800e67f5be0",
+      "type": "contract",
+      "key": "SignetFccInstructionSender",
+      "label": "SignetFccInstructionSender (gate B)",
+      "address": "0x3FFA63a3bf21a626c1B391D2577b1800e67F5Be0",
+      "network": "coston2",
+      "explorer": "https://coston2.testnet.flarescan.com/address/0x3FFA63a3bf21a626c1B391D2577b1800e67F5Be0"
+    },
+    {
+      "id": "contract:0x48ac463d7975828989331f4de43341627b9c5f1d",
+      "type": "contract",
+      "key": "fdc-hub",
+      "label": "FdcHub",
+      "address": "0x48ac463d7975828989331f4de43341627b9c5f1d",
+      "network": "coston2",
+      "upstream": true,
+      "explorer": "https://coston2.testnet.flarescan.com/address/0x48ac463d7975828989331f4de43341627b9c5f1d"
+    },
+    {
+      "id": "contract:0x6d49c54d2f75214616a0964bd52c695384f1b6e2",
+      "type": "contract",
+      "key": "SignetFccInstructionSender",
+      "label": "SignetFccInstructionSender (retired, extension 66163)",
+      "address": "0x6D49c54D2F75214616a0964Bd52c695384f1b6E2",
+      "network": "coston2",
+      "explorer": "https://coston2.testnet.flarescan.com/address/0x6D49c54D2F75214616a0964Bd52c695384f1b6E2",
+      "retired": true
+    },
+    {
+      "id": "contract:0x906507e0b64bcd494db73bd0459d1c667e14b933",
+      "type": "contract",
+      "key": "fdc-verification",
+      "label": "FdcVerification",
+      "address": "0x906507e0b64bcd494db73bd0459d1c667e14b933",
+      "network": "coston2",
+      "upstream": true,
+      "explorer": "https://coston2.testnet.flarescan.com/address/0x906507e0b64bcd494db73bd0459d1c667e14b933"
+    },
+    {
+      "id": "contract:0xa10b672d1c62e5457b17af63d4302add6a99d7de",
+      "type": "contract",
+      "key": "relay",
+      "label": "Relay",
+      "address": "0xa10b672d1c62e5457b17af63d4302add6a99d7de",
+      "network": "coston2",
+      "upstream": true,
+      "explorer": "https://coston2.testnet.flarescan.com/address/0xa10b672d1c62e5457b17af63d4302add6a99d7de"
+    },
+    {
+      "id": "contract:0xad67fe66660fb8dfe9d6b1b4240d8650e30f6019",
+      "type": "contract",
+      "key": "flare-contract-registry",
+      "label": "FlareContractRegistry",
+      "address": "0xaD67FE66660Fb8dFE9d6b1b4240d8650e30F6019",
+      "network": "coston2",
+      "upstream": true,
+      "explorer": "https://coston2.testnet.flarescan.com/address/0xaD67FE66660Fb8dFE9d6b1b4240d8650e30F6019"
+    },
+    {
+      "id": "contract:0xc1ca88b937d0b528842f95d5731ffb586f4fbdfa",
+      "type": "contract",
+      "key": "asset-manager-fxrp",
+      "label": "AssetManagerFXRP",
+      "address": "0xc1ca88b937d0b528842f95d5731ffb586f4fbdfa",
+      "network": "coston2",
+      "upstream": true,
+      "explorer": "https://coston2.testnet.flarescan.com/address/0xc1ca88b937d0b528842f95d5731ffb586f4fbdfa"
+    },
+    {
+      "id": "contract:0xd6cf30b6411db8465147ffdcf0e0418030b4b9ca",
+      "type": "contract",
+      "key": "SignetInstructionSender",
+      "label": "SignetInstructionSender",
+      "address": "0xd6cF30B6411DB8465147FfDcF0e0418030B4b9CA",
+      "network": "coston2",
+      "explorer": "https://coston2.testnet.flarescan.com/address/0xd6cF30B6411DB8465147FfDcF0e0418030B4b9CA"
+    },
+    {
+      "id": "contract:0xdd8aa7a4f43f01258a426a30d02032821de9bc6e",
+      "type": "contract",
+      "key": "SignetFccInstructionSender",
+      "label": "SignetFccInstructionSender (retired, extension 66164)",
+      "address": "0xDd8aA7A4f43f01258A426a30d02032821De9bc6e",
+      "network": "coston2",
+      "explorer": "https://coston2.testnet.flarescan.com/address/0xDd8aA7A4f43f01258A426a30d02032821De9bc6e",
+      "retired": true
+    },
+    {
+      "id": "extension:66163",
+      "type": "fccExtension",
+      "extensionId": "66163",
+      "retired": true,
+      "retiredAt": "2026-08-11T23:11:16Z",
+      "reason": "Its authorizeRedemption took the decision input alone and relayed it unmodified, which a security review correctly called an unauthenticated signing-decision relay: any caller could name an obligation that did not exist. Superseded by a sender that checks the obligation against SignetRegistry. It never carried a live TEE machine, so no instruction was ever executed through it.",
+      "teeMachineRegistered": false
+    },
+    {
+      "id": "extension:66164",
+      "type": "fccExtension",
+      "extensionId": "66164",
+      "retired": true,
+      "retiredAt": "2026-08-14T06:51:34Z",
+      "reason": "It checked the obligation against SignetRegistry, which is why it superseded 66163, but its authorizeRedemption still accepted a caller-authored message: the caller chose destination, amount, reference, tag and window, and the contract checked those for internal consistency rather than truth. Superseded by gate B, whose authorizeRedemption(uint256,uint32) takes a request id and a generation and resolves every payment field from FAssets itself, so no parameter exists through which a caller could express one. It never carried a live TEE machine, so no instruction was ever executed through it.",
+      "teeMachineRegistered": false
+    },
+    {
+      "id": "extension:66244",
+      "type": "fccExtension",
+      "extensionId": "66244",
+      "flareTeeManager": "0x1a9C4A0f9D76c0b1D91d22E24E573a9b377618aE",
+      "opType": "SIGNET_REDEMPTION",
+      "commands": [
+        "AUTHORIZE_REDEMPTION",
+        "HEALTH_CHECK"
+      ],
+      "teeMachineRegistered": false,
+      "attestation": "none"
+    },
+    {
+      "id": "network:coston2",
+      "type": "network",
+      "label": "Flare Coston2 testnet"
+    },
+    {
+      "id": "network:coston2-fork",
+      "type": "network",
+      "label": "coston2-fork"
+    },
+    {
+      "id": "network:testXRP",
+      "type": "network",
+      "label": "XRPL Testnet"
+    },
+    {
+      "id": "receipt:fdc-proof-28B48DC36ACFDA1C22E97C033941355E4680B8F28964DB78F68AA44B41FBEFF4.json",
+      "type": "receipt",
+      "path": "evidence/receipts/fdc-proof-28B48DC36ACFDA1C22E97C033941355E4680B8F28964DB78F68AA44B41FBEFF4.json",
+      "seam": "fdc-on-chain",
+      "schemaVersion": null,
+      "settles": null,
+      "flareChain": null,
+      "requestId": null,
+      "fdcStatus": null,
+      "engineResult": null,
+      "attestation": null,
+      "derivedInsideFccExtension": null
+    },
+    {
+      "id": "receipt:fdc-request-7500DA52CAB254DBD1B64BC88975B2D01C4DFDF309A6C78398C57142493759AF.json",
+      "type": "receipt",
+      "path": "evidence/receipts/fdc-request-7500DA52CAB254DBD1B64BC88975B2D01C4DFDF309A6C78398C57142493759AF.json",
+      "seam": "fdc",
+      "schemaVersion": null,
+      "settles": null,
+      "flareChain": null,
+      "requestId": null,
+      "fdcStatus": null,
+      "engineResult": null,
+      "attestation": null,
+      "derivedInsideFccExtension": null
+    },
+    {
+      "id": "receipt:lifecycle-0EA28A0EBC5D23D3536BABB1296007DBA50E0E3B3EA84862B32A20C32FD16B22.json",
+      "type": "receipt",
+      "path": "evidence/receipts/lifecycle-0EA28A0EBC5D23D3536BABB1296007DBA50E0E3B3EA84862B32A20C32FD16B22.json",
+      "seam": "composed-lifecycle",
+      "schemaVersion": null,
+      "settles": null,
+      "flareChain": "coston2-fork@33934268",
+      "requestId": "44932582",
+      "fdcStatus": "VALID",
+      "engineResult": "tesSUCCESS",
+      "attestation": null,
+      "derivedInsideFccExtension": null
+    },
+    {
+      "id": "receipt:lifecycle-28B48DC36ACFDA1C22E97C033941355E4680B8F28964DB78F68AA44B41FBEFF4.json",
+      "type": "receipt",
+      "path": "evidence/receipts/lifecycle-28B48DC36ACFDA1C22E97C033941355E4680B8F28964DB78F68AA44B41FBEFF4.json",
+      "seam": "composed-lifecycle",
+      "schemaVersion": null,
+      "settles": null,
+      "flareChain": "coston2-fork@33928981",
+      "requestId": "44892968",
+      "fdcStatus": "VALID",
+      "engineResult": "tesSUCCESS",
+      "attestation": null,
+      "derivedInsideFccExtension": null
+    },
+    {
+      "id": "receipt:lifecycle-85EA5E5BB4381FCB6500C57E08F77E35FA349E31E79F5DEE9E6E941F62FA23EA.json",
+      "type": "receipt",
+      "path": "evidence/receipts/lifecycle-85EA5E5BB4381FCB6500C57E08F77E35FA349E31E79F5DEE9E6E941F62FA23EA.json",
+      "seam": "composed-lifecycle",
+      "schemaVersion": 2,
+      "settles": null,
+      "flareChain": "coston2-fork@33947131",
+      "requestId": "45002562",
+      "fdcStatus": "VALID",
+      "engineResult": "tesSUCCESS",
+      "attestation": "none: the extension ran as a local process, not in a Confidential Space VM",
+      "derivedInsideFccExtension": true
+    },
+    {
+      "id": "receipt:lifecycle-907C3E3D0E6F96697219880F5868F3392D9CAD7952C6011095A7E6ACD9A3E3D1.json",
+      "type": "receipt",
+      "path": "evidence/receipts/lifecycle-907C3E3D0E6F96697219880F5868F3392D9CAD7952C6011095A7E6ACD9A3E3D1.json",
+      "seam": "composed-lifecycle",
+      "schemaVersion": 2,
+      "settles": null,
+      "flareChain": "coston2-fork@33947158",
+      "requestId": "45002076",
+      "fdcStatus": "VALID",
+      "engineResult": "tecUNFUNDED_PAYMENT",
+      "attestation": "none: the extension ran as a local process, not in a Confidential Space VM",
+      "derivedInsideFccExtension": true
+    },
+    {
+      "id": "receipt:lifecycle-A10C7C3C6C644FB97B97F796C356F8CBFC8F58B19931859E470B3050AFF8399D.json",
+      "type": "receipt",
+      "path": "evidence/receipts/lifecycle-A10C7C3C6C644FB97B97F796C356F8CBFC8F58B19931859E470B3050AFF8399D.json",
+      "seam": "composed-lifecycle",
+      "schemaVersion": 2,
+      "settles": null,
+      "flareChain": "coston2-fork@34039607",
+      "requestId": "45430134",
+      "fdcStatus": "VALID",
+      "engineResult": "tesSUCCESS",
+      "attestation": "none: the extension ran as a local process, not in a Confidential Space VM",
+      "derivedInsideFccExtension": true
+    },
+    {
+      "id": "receipt:lifecycle-A2E16620E86423A4E835B8AB6E9BF43C6B81123E977F5BD42F6EEDD2495C605C.json",
+      "type": "receipt",
+      "path": "evidence/receipts/lifecycle-A2E16620E86423A4E835B8AB6E9BF43C6B81123E977F5BD42F6EEDD2495C605C.json",
+      "seam": "composed-lifecycle",
+      "schemaVersion": 2,
+      "settles": null,
+      "flareChain": "coston2-fork@33943813",
+      "requestId": "44993990",
+      "fdcStatus": "VALID",
+      "engineResult": "tesSUCCESS",
+      "attestation": "none: the extension ran as a local process, not in a Confidential Space VM",
+      "derivedInsideFccExtension": true
+    },
+    {
+      "id": "receipt:target-chain-8A1492D15309AEBA34ABDE3D03D2FAD5B735165435A3C90F8C6CAFCB571AB51A.json",
+      "type": "receipt",
+      "path": "evidence/receipts/target-chain-8A1492D15309AEBA34ABDE3D03D2FAD5B735165435A3C90F8C6CAFCB571AB51A.json",
+      "seam": "target-chain-lifecycle",
+      "schemaVersion": null,
+      "settles": false,
+      "flareChain": "coston2",
+      "requestId": "44928272",
+      "fdcStatus": null,
+      "engineResult": "tesSUCCESS",
+      "attestation": null,
+      "derivedInsideFccExtension": null
+    },
+    {
+      "id": "receipt:xrpl-adversarial.json",
+      "type": "receipt",
+      "path": "evidence/receipts/xrpl-adversarial.json",
+      "seam": "xrpl",
+      "schemaVersion": null,
+      "settles": null,
+      "flareChain": null,
+      "requestId": null,
+      "fdcStatus": null,
+      "engineResult": null,
+      "attestation": null,
+      "derivedInsideFccExtension": null
+    },
+    {
+      "id": "receipt:xrpl-payment-7500DA52CAB254DBD1B64BC88975B2D01C4DFDF309A6C78398C57142493759AF.json",
+      "type": "receipt",
+      "path": "evidence/receipts/xrpl-payment-7500DA52CAB254DBD1B64BC88975B2D01C4DFDF309A6C78398C57142493759AF.json",
+      "seam": "xrpl",
+      "schemaVersion": null,
+      "settles": false,
+      "flareChain": null,
+      "requestId": "44851498",
+      "fdcStatus": null,
+      "engineResult": "tesSUCCESS",
+      "attestation": null,
+      "derivedInsideFccExtension": null
+    },
+    {
+      "id": "receipt:xrpl-set-regular-key-03445ECA6C42EA46BDF2AA0CBAA348C0A889529334798126602BDC9477E3C82F.json",
+      "type": "receipt",
+      "path": "evidence/receipts/xrpl-set-regular-key-03445ECA6C42EA46BDF2AA0CBAA348C0A889529334798126602BDC9477E3C82F.json",
+      "seam": "xrpl",
+      "schemaVersion": null,
+      "settles": null,
+      "flareChain": null,
+      "requestId": null,
+      "fdcStatus": null,
+      "engineResult": "tesSUCCESS",
+      "attestation": null,
+      "derivedInsideFccExtension": null
+    },
+    {
+      "id": "tx:coston2:0x58080e620c7f584ae618a6926b24549b9c31561ec18f2f67538af6c7c5915c29",
+      "type": "transaction",
+      "network": "coston2",
+      "hash": "0x58080e620c7f584ae618a6926b24549b9c31561ec18f2f67538af6c7c5915c29",
+      "explorer": "https://coston2.testnet.flarescan.com/tx/0x58080e620c7f584ae618a6926b24549b9c31561ec18f2f67538af6c7c5915c29"
+    },
+    {
+      "id": "tx:coston2:0x73de6ed4861dfdf995faeded185fd1619d75920ef0c377d1f56b43f10e0f9785",
+      "type": "transaction",
+      "network": "coston2",
+      "hash": "0x73de6ed4861dfdf995faeded185fd1619d75920ef0c377d1f56b43f10e0f9785",
+      "explorer": "https://coston2.testnet.flarescan.com/tx/0x73de6ed4861dfdf995faeded185fd1619d75920ef0c377d1f56b43f10e0f9785"
+    },
+    {
+      "id": "tx:coston2:0x7814313d1809c9200f2b1059a3829b02fff6ce53517367606cbdd3b5034f0083",
+      "type": "transaction",
+      "network": "coston2",
+      "hash": "0x7814313d1809c9200f2b1059a3829b02fff6ce53517367606cbdd3b5034f0083",
+      "explorer": "https://coston2.testnet.flarescan.com/tx/0x7814313d1809c9200f2b1059a3829b02fff6ce53517367606cbdd3b5034f0083"
+    },
+    {
+      "id": "tx:coston2:0xacbce0e5b67fef34c25693074bffaae7324c7e1ce3c4bff97432196fabbfc88b",
+      "type": "transaction",
+      "network": "coston2",
+      "hash": "0xacbce0e5b67fef34c25693074bffaae7324c7e1ce3c4bff97432196fabbfc88b",
+      "explorer": "https://coston2.testnet.flarescan.com/tx/0xacbce0e5b67fef34c25693074bffaae7324c7e1ce3c4bff97432196fabbfc88b"
+    },
+    {
+      "id": "tx:coston2:0xcd36b0a8909faf0422ca741c9c9bb1924673871c22e02383901e59a827f27297",
+      "type": "transaction",
+      "network": "coston2",
+      "hash": "0xcd36b0a8909faf0422ca741c9c9bb1924673871c22e02383901e59a827f27297",
+      "explorer": "https://coston2.testnet.flarescan.com/tx/0xcd36b0a8909faf0422ca741c9c9bb1924673871c22e02383901e59a827f27297"
+    },
+    {
+      "id": "tx:xrpl:03445ECA6C42EA46BDF2AA0CBAA348C0A889529334798126602BDC9477E3C82F",
+      "type": "transaction",
+      "network": "testXRP",
+      "hash": "03445ECA6C42EA46BDF2AA0CBAA348C0A889529334798126602BDC9477E3C82F",
+      "engineResult": "tesSUCCESS",
+      "validatedLedger": 19822182,
+      "explorer": "https://testnet.xrpl.org/transactions/03445ECA6C42EA46BDF2AA0CBAA348C0A889529334798126602BDC9477E3C82F"
+    },
+    {
+      "id": "tx:xrpl:0EA28A0EBC5D23D3536BABB1296007DBA50E0E3B3EA84862B32A20C32FD16B22",
+      "type": "transaction",
+      "network": "testXRP",
+      "hash": "0EA28A0EBC5D23D3536BABB1296007DBA50E0E3B3EA84862B32A20C32FD16B22",
+      "engineResult": "tesSUCCESS",
+      "validatedLedger": 19827362,
+      "explorer": "https://testnet.xrpl.org/transactions/0EA28A0EBC5D23D3536BABB1296007DBA50E0E3B3EA84862B32A20C32FD16B22"
+    },
+    {
+      "id": "tx:xrpl:28B48DC36ACFDA1C22E97C033941355E4680B8F28964DB78F68AA44B41FBEFF4",
+      "type": "transaction",
+      "network": "testXRP",
+      "hash": "28B48DC36ACFDA1C22E97C033941355E4680B8F28964DB78F68AA44B41FBEFF4",
+      "engineResult": "tesSUCCESS",
+      "validatedLedger": 19823767,
+      "explorer": "https://testnet.xrpl.org/transactions/28B48DC36ACFDA1C22E97C033941355E4680B8F28964DB78F68AA44B41FBEFF4"
+    },
+    {
+      "id": "tx:xrpl:7500DA52CAB254DBD1B64BC88975B2D01C4DFDF309A6C78398C57142493759AF",
+      "type": "transaction",
+      "network": "testXRP",
+      "hash": "7500DA52CAB254DBD1B64BC88975B2D01C4DFDF309A6C78398C57142493759AF",
+      "engineResult": "tesSUCCESS",
+      "validatedLedger": 19822204,
+      "explorer": "https://testnet.xrpl.org/transactions/7500DA52CAB254DBD1B64BC88975B2D01C4DFDF309A6C78398C57142493759AF"
+    },
+    {
+      "id": "tx:xrpl:85EA5E5BB4381FCB6500C57E08F77E35FA349E31E79F5DEE9E6E941F62FA23EA",
+      "type": "transaction",
+      "network": "testXRP",
+      "hash": "85EA5E5BB4381FCB6500C57E08F77E35FA349E31E79F5DEE9E6E941F62FA23EA",
+      "engineResult": "tesSUCCESS",
+      "validatedLedger": 19834025,
+      "explorer": "https://testnet.xrpl.org/transactions/85EA5E5BB4381FCB6500C57E08F77E35FA349E31E79F5DEE9E6E941F62FA23EA"
+    },
+    {
+      "id": "tx:xrpl:8A1492D15309AEBA34ABDE3D03D2FAD5B735165435A3C90F8C6CAFCB571AB51A",
+      "type": "transaction",
+      "network": "testXRP",
+      "hash": "8A1492D15309AEBA34ABDE3D03D2FAD5B735165435A3C90F8C6CAFCB571AB51A",
+      "engineResult": "tesSUCCESS",
+      "validatedLedger": 19825042,
+      "explorer": "https://testnet.xrpl.org/transactions/8A1492D15309AEBA34ABDE3D03D2FAD5B735165435A3C90F8C6CAFCB571AB51A"
+    },
+    {
+      "id": "tx:xrpl:907C3E3D0E6F96697219880F5868F3392D9CAD7952C6011095A7E6ACD9A3E3D1",
+      "type": "transaction",
+      "network": "testXRP",
+      "hash": "907C3E3D0E6F96697219880F5868F3392D9CAD7952C6011095A7E6ACD9A3E3D1",
+      "engineResult": "tecUNFUNDED_PAYMENT",
+      "validatedLedger": 19834056,
+      "explorer": "https://testnet.xrpl.org/transactions/907C3E3D0E6F96697219880F5868F3392D9CAD7952C6011095A7E6ACD9A3E3D1"
+    },
+    {
+      "id": "tx:xrpl:A10C7C3C6C644FB97B97F796C356F8CBFC8F58B19931859E470B3050AFF8399D",
+      "type": "transaction",
+      "network": "testXRP",
+      "hash": "A10C7C3C6C644FB97B97F796C356F8CBFC8F58B19931859E470B3050AFF8399D",
+      "engineResult": "tesSUCCESS",
+      "validatedLedger": 19895487,
+      "explorer": "https://testnet.xrpl.org/transactions/A10C7C3C6C644FB97B97F796C356F8CBFC8F58B19931859E470B3050AFF8399D"
+    },
+    {
+      "id": "tx:xrpl:A2E16620E86423A4E835B8AB6E9BF43C6B81123E977F5BD42F6EEDD2495C605C",
+      "type": "transaction",
+      "network": "testXRP",
+      "hash": "A2E16620E86423A4E835B8AB6E9BF43C6B81123E977F5BD42F6EEDD2495C605C",
+      "engineResult": "tesSUCCESS",
+      "validatedLedger": 19831523,
+      "explorer": "https://testnet.xrpl.org/transactions/A2E16620E86423A4E835B8AB6E9BF43C6B81123E977F5BD42F6EEDD2495C605C"
+    }
+  ],
+  "edges": [
+    {
+      "from": "claim:claim-canonical-requestid-derivation",
+      "rel": "citedBy",
+      "to": "artifact:contracts/src/adapters/FAssetsAdapter.sol"
+    },
+    {
+      "from": "claim:claim-canonical-requestid-derivation",
+      "rel": "citedBy",
+      "to": "artifact:contracts/src/fcc/SignetFccInstructionSender.sol"
+    },
+    {
+      "from": "claim:claim-canonical-requestid-derivation",
+      "rel": "citedBy",
+      "to": "artifact:contracts/test/unit/CanonicalInstruction.t.sol"
+    },
+    {
+      "from": "claim:claim-canonical-requestid-derivation",
+      "rel": "citedBy",
+      "to": "artifact:deployments/coston2.json"
+    },
+    {
+      "from": "claim:claim-canonical-requestid-derivation",
+      "rel": "citedBy",
+      "to": "artifact:docs/evidence/gate-b.md"
+    },
+    {
+      "from": "claim:claim-canonical-requestid-derivation",
+      "rel": "citedBy",
+      "to": "artifact:extension/internal/fccinput/canonical.go"
+    },
+    {
+      "from": "claim:claim-canonical-requestid-derivation",
+      "rel": "citedBy",
+      "to": "artifact:extension/internal/fccinput/override_test.go"
+    },
+    {
+      "from": "claim:claim-canonical-requestid-derivation",
+      "rel": "provenOn",
+      "to": "network:coston2"
+    },
+    {
+      "from": "claim:claim-composed-lifecycle",
+      "rel": "citedBy",
+      "to": "artifact:docs/evidence/artifacts/lifecycle-run.json"
+    },
+    {
+      "from": "claim:claim-composed-lifecycle",
+      "rel": "citedBy",
+      "to": "artifact:docs/evidence/phase-09.md"
+    },
+    {
+      "from": "claim:claim-composed-lifecycle",
+      "rel": "citedBy",
+      "to": "artifact:scripts/lifecycle/run.mjs"
+    },
+    {
+      "from": "claim:claim-composed-lifecycle",
+      "rel": "citedBy",
+      "to": "receipt:lifecycle-0EA28A0EBC5D23D3536BABB1296007DBA50E0E3B3EA84862B32A20C32FD16B22.json"
+    },
+    {
+      "from": "claim:claim-composed-lifecycle",
+      "rel": "citedBy",
+      "to": "receipt:lifecycle-28B48DC36ACFDA1C22E97C033941355E4680B8F28964DB78F68AA44B41FBEFF4.json"
+    },
+    {
+      "from": "claim:claim-composed-lifecycle",
+      "rel": "provenOn",
+      "to": "network:coston2-fork"
+    },
+    {
+      "from": "claim:claim-composed-lifecycle",
+      "rel": "provenOn",
+      "to": "network:testXRP"
+    },
+    {
+      "from": "claim:claim-contracts-cannot-authorize-arbitrary-fields",
+      "rel": "citedBy",
+      "to": "artifact:contracts/src/SignetInstructionSender.sol"
+    },
+    {
+      "from": "claim:claim-contracts-cannot-authorize-arbitrary-fields",
+      "rel": "citedBy",
+      "to": "artifact:contracts/src/SignetRegistry.sol"
+    },
+    {
+      "from": "claim:claim-contracts-cannot-authorize-arbitrary-fields",
+      "rel": "citedBy",
+      "to": "artifact:contracts/test/unit/ObligationHashParity.t.sol"
+    },
+    {
+      "from": "claim:claim-contracts-cannot-authorize-arbitrary-fields",
+      "rel": "citedBy",
+      "to": "artifact:contracts/test/unit/SignetRegistry.t.sol"
+    },
+    {
+      "from": "claim:claim-contracts-cannot-authorize-arbitrary-fields",
+      "rel": "citedBy",
+      "to": "artifact:docs/evidence/phase-06.md"
+    },
+    {
+      "from": "claim:claim-coordinator-durability",
+      "rel": "citedBy",
+      "to": "artifact:coordinator/migrations/0001_initial.sql"
+    },
+    {
+      "from": "claim:claim-coordinator-durability",
+      "rel": "citedBy",
+      "to": "artifact:coordinator/test/durability.test.mjs"
+    },
+    {
+      "from": "claim:claim-coordinator-durability",
+      "rel": "citedBy",
+      "to": "artifact:docs/evidence/phase-08.md"
+    },
+    {
+      "from": "claim:claim-core-lifecycle",
+      "rel": "provenOn",
+      "to": "network:coston2"
+    },
+    {
+      "from": "claim:claim-core-lifecycle",
+      "rel": "provenOn",
+      "to": "network:testXRP"
+    },
+    {
+      "from": "claim:claim-coston2-addresses-verified",
+      "rel": "citedBy",
+      "to": "artifact:deployments/coston2.json"
+    },
+    {
+      "from": "claim:claim-coston2-addresses-verified",
+      "rel": "citedBy",
+      "to": "artifact:docs/evidence/phase-00.md"
+    },
+    {
+      "from": "claim:claim-coston2-addresses-verified",
+      "rel": "citedBy",
+      "to": "artifact:docs/source-lock.json"
+    },
+    {
+      "from": "claim:claim-coston2-addresses-verified",
+      "rel": "citedBy",
+      "to": "artifact:scripts/resolve-coston2.mjs"
+    },
+    {
+      "from": "claim:claim-coston2-addresses-verified",
+      "rel": "provenOn",
+      "to": "network:coston2"
+    },
+    {
+      "from": "claim:claim-coston2-deployment",
+      "rel": "citedBy",
+      "to": "artifact:deployments/coston2.json"
+    },
+    {
+      "from": "claim:claim-coston2-deployment",
+      "rel": "citedBy",
+      "to": "artifact:docs/evidence/phase-10.md"
+    },
+    {
+      "from": "claim:claim-coston2-deployment",
+      "rel": "citedBy",
+      "to": "artifact:scripts/deploy-coston2.mjs"
+    },
+    {
+      "from": "claim:claim-coston2-deployment",
+      "rel": "provenOn",
+      "to": "network:coston2"
+    },
+    {
+      "from": "claim:claim-duplicate-payment-gap",
+      "rel": "citedBy",
+      "to": "artifact:docs/adr/0003-underlying-payment-precheck.md"
+    },
+    {
+      "from": "claim:claim-duplicate-payment-gap",
+      "rel": "citedBy",
+      "to": "artifact:docs/evidence/phase-10.md"
+    },
+    {
+      "from": "claim:claim-duplicate-payment-gap",
+      "rel": "citedBy",
+      "to": "artifact:docs/guarantee.md"
+    },
+    {
+      "from": "claim:claim-duplicate-payment-gap",
+      "rel": "citedBy",
+      "to": "artifact:reference/test-vectors/decision-fixtures-v2.json"
+    },
+    {
+      "from": "claim:claim-duplicate-payment-gap",
+      "rel": "citedBy",
+      "to": "artifact:scripts/lifecycle/incident-44928272.test.mjs"
+    },
+    {
+      "from": "claim:claim-duplicate-payment-gap",
+      "rel": "citedBy",
+      "to": "artifact:scripts/xrpl/observe.mjs"
+    },
+    {
+      "from": "claim:claim-duplicate-payment-gap",
+      "rel": "provenOn",
+      "to": "network:coston2"
+    },
+    {
+      "from": "claim:claim-duplicate-payment-gap",
+      "rel": "provenOn",
+      "to": "network:testXRP"
+    },
+    {
+      "from": "claim:claim-execution-layer",
+      "rel": "citedBy",
+      "to": "artifact:deployments/coston2.json"
+    },
+    {
+      "from": "claim:claim-execution-layer",
+      "rel": "citedBy",
+      "to": "artifact:docs/evidence/organizer-accepted-proof-boundary.md"
+    },
+    {
+      "from": "claim:claim-execution-layer",
+      "rel": "citedBy",
+      "to": "artifact:extension/cmd/signet-fcc-extension/main.go"
+    },
+    {
+      "from": "claim:claim-execution-layer",
+      "rel": "citedBy",
+      "to": "artifact:scripts/fcc/extension.test.mjs"
+    },
+    {
+      "from": "claim:claim-execution-layer",
+      "rel": "citedBy",
+      "to": "artifact:scripts/lifecycle/incident-44928272.test.mjs"
+    },
+    {
+      "from": "claim:claim-execution-layer",
+      "rel": "citedBy",
+      "to": "artifact:scripts/lifecycle/run.mjs"
+    },
+    {
+      "from": "claim:claim-execution-layer",
+      "rel": "citedBy",
+      "to": "receipt:lifecycle-A2E16620E86423A4E835B8AB6E9BF43C6B81123E977F5BD42F6EEDD2495C605C.json"
+    },
+    {
+      "from": "claim:claim-execution-layer",
+      "rel": "provenOn",
+      "to": "network:coston2"
+    },
+    {
+      "from": "claim:claim-execution-layer",
+      "rel": "provenOn",
+      "to": "network:testXRP"
+    },
+    {
+      "from": "claim:claim-fassets-fxrp-live",
+      "rel": "citedBy",
+      "to": "artifact:docs/evidence/phase-00.md"
+    },
+    {
+      "from": "claim:claim-fassets-fxrp-live",
+      "rel": "citedBy",
+      "to": "artifact:docs/protocol-seams/fassets-access-probe.json"
+    },
+    {
+      "from": "claim:claim-fassets-fxrp-live",
+      "rel": "citedBy",
+      "to": "artifact:docs/source-lock.json"
+    },
+    {
+      "from": "claim:claim-fassets-fxrp-live",
+      "rel": "provenOn",
+      "to": "network:coston2"
+    },
+    {
+      "from": "claim:claim-fassets-seam-proven",
+      "rel": "citedBy",
+      "to": "artifact:contracts/src/adapters/FAssetsAdapter.sol"
+    },
+    {
+      "from": "claim:claim-fassets-seam-proven",
+      "rel": "citedBy",
+      "to": "artifact:contracts/test/fork/FAssetsSeam.t.sol"
+    },
+    {
+      "from": "claim:claim-fassets-seam-proven",
+      "rel": "citedBy",
+      "to": "artifact:docs/evidence/phase-02.md"
+    },
+    {
+      "from": "claim:claim-fassets-seam-proven",
+      "rel": "citedBy",
+      "to": "artifact:docs/protocol-seams/fassets-seam-evidence.json"
+    },
+    {
+      "from": "claim:claim-fassets-seam-proven",
+      "rel": "citedBy",
+      "to": "artifact:docs/protocol-seams/fassets.md"
+    },
+    {
+      "from": "claim:claim-fassets-seam-proven",
+      "rel": "provenOn",
+      "to": "network:coston2"
+    },
+    {
+      "from": "claim:claim-fdc-proof-on-chain",
+      "rel": "citedBy",
+      "to": "artifact:docs/evidence/phase-10.md"
+    },
+    {
+      "from": "claim:claim-fdc-proof-on-chain",
+      "rel": "citedBy",
+      "to": "artifact:scripts/fdc/prove.mjs"
+    },
+    {
+      "from": "claim:claim-fdc-proof-on-chain",
+      "rel": "citedBy",
+      "to": "receipt:fdc-proof-28B48DC36ACFDA1C22E97C033941355E4680B8F28964DB78F68AA44B41FBEFF4.json"
+    },
+    {
+      "from": "claim:claim-fdc-proof-on-chain",
+      "rel": "citedBy",
+      "to": "receipt:target-chain-8A1492D15309AEBA34ABDE3D03D2FAD5B735165435A3C90F8C6CAFCB571AB51A.json"
+    },
+    {
+      "from": "claim:claim-fdc-proof-on-chain",
+      "rel": "provenOn",
+      "to": "network:coston2"
+    },
+    {
+      "from": "claim:claim-fdc-proof-on-chain",
+      "rel": "provenOn",
+      "to": "network:testXRP"
+    },
+    {
+      "from": "claim:claim-fdc-request-and-response-proven",
+      "rel": "citedBy",
+      "to": "artifact:docs/evidence/phase-05.md"
+    },
+    {
+      "from": "claim:claim-fdc-request-and-response-proven",
+      "rel": "citedBy",
+      "to": "artifact:docs/protocol-seams/fdc.md"
+    },
+    {
+      "from": "claim:claim-fdc-request-and-response-proven",
+      "rel": "citedBy",
+      "to": "receipt:fdc-request-7500DA52CAB254DBD1B64BC88975B2D01C4DFDF309A6C78398C57142493759AF.json"
+    },
+    {
+      "from": "claim:claim-fdc-request-and-response-proven",
+      "rel": "provenOn",
+      "to": "network:coston2"
+    },
+    {
+      "from": "claim:claim-fdc-request-and-response-proven",
+      "rel": "provenOn",
+      "to": "network:testXRP"
+    },
+    {
+      "from": "claim:claim-go-matches-reference-model",
+      "rel": "citedBy",
+      "to": "artifact:docs/evidence/phase-07.md"
+    },
+    {
+      "from": "claim:claim-go-matches-reference-model",
+      "rel": "citedBy",
+      "to": "artifact:extension/internal/canonical/encoding.go"
+    },
+    {
+      "from": "claim:claim-go-matches-reference-model",
+      "rel": "citedBy",
+      "to": "artifact:extension/internal/conformance/fixtures_test.go"
+    },
+    {
+      "from": "claim:claim-go-matches-reference-model",
+      "rel": "citedBy",
+      "to": "artifact:extension/internal/policy/policy.go"
+    },
+    {
+      "from": "claim:claim-go-matches-reference-model",
+      "rel": "citedBy",
+      "to": "artifact:reference/test-vectors/decision-fixtures.json"
+    },
+    {
+      "from": "claim:claim-hardening",
+      "rel": "citedBy",
+      "to": "artifact:docs/evidence/phase-13.md"
+    },
+    {
+      "from": "claim:claim-hardening",
+      "rel": "citedBy",
+      "to": "artifact:docs/runbooks/recovery.md"
+    },
+    {
+      "from": "claim:claim-hardening",
+      "rel": "citedBy",
+      "to": "artifact:docs/threat-model.md"
+    },
+    {
+      "from": "claim:claim-hardening",
+      "rel": "citedBy",
+      "to": "artifact:extension/internal/policy/fuzz_test.go"
+    },
+    {
+      "from": "claim:claim-hardening",
+      "rel": "citedBy",
+      "to": "artifact:extension/internal/wire/fuzz_test.go"
+    },
+    {
+      "from": "claim:claim-hardening",
+      "rel": "provenOn",
+      "to": "network:coston2"
+    },
+    {
+      "from": "claim:claim-independent-verifier",
+      "rel": "citedBy",
+      "to": "artifact:docs/evidence-schema.md"
+    },
+    {
+      "from": "claim:claim-independent-verifier",
+      "rel": "citedBy",
+      "to": "artifact:docs/evidence/phase-11.md"
+    },
+    {
+      "from": "claim:claim-independent-verifier",
+      "rel": "citedBy",
+      "to": "artifact:verifier/src/verify.ts"
+    },
+    {
+      "from": "claim:claim-independent-verifier",
+      "rel": "citedBy",
+      "to": "artifact:verifier/test/corruption.test.ts"
+    },
+    {
+      "from": "claim:claim-independent-verifier",
+      "rel": "citedBy",
+      "to": "receipt:lifecycle-0EA28A0EBC5D23D3536BABB1296007DBA50E0E3B3EA84862B32A20C32FD16B22.json"
+    },
+    {
+      "from": "claim:claim-independent-verifier",
+      "rel": "citedBy",
+      "to": "receipt:lifecycle-28B48DC36ACFDA1C22E97C033941355E4680B8F28964DB78F68AA44B41FBEFF4.json"
+    },
+    {
+      "from": "claim:claim-independent-verifier",
+      "rel": "provenOn",
+      "to": "network:coston2"
+    },
+    {
+      "from": "claim:claim-independent-verifier",
+      "rel": "provenOn",
+      "to": "network:testXRP"
+    },
+    {
+      "from": "claim:claim-proof-surface",
+      "rel": "citedBy",
+      "to": "artifact:docs/evidence/phase-12.md"
+    },
+    {
+      "from": "claim:claim-proof-surface",
+      "rel": "citedBy",
+      "to": "artifact:web/src/build.mjs"
+    },
+    {
+      "from": "claim:claim-proof-surface",
+      "rel": "citedBy",
+      "to": "artifact:web/test/check.mjs"
+    },
+    {
+      "from": "claim:claim-reference-model-frozen",
+      "rel": "citedBy",
+      "to": "artifact:docs/adr/0001-canonical-encoding.md"
+    },
+    {
+      "from": "claim:claim-reference-model-frozen",
+      "rel": "citedBy",
+      "to": "artifact:docs/adr/0002-policy-semantics.md"
+    },
+    {
+      "from": "claim:claim-reference-model-frozen",
+      "rel": "citedBy",
+      "to": "artifact:docs/evidence/phase-01.md"
+    },
+    {
+      "from": "claim:claim-reference-model-frozen",
+      "rel": "citedBy",
+      "to": "artifact:reference/src/decide.ts"
+    },
+    {
+      "from": "claim:claim-reference-model-frozen",
+      "rel": "citedBy",
+      "to": "artifact:reference/test-vectors/decision-fixtures.json"
+    },
+    {
+      "from": "claim:claim-source-lock",
+      "rel": "citedBy",
+      "to": "artifact:docs/evidence/phase-00.md"
+    },
+    {
+      "from": "claim:claim-source-lock",
+      "rel": "citedBy",
+      "to": "artifact:docs/source-lock.json"
+    },
+    {
+      "from": "claim:claim-source-lock",
+      "rel": "citedBy",
+      "to": "artifact:scripts/fetch-upstream.mjs"
+    },
+    {
+      "from": "claim:claim-source-lock",
+      "rel": "citedBy",
+      "to": "artifact:scripts/verify-source-lock.mjs"
+    },
+    {
+      "from": "claim:claim-target-chain-lifecycle",
+      "rel": "citedBy",
+      "to": "artifact:docs/evidence/phase-10.md"
+    },
+    {
+      "from": "claim:claim-target-chain-lifecycle",
+      "rel": "citedBy",
+      "to": "artifact:scripts/lifecycle/target-chain.mjs"
+    },
+    {
+      "from": "claim:claim-target-chain-lifecycle",
+      "rel": "citedBy",
+      "to": "receipt:target-chain-8A1492D15309AEBA34ABDE3D03D2FAD5B735165435A3C90F8C6CAFCB571AB51A.json"
+    },
+    {
+      "from": "claim:claim-target-chain-lifecycle",
+      "rel": "provenOn",
+      "to": "network:coston2"
+    },
+    {
+      "from": "claim:claim-target-chain-lifecycle",
+      "rel": "provenOn",
+      "to": "network:testXRP"
+    },
+    {
+      "from": "claim:claim-unauthorized-refused",
+      "rel": "provenOn",
+      "to": "network:coston2"
+    },
+    {
+      "from": "claim:claim-unauthorized-refused",
+      "rel": "provenOn",
+      "to": "network:testXRP"
+    },
+    {
+      "from": "claim:claim-upstream-reproducible",
+      "rel": "citedBy",
+      "to": "artifact:docs/evidence/phase-02.md"
+    },
+    {
+      "from": "claim:claim-upstream-reproducible",
+      "rel": "citedBy",
+      "to": "artifact:docs/source-lock.json"
+    },
+    {
+      "from": "claim:claim-upstream-reproducible",
+      "rel": "citedBy",
+      "to": "artifact:scripts/fetch-upstream.mjs"
+    },
+    {
+      "from": "claim:claim-upstream-reproducible",
+      "rel": "citedBy",
+      "to": "artifact:scripts/verify-source-lock.mjs"
+    },
+    {
+      "from": "claim:claim-v1-preserved",
+      "rel": "citedBy",
+      "to": "artifact:reference/test-vectors/decision-fixtures-v1-historical.json"
+    },
+    {
+      "from": "claim:claim-v1-preserved",
+      "rel": "citedBy",
+      "to": "artifact:reference/test/v1-historical.test.ts"
+    },
+    {
+      "from": "claim:claim-v2-underlying-observation",
+      "rel": "citedBy",
+      "to": "artifact:docs/guarantee.md"
+    },
+    {
+      "from": "claim:claim-v2-underlying-observation",
+      "rel": "citedBy",
+      "to": "artifact:extension/internal/policy/policy.go"
+    },
+    {
+      "from": "claim:claim-v2-underlying-observation",
+      "rel": "citedBy",
+      "to": "artifact:reference/src/decide.ts"
+    },
+    {
+      "from": "claim:claim-v2-underlying-observation",
+      "rel": "citedBy",
+      "to": "artifact:reference/test-vectors/decision-fixtures-v2.json"
+    },
+    {
+      "from": "claim:claim-v2-underlying-observation",
+      "rel": "citedBy",
+      "to": "artifact:reference/test/property/observation.property.test.ts"
+    },
+    {
+      "from": "claim:claim-v2-underlying-observation",
+      "rel": "citedBy",
+      "to": "artifact:scripts/xrpl/observe.mjs"
+    },
+    {
+      "from": "claim:claim-v2-underlying-observation",
+      "rel": "citedBy",
+      "to": "artifact:scripts/xrpl/observe.test.mjs"
+    },
+    {
+      "from": "claim:claim-v2-underlying-observation",
+      "rel": "citedBy",
+      "to": "artifact:verifier/test/corruption.test.ts"
+    },
+    {
+      "from": "claim:claim-v2-underlying-observation",
+      "rel": "provenOn",
+      "to": "network:testXRP"
+    },
+    {
+      "from": "claim:claim-xrpl-exact-payment-validated",
+      "rel": "citedBy",
+      "to": "artifact:docs/evidence/phase-04.md"
+    },
+    {
+      "from": "claim:claim-xrpl-exact-payment-validated",
+      "rel": "citedBy",
+      "to": "artifact:docs/protocol-seams/xrpl.md"
+    },
+    {
+      "from": "claim:claim-xrpl-exact-payment-validated",
+      "rel": "citedBy",
+      "to": "receipt:xrpl-payment-7500DA52CAB254DBD1B64BC88975B2D01C4DFDF309A6C78398C57142493759AF.json"
+    },
+    {
+      "from": "claim:claim-xrpl-exact-payment-validated",
+      "rel": "provenOn",
+      "to": "network:testXRP"
+    },
+    {
+      "from": "claim:claim-xrpl-key-lifecycle",
+      "rel": "citedBy",
+      "to": "artifact:docs/evidence/phase-04.md"
+    },
+    {
+      "from": "claim:claim-xrpl-key-lifecycle",
+      "rel": "citedBy",
+      "to": "artifact:docs/protocol-seams/xrpl.md"
+    },
+    {
+      "from": "claim:claim-xrpl-key-lifecycle",
+      "rel": "citedBy",
+      "to": "receipt:xrpl-set-regular-key-03445ECA6C42EA46BDF2AA0CBAA348C0A889529334798126602BDC9477E3C82F.json"
+    },
+    {
+      "from": "claim:claim-xrpl-key-lifecycle",
+      "rel": "provenOn",
+      "to": "network:testXRP"
+    },
+    {
+      "from": "claim:claim-xrpl-reliable-submission",
+      "rel": "citedBy",
+      "to": "artifact:docs/evidence/phase-04.md"
+    },
+    {
+      "from": "claim:claim-xrpl-reliable-submission",
+      "rel": "citedBy",
+      "to": "artifact:docs/protocol-seams/xrpl.md"
+    },
+    {
+      "from": "claim:claim-xrpl-reliable-submission",
+      "rel": "citedBy",
+      "to": "artifact:scripts/xrpl/reconcile.test.mjs"
+    },
+    {
+      "from": "claim:claim-xrpl-reliable-submission",
+      "rel": "citedBy",
+      "to": "artifact:scripts/xrpl/submit.mjs"
+    },
+    {
+      "from": "claim:claim-xrpl-reliable-submission",
+      "rel": "citedBy",
+      "to": "receipt:xrpl-adversarial.json"
+    },
+    {
+      "from": "claim:claim-xrpl-reliable-submission",
+      "rel": "provenOn",
+      "to": "network:testXRP"
+    },
+    {
+      "from": "contract:0x191a1282ac700ede65c5b0aaf313bacc3ea7fc7e",
+      "rel": "deployedOn",
+      "to": "network:coston2"
+    },
+    {
+      "from": "contract:0x1a9c4a0f9d76c0b1d91d22e24e573a9b377618ae",
+      "rel": "deployedOn",
+      "to": "network:coston2"
+    },
+    {
+      "from": "contract:0x1c772f700308af4c13897cc7b9c41effb82c50c0",
+      "rel": "deployedOn",
+      "to": "network:coston2"
+    },
+    {
+      "from": "contract:0x381bde5961695914b28b16f405d51e8acb877f6e",
+      "rel": "createdBy:registry",
+      "to": "tx:coston2:0xacbce0e5b67fef34c25693074bffaae7324c7e1ce3c4bff97432196fabbfc88b"
+    },
+    {
+      "from": "contract:0x381bde5961695914b28b16f405d51e8acb877f6e",
+      "rel": "deployedOn",
+      "to": "network:coston2"
+    },
+    {
+      "from": "contract:0x3ffa63a3bf21a626c1b391d2577b1800e67f5be0",
+      "rel": "createdBy:deploy",
+      "to": "tx:coston2:0x58080e620c7f584ae618a6926b24549b9c31561ec18f2f67538af6c7c5915c29"
+    },
+    {
+      "from": "contract:0x3ffa63a3bf21a626c1b391d2577b1800e67f5be0",
+      "rel": "createdBy:register",
+      "to": "tx:coston2:0xcd36b0a8909faf0422ca741c9c9bb1924673871c22e02383901e59a827f27297"
+    },
+    {
+      "from": "contract:0x3ffa63a3bf21a626c1b391d2577b1800e67f5be0",
+      "rel": "createdBy:setExtensionId",
+      "to": "tx:coston2:0x73de6ed4861dfdf995faeded185fd1619d75920ef0c377d1f56b43f10e0f9785"
+    },
+    {
+      "from": "contract:0x3ffa63a3bf21a626c1b391d2577b1800e67f5be0",
+      "rel": "deployedOn",
+      "to": "network:coston2"
+    },
+    {
+      "from": "contract:0x48ac463d7975828989331f4de43341627b9c5f1d",
+      "rel": "deployedOn",
+      "to": "network:coston2"
+    },
+    {
+      "from": "contract:0x6d49c54d2f75214616a0964bd52c695384f1b6e2",
+      "rel": "deployedOn",
+      "to": "network:coston2"
+    },
+    {
+      "from": "contract:0x906507e0b64bcd494db73bd0459d1c667e14b933",
+      "rel": "deployedOn",
+      "to": "network:coston2"
+    },
+    {
+      "from": "contract:0xa10b672d1c62e5457b17af63d4302add6a99d7de",
+      "rel": "deployedOn",
+      "to": "network:coston2"
+    },
+    {
+      "from": "contract:0xad67fe66660fb8dfe9d6b1b4240d8650e30f6019",
+      "rel": "deployedOn",
+      "to": "network:coston2"
+    },
+    {
+      "from": "contract:0xc1ca88b937d0b528842f95d5731ffb586f4fbdfa",
+      "rel": "deployedOn",
+      "to": "network:coston2"
+    },
+    {
+      "from": "contract:0xd6cf30b6411db8465147ffdcf0e0418030b4b9ca",
+      "rel": "createdBy:instructionSender",
+      "to": "tx:coston2:0x7814313d1809c9200f2b1059a3829b02fff6ce53517367606cbdd3b5034f0083"
+    },
+    {
+      "from": "contract:0xd6cf30b6411db8465147ffdcf0e0418030b4b9ca",
+      "rel": "deployedOn",
+      "to": "network:coston2"
+    },
+    {
+      "from": "contract:0xdd8aa7a4f43f01258a426a30d02032821de9bc6e",
+      "rel": "deployedOn",
+      "to": "network:coston2"
+    },
+    {
+      "from": "extension:66163",
+      "rel": "instructionSender",
+      "to": "contract:0x6d49c54d2f75214616a0964bd52c695384f1b6e2"
+    },
+    {
+      "from": "extension:66163",
+      "rel": "supersededBy",
+      "to": "extension:66244"
+    },
+    {
+      "from": "extension:66164",
+      "rel": "instructionSender",
+      "to": "contract:0xdd8aa7a4f43f01258a426a30d02032821de9bc6e"
+    },
+    {
+      "from": "extension:66164",
+      "rel": "supersededBy",
+      "to": "extension:66244"
+    },
+    {
+      "from": "extension:66244",
+      "rel": "instructionSender",
+      "to": "contract:0x3ffa63a3bf21a626c1b391d2577b1800e67f5be0"
+    },
+    {
+      "from": "extension:66244",
+      "rel": "registeredOn",
+      "to": "network:coston2"
+    },
+    {
+      "from": "receipt:fdc-proof-28B48DC36ACFDA1C22E97C033941355E4680B8F28964DB78F68AA44B41FBEFF4.json",
+      "rel": "executedOn",
+      "to": "network:coston2"
+    },
+    {
+      "from": "receipt:lifecycle-0EA28A0EBC5D23D3536BABB1296007DBA50E0E3B3EA84862B32A20C32FD16B22.json",
+      "rel": "executedOn",
+      "to": "network:testXRP"
+    },
+    {
+      "from": "receipt:lifecycle-0EA28A0EBC5D23D3536BABB1296007DBA50E0E3B3EA84862B32A20C32FD16B22.json",
+      "rel": "flareStateFrom",
+      "to": "network:coston2-fork"
+    },
+    {
+      "from": "receipt:lifecycle-0EA28A0EBC5D23D3536BABB1296007DBA50E0E3B3EA84862B32A20C32FD16B22.json",
+      "rel": "records",
+      "to": "tx:xrpl:0EA28A0EBC5D23D3536BABB1296007DBA50E0E3B3EA84862B32A20C32FD16B22"
+    },
+    {
+      "from": "receipt:lifecycle-28B48DC36ACFDA1C22E97C033941355E4680B8F28964DB78F68AA44B41FBEFF4.json",
+      "rel": "executedOn",
+      "to": "network:testXRP"
+    },
+    {
+      "from": "receipt:lifecycle-28B48DC36ACFDA1C22E97C033941355E4680B8F28964DB78F68AA44B41FBEFF4.json",
+      "rel": "flareStateFrom",
+      "to": "network:coston2-fork"
+    },
+    {
+      "from": "receipt:lifecycle-28B48DC36ACFDA1C22E97C033941355E4680B8F28964DB78F68AA44B41FBEFF4.json",
+      "rel": "records",
+      "to": "tx:xrpl:28B48DC36ACFDA1C22E97C033941355E4680B8F28964DB78F68AA44B41FBEFF4"
+    },
+    {
+      "from": "receipt:lifecycle-85EA5E5BB4381FCB6500C57E08F77E35FA349E31E79F5DEE9E6E941F62FA23EA.json",
+      "rel": "derivedThrough",
+      "to": "contract:0xdd8aa7a4f43f01258a426a30d02032821de9bc6e"
+    },
+    {
+      "from": "receipt:lifecycle-85EA5E5BB4381FCB6500C57E08F77E35FA349E31E79F5DEE9E6E941F62FA23EA.json",
+      "rel": "derivedThrough",
+      "to": "extension:66164"
+    },
+    {
+      "from": "receipt:lifecycle-85EA5E5BB4381FCB6500C57E08F77E35FA349E31E79F5DEE9E6E941F62FA23EA.json",
+      "rel": "executedOn",
+      "to": "network:testXRP"
+    },
+    {
+      "from": "receipt:lifecycle-85EA5E5BB4381FCB6500C57E08F77E35FA349E31E79F5DEE9E6E941F62FA23EA.json",
+      "rel": "flareStateFrom",
+      "to": "network:coston2-fork"
+    },
+    {
+      "from": "receipt:lifecycle-85EA5E5BB4381FCB6500C57E08F77E35FA349E31E79F5DEE9E6E941F62FA23EA.json",
+      "rel": "records",
+      "to": "tx:xrpl:85EA5E5BB4381FCB6500C57E08F77E35FA349E31E79F5DEE9E6E941F62FA23EA"
+    },
+    {
+      "from": "receipt:lifecycle-907C3E3D0E6F96697219880F5868F3392D9CAD7952C6011095A7E6ACD9A3E3D1.json",
+      "rel": "derivedThrough",
+      "to": "contract:0xdd8aa7a4f43f01258a426a30d02032821de9bc6e"
+    },
+    {
+      "from": "receipt:lifecycle-907C3E3D0E6F96697219880F5868F3392D9CAD7952C6011095A7E6ACD9A3E3D1.json",
+      "rel": "derivedThrough",
+      "to": "extension:66164"
+    },
+    {
+      "from": "receipt:lifecycle-907C3E3D0E6F96697219880F5868F3392D9CAD7952C6011095A7E6ACD9A3E3D1.json",
+      "rel": "executedOn",
+      "to": "network:testXRP"
+    },
+    {
+      "from": "receipt:lifecycle-907C3E3D0E6F96697219880F5868F3392D9CAD7952C6011095A7E6ACD9A3E3D1.json",
+      "rel": "flareStateFrom",
+      "to": "network:coston2-fork"
+    },
+    {
+      "from": "receipt:lifecycle-907C3E3D0E6F96697219880F5868F3392D9CAD7952C6011095A7E6ACD9A3E3D1.json",
+      "rel": "records",
+      "to": "tx:xrpl:907C3E3D0E6F96697219880F5868F3392D9CAD7952C6011095A7E6ACD9A3E3D1"
+    },
+    {
+      "from": "receipt:lifecycle-A10C7C3C6C644FB97B97F796C356F8CBFC8F58B19931859E470B3050AFF8399D.json",
+      "rel": "derivedThrough",
+      "to": "contract:0x3ffa63a3bf21a626c1b391d2577b1800e67f5be0"
+    },
+    {
+      "from": "receipt:lifecycle-A10C7C3C6C644FB97B97F796C356F8CBFC8F58B19931859E470B3050AFF8399D.json",
+      "rel": "derivedThrough",
+      "to": "extension:66244"
+    },
+    {
+      "from": "receipt:lifecycle-A10C7C3C6C644FB97B97F796C356F8CBFC8F58B19931859E470B3050AFF8399D.json",
+      "rel": "executedOn",
+      "to": "network:testXRP"
+    },
+    {
+      "from": "receipt:lifecycle-A10C7C3C6C644FB97B97F796C356F8CBFC8F58B19931859E470B3050AFF8399D.json",
+      "rel": "flareStateFrom",
+      "to": "network:coston2-fork"
+    },
+    {
+      "from": "receipt:lifecycle-A10C7C3C6C644FB97B97F796C356F8CBFC8F58B19931859E470B3050AFF8399D.json",
+      "rel": "records",
+      "to": "tx:xrpl:A10C7C3C6C644FB97B97F796C356F8CBFC8F58B19931859E470B3050AFF8399D"
+    },
+    {
+      "from": "receipt:lifecycle-A2E16620E86423A4E835B8AB6E9BF43C6B81123E977F5BD42F6EEDD2495C605C.json",
+      "rel": "derivedThrough",
+      "to": "contract:0x6d49c54d2f75214616a0964bd52c695384f1b6e2"
+    },
+    {
+      "from": "receipt:lifecycle-A2E16620E86423A4E835B8AB6E9BF43C6B81123E977F5BD42F6EEDD2495C605C.json",
+      "rel": "derivedThrough",
+      "to": "extension:66163"
+    },
+    {
+      "from": "receipt:lifecycle-A2E16620E86423A4E835B8AB6E9BF43C6B81123E977F5BD42F6EEDD2495C605C.json",
+      "rel": "executedOn",
+      "to": "network:testXRP"
+    },
+    {
+      "from": "receipt:lifecycle-A2E16620E86423A4E835B8AB6E9BF43C6B81123E977F5BD42F6EEDD2495C605C.json",
+      "rel": "flareStateFrom",
+      "to": "network:coston2-fork"
+    },
+    {
+      "from": "receipt:lifecycle-A2E16620E86423A4E835B8AB6E9BF43C6B81123E977F5BD42F6EEDD2495C605C.json",
+      "rel": "records",
+      "to": "tx:xrpl:A2E16620E86423A4E835B8AB6E9BF43C6B81123E977F5BD42F6EEDD2495C605C"
+    },
+    {
+      "from": "receipt:target-chain-8A1492D15309AEBA34ABDE3D03D2FAD5B735165435A3C90F8C6CAFCB571AB51A.json",
+      "rel": "executedOn",
+      "to": "network:testXRP"
+    },
+    {
+      "from": "receipt:target-chain-8A1492D15309AEBA34ABDE3D03D2FAD5B735165435A3C90F8C6CAFCB571AB51A.json",
+      "rel": "flareStateFrom",
+      "to": "network:coston2"
+    },
+    {
+      "from": "receipt:target-chain-8A1492D15309AEBA34ABDE3D03D2FAD5B735165435A3C90F8C6CAFCB571AB51A.json",
+      "rel": "records",
+      "to": "tx:xrpl:8A1492D15309AEBA34ABDE3D03D2FAD5B735165435A3C90F8C6CAFCB571AB51A"
+    },
+    {
+      "from": "receipt:xrpl-adversarial.json",
+      "rel": "executedOn",
+      "to": "network:testXRP"
+    },
+    {
+      "from": "receipt:xrpl-payment-7500DA52CAB254DBD1B64BC88975B2D01C4DFDF309A6C78398C57142493759AF.json",
+      "rel": "executedOn",
+      "to": "network:testXRP"
+    },
+    {
+      "from": "receipt:xrpl-payment-7500DA52CAB254DBD1B64BC88975B2D01C4DFDF309A6C78398C57142493759AF.json",
+      "rel": "records",
+      "to": "tx:xrpl:7500DA52CAB254DBD1B64BC88975B2D01C4DFDF309A6C78398C57142493759AF"
+    },
+    {
+      "from": "receipt:xrpl-set-regular-key-03445ECA6C42EA46BDF2AA0CBAA348C0A889529334798126602BDC9477E3C82F.json",
+      "rel": "executedOn",
+      "to": "network:testXRP"
+    },
+    {
+      "from": "receipt:xrpl-set-regular-key-03445ECA6C42EA46BDF2AA0CBAA348C0A889529334798126602BDC9477E3C82F.json",
+      "rel": "records",
+      "to": "tx:xrpl:03445ECA6C42EA46BDF2AA0CBAA348C0A889529334798126602BDC9477E3C82F"
+    }
+  ]
+}

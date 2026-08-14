@@ -1,11 +1,18 @@
 # Final review handoff
 
 Branch: `build/signet-autonomous`
-Run status: `ready_for_review`
-Date: 2026-08-11
+Run status: `ready_for_submission`
+Date: 2026-08-11, revised 2026-08-14 after gate B and phase 14
 
-Phases 00 through 13 have run. Phase 14 submission and Phase 15 production expansion were out of
-scope for this run and were not executed.
+Phases 00 through 14 have run. Phase 15 production expansion is out of scope and was not executed.
+
+Two things changed after this file was first written, and both are load-bearing:
+
+1. **Gate B** closed the arbitrary-signature gap that the first version of this file led with, and is
+   deployed on Coston2 as extension `66244`. The section below is rewritten accordingly.
+2. **GCP Confidential Space was downgraded** from a submission blocker to a stretch. It is not
+   attempted here and no hardware-attestation claim is made anywhere. The checklist for doing it
+   later is [`docs/run/GATE_A_STRETCH.md`](GATE_A_STRETCH.md).
 
 ## Start here
 
@@ -29,19 +36,37 @@ pnpm --filter @signet/verifier verify:receipt <transaction hash from evidence/re
 
 [`docs/threat-model.md`](../threat-model.md).
 
-Thirteen threats are closed with a stated mechanism and a proof for each. **One is not.** A
-coordinator that reports a genuine, active FAssets obligation while naming a destination of its own
-choosing receives a real signature over a real transaction paying that destination. `decide()` trusts
-the redemption snapshot it is handed, and the obligation hash covers only the obligation's identity,
-so nothing catches the substitution before signing.
+Eighteen threats are closed with a stated mechanism and a proof for each. The one that was open when
+this file was first written, a coordinator obtaining a signature for a destination it chose, is now
+closed by gate B and the closure is structural.
 
-PRD section 22.3 lists "coordinator cannot obtain arbitrary signature" as the mitigation for exactly
-this adversary. **It is not implemented.** What exists is attributability, and it works: the
-authorization commitment covers every payment field, phase 11's verifier recomputes it from public
-data, and the corruption tests prove a moved destination is caught. That is detection after a
-signature exists, not prevention.
+`SignetFccInstructionSender.authorizeRedemption(uint256 requestId, uint32 generation)` takes a
+request id and a generation. It resolves the obligation through
+`FAssetsAdapter.readCanonicalRedemptionById`, which reads the agent from the request rather than
+accepting one, refuses anything FAssets does not report `ACTIVE`, checks the binding and the registry
+action, and ABI-encodes the canonical instruction itself. **There is no parameter through which a
+caller could express a payment field.** A caller-authored obligation now fails to decode on the FCC
+path, and the FCC test asserts it fails as a decode error rather than a policy refusal. The
+standalone `cmd/signet-extension` CLI still accepts one from stdin and reaches no key; it is open
+finding 3 in the threat model.
 
-If you read one thing and disagree with one thing, let it be this.
+Live on Coston2 as sender
+[`0x3FFA63a3bf21a626c1B391D2577b1800e67F5Be0`](https://coston2.testnet.flarescan.com/address/0x3FFA63a3bf21a626c1B391D2577b1800e67F5Be0),
+extension id `66244`. Check it yourself:
+
+```bash
+cast call 0x1a9C4A0f9D76c0b1D91d22E24E573a9b377618aE \
+  "getTeeExtensionInstructionsSender(uint256)(address)" 66244 \
+  --rpc-url https://coston2-api.flare.network/ext/C/rpc
+```
+
+**What this does not buy.** The extension still runs as a local process with no attestation, so an
+operator with host access can bypass the contract path by running its own binary against its own key.
+Gate B removes the protocol-level path to an arbitrary signature. It does not create isolation
+between the decider and the host. That is what a real TEE would buy and this deliverable does not
+have one.
+
+If you read one thing and disagree with one thing, let it be the paragraph directly above.
 
 ## What is real
 
@@ -54,6 +79,7 @@ If you read one thing and disagree with one thing, let it be this.
 | real | the Signet contracts, deployed on Coston2 and exercised through their real entry points |
 | real | a Coston2 FAssets redemption we created as a minter, and a full minting cycle to get there |
 | real | FDC end to end: request paid to FdcHub, round finalized, Merkle proof, `verifyXRPPayment` accepted on chain |
+| real | the gate B instruction sender, deployed and registered on the live Coston2 `FlareTeeManager` as extension `66244` |
 | local | the extension's execution environment. A process. **No TEE, no attestation, nothing hardware-backed, and nothing claims otherwise.** |
 
 ## Phase status
@@ -73,7 +99,9 @@ If you read one thing and disagree with one thing, let it be this.
 | 10 Target-chain lifecycle | PARTIAL, Signet's leg verified on chain; own-agent settlement out of scope by organizer guidance, not pending |
 | 11 Independent verifier | PASS |
 | 12 Operator and proof UI | PASS, deployed |
-| 13 Hardening | PASS, one high risk open and accepted |
+| 13 Hardening | PASS, the high risk it recorded is now closed by gate B |
+| gate B Canonical requestId-only derivation | PASS, deployed on Coston2 as extension `66244` |
+| 14 Submission | PASS, package assembled; nothing submitted externally |
 
 ## The most important thing this run found
 
@@ -177,6 +205,7 @@ These are here because a handoff that lists only successes is not a handoff.
 |---|---|
 | SignetRegistry | [`0x381bdE5961695914B28B16f405d51E8acB877f6e`](https://coston2.testnet.flarescan.com/address/0x381bdE5961695914B28B16f405d51E8acB877f6e) |
 | SignetInstructionSender | [`0xd6cF30B6411DB8465147FfDcF0e0418030B4b9CA`](https://coston2.testnet.flarescan.com/address/0xd6cF30B6411DB8465147FfDcF0e0418030B4b9CA) |
+| SignetFccInstructionSender (gate B) | [`0x3FFA63a3bf21a626c1B391D2577b1800e67F5Be0`](https://coston2.testnet.flarescan.com/address/0x3FFA63a3bf21a626c1B391D2577b1800e67F5Be0), extension `66244` |
 | Coston2 redemption | request 44928272 |
 | proof page | https://signet-proof.pages.dev/ |
 
@@ -200,11 +229,12 @@ work made up for it.
 | `extension/cmd/signet-fcc-extension` | implements the pinned scaffold's extension contract |
 | op-type | `SIGNET_REDEMPTION`, commands `AUTHORIZE_REDEMPTION` and `HEALTH_CHECK` |
 | no wildcard | asserted by test: a wildcard is the shape of an arbitrary signing endpoint |
-| extension id | **66164**, registered on the live Coston2 `FlareTeeManager` |
-| instruction sender | `0xDd8aA7A4f43f01258A426a30d02032821De9bc6e` |
-| TEE machine | **none.** `getActiveTeeMachines(66164)` returns empty |
+| extension id | **66244**, registered on the live Coston2 `FlareTeeManager` |
+| instruction sender | `0x3FFA63a3bf21a626c1B391D2577b1800e67F5Be0` |
+| TEE machine | **none.** `getActiveTeeMachines(66244)` returns empty |
 | attestation | **none.** The extension runs as a local process; FTDC rejects simulated attestation |
 | positive path | takes the payment it signs **from the FCC ActionResult**, not from the CLI |
+| superseded | `66163` and `66164`, both retired and recorded with reasons in `deployments/coston2.json`. Neither ever carried a live TEE machine, so no instruction was ever executed through either |
 
 ## Claims
 
@@ -232,4 +262,5 @@ The production claim, which is **architecture and not demonstrated**:
 - Any claim of exactly-once payment against an independent racer. Signet enforces at-most-once by
   itself; the window between observing and validating cannot be closed. `docs/guarantee.md` says so
   in the first paragraph rather than in a footnote.
-- Any claim that the coordinator cannot obtain an arbitrary signature. It can.
+- Any claim that gate B protects the key from the host. It constrains what the *contract* will
+  instruct. A process with host access needs no instruction.

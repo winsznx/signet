@@ -52,6 +52,12 @@ Rated high, accepted for this build, blocking for production. Closing it means t
 reading FAssets itself rather than accepting a snapshot, which is architecture work rather than
 hardening.
 
+> **Superseded 2026-08-14.** The paragraph above was true when this phase ran and is kept as written
+> rather than edited, because a phase report that silently improves itself is worthless. The gap it
+> describes was closed afterwards by gate B, which did exactly the architecture work it names: the
+> signing boundary now reads FAssets itself. See [`gate-b.md`](gate-b.md). The threat is recorded as
+> closed in [`../threat-model.md`](../threat-model.md) and the residual is restated there.
+
 Five medium risks are accepted with stated reasons: the signing library, the plaintext blob,
 receipt-supplied decision context, the head-following fork, and fixture-covered tag and ticket modes.
 

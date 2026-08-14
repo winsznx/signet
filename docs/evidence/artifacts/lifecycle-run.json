@@ -2,27 +2,27 @@
   "fork": {
     "rpc": "http://127.0.0.1:8546",
     "chainId": 114,
-    "forkBlock": 33947158,
+    "forkBlock": 34039607,
     "assetManager": "0xc1Ca88b937d0b528842F95d5731ffB586f4fbDFA"
   },
   "extension": {
-    "codeHash": "0x3e3b9acd026d4b55354bd9eabfa56893912778ede4b7793c924b9d54c7416760",
+    "codeHash": "0xd371b022c1336059a5daad0152d4dfe03408ccfd806242d6b597362c5a92087e",
     "extensionId": "1",
     "policyVersion": 1
   },
   "obligation": {
-    "requestId": "45002076",
+    "requestId": "45430134",
     "agentVault": "0x165c62b4531d28e34c68a8b2acbf4d0421e4e028",
     "paymentAddress": "rpa8bBa8GS1Zit6y9PcpQbahkqFahpWMyb",
-    "paymentReference": "0x4642505266410002000000000000000000000000000000000000000002aead5c",
+    "paymentReference": "0x4642505266410002000000000000000000000000000000000000000002b53576",
     "valueUBA": "10000000",
     "feeUBA": "50000",
-    "obligationHashOnChain": "0xec917eac8a1969a74eb634a535415d8b7f6aa0ec0423ac2e11eb55fc774126f9"
+    "obligationHashOnChain": "0xcfa36a2d4c4731eaa2b8f1f2de7a895d8946467e01e2ecd1708bac999ef6f8db"
   },
   "decision": {
     "kind": "authorize",
-    "obligationHash": "0xec917eac8a1969a74eb634a535415d8b7f6aa0ec0423ac2e11eb55fc774126f9",
-    "authorizationCommitment": "0xc09d5b399d21a8178e4da7ecf5223f546e5bed5a5cf88bb4b0e7d1f5cff8c952",
+    "obligationHash": "0xcfa36a2d4c4731eaa2b8f1f2de7a895d8946467e01e2ecd1708bac999ef6f8db",
+    "authorizationCommitment": "0xd263d457e29895ea620e5c2e74d84784dcea222f1a3935bb5d0400745d68531c",
     "payment": {
       "TransactionType": "Payment",
       "Account": "rPvarExLQuuqtkMBfDHp3pNnESZ5HByXta",
@@ -30,24 +30,24 @@
       "Amount": "9950000",
       "Fee": "10",
       "Flags": 0,
-      "LastLedgerSequence": 19834090,
+      "LastLedgerSequence": 19895521,
       "Memos": [
         {
           "Memo": {
-            "MemoData": "4642505266410002000000000000000000000000000000000000000002AEAD5C"
+            "MemoData": "4642505266410002000000000000000000000000000000000000000002B53576"
           }
         }
       ],
-      "Sequence": 19822153
+      "Sequence": 19822154
     }
   },
   "bindingId": "0x515074b603f51eff149637214bab52fe41a53eb025cd5e32ac5741b83a875f82",
   "xrpl": {
     "network": "xrpl-testnet",
     "source": "rPvarExLQuuqtkMBfDHp3pNnESZ5HByXta",
-    "txHash": "907C3E3D0E6F96697219880F5868F3392D9CAD7952C6011095A7E6ACD9A3E3D1",
-    "finalState": "VALIDATED_FAILURE",
-    "validatedLedger": 19834056,
+    "txHash": "A10C7C3C6C644FB97B97F796C356F8CBFC8F58B19931859E470B3050AFF8399D",
+    "finalState": "VALIDATED_SUCCESS",
+    "validatedLedger": 19895487,
     "replayEngineResult": "tefPAST_SEQ"
   },
   "fdc": {
@@ -57,47 +57,47 @@
     {
       "name": "fork started",
       "ok": true,
-      "note": "coston2 @ 33947158"
+      "note": "coston2 @ 34039607"
     },
     {
       "name": "extension built and measured",
       "ok": true,
-      "note": "0x3e3b9acd026d4b55… over 3942034 bytes"
+      "note": "0xd371b022c1336059… over 3942034 bytes"
     },
     {
       "name": "signet deployed on the fork",
       "ok": true,
-      "note": "registry 0x62822bFD0B059A918f8eC5b8f0d4691E45347f1b"
+      "note": "registry 0xe1c957bd65265AC07ffd86F17A1d337637152C17"
     },
     {
       "name": "fassets produced an obligation for our destination",
       "ok": true,
-      "note": "request 45002076, agent 0x165c62b4531d28e34c68a8b2acbf4d0421e4e028"
+      "note": "request 45430134, agent 0x165c62b4531d28e34c68a8b2acbf4d0421e4e028"
     },
     {
       "name": "action opened by the pinned instruction sender",
       "ok": true,
-      "note": "0xec917eac8a1969a74eb634a535415d8b7f6aa0ec0423ac2e11eb55fc774126f9"
+      "note": "0xcfa36a2d4c4731eaa2b8f1f2de7a895d8946467e01e2ecd1708bac999ef6f8db"
     },
     {
       "name": "the underlying observation completed across independent endpoints",
       "ok": true,
-      "note": "2 sources at ledger 19834050, 0 matching payment(s)"
+      "note": "2 sources at ledger 19895481, 0 matching payment(s)"
     },
     {
       "name": "obligation field firstUnderlyingBlock is the one fassets emitted",
       "ok": true,
-      "note": "19833935"
+      "note": "19895402"
     },
     {
       "name": "obligation field lastUnderlyingBlock is the one fassets emitted",
       "ok": true,
-      "note": "19834534"
+      "note": "19895947"
     },
     {
       "name": "obligation field lastUnderlyingTimestamp is the one fassets emitted",
       "ok": true,
-      "note": "1786496653"
+      "note": "1786691253"
     },
     {
       "name": "obligation field valueUBA is the one fassets emitted",
@@ -112,7 +112,7 @@
     {
       "name": "obligation field paymentReference is the one fassets emitted",
       "ok": true,
-      "note": "0x4642505266410002000000000000000000000000000000000000000002aead5c"
+      "note": "0x4642505266410002000000000000000000000000000000000000000002b53576"
     },
     {
       "name": "obligation field paymentAddress is the one fassets emitted",
@@ -152,7 +152,7 @@
     {
       "name": "obligation hash agrees across solidity, go and typescript",
       "ok": true,
-      "note": "0xec917eac8a1969a74eb634a535415d8b7f6aa0ec0423ac2e11eb55fc774126f9"
+      "note": "0xcfa36a2d4c4731eaa2b8f1f2de7a895d8946467e01e2ecd1708bac999ef6f8db"
     },
     {
       "name": "destination came from fassets",
@@ -167,7 +167,7 @@
     {
       "name": "memo carries the fassets payment reference",
       "ok": true,
-      "note": "4642505266410002000000000000000000000000000000000000000002aead5c"
+      "note": "4642505266410002000000000000000000000000000000000000000002b53576"
     },
     {
       "name": "source is the bound account",
@@ -187,12 +187,12 @@
     {
       "name": "moving the destination does not change the obligation identity",
       "ok": true,
-      "note": "0xec917eac8a1969a74eb634a535415d8b7f6aa0ec0423ac2e11eb55fc774126f9"
+      "note": "0xcfa36a2d4c4731eaa2b8f1f2de7a895d8946467e01e2ecd1708bac999ef6f8db"
     },
     {
       "name": "moving the destination breaks the authorization commitment",
       "ok": true,
-      "note": "0xc09d5b399d21a817… → 0xf389a2d379b99b26…"
+      "note": "0xd263d457e29895ea… → 0xbb414fc9dd365e11…"
     },
     {
       "name": "attack amount raised: go and reference agree",
@@ -392,7 +392,7 @@
     {
       "name": "the signed blob decodes to exactly the authorized payment",
       "ok": true,
-      "note": "907C3E3D0E6F96697219880F5868F3392D9CAD7952C6011095A7E6ACD9A3E3D1"
+      "note": "A10C7C3C6C644FB97B97F796C356F8CBFC8F58B19931859E470B3050AFF8399D"
     },
     {
       "name": "the signed blob carries the fassets reference unchanged",
@@ -412,17 +412,17 @@
     {
       "name": "signed transaction persisted before first submission",
       "ok": true,
-      "note": "./.runtime/xrpl/submissions/907C3E3D0E6F96697219880F5868F3392D9CAD7952C6011095A7E6ACD9A3E3D1.json"
+      "note": "./.runtime/xrpl/submissions/A10C7C3C6C644FB97B97F796C356F8CBFC8F58B19931859E470B3050AFF8399D.json"
     },
     {
       "name": "provisional response received",
       "ok": true,
-      "note": "tecUNFUNDED_PAYMENT (not a result)"
+      "note": "tesSUCCESS (not a result)"
     },
     {
       "name": "payment reached validated success on xrpl testnet",
-      "ok": false,
-      "note": "VALIDATED_FAILURE at ledger 19834056"
+      "ok": true,
+      "note": "VALIDATED_SUCCESS at ledger 19895487"
     },
     {
       "name": "resubmitting the identical blob cannot pay twice",
