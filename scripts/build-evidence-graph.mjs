@@ -19,6 +19,31 @@ const ledger = JSON.parse(readFileSync(join(REPO_ROOT, "evidence", "claim-ledger
 const deployments = JSON.parse(readFileSync(join(REPO_ROOT, "deployments", "coston2.json"), "utf8"));
 const RECEIPT_DIR = join(REPO_ROOT, "evidence", "receipts");
 
+/**
+ * How strong is the link this edge represents?
+ *
+ * The reason these exist: two pieces of evidence drawn next to each other read as one continuous
+ * transaction, and most of Signet's evidence is not continuous. A payment on XRPL and an obligation
+ * on a Coston2 fork are both real and are not the same chain. Labelling the *edge* rather than the
+ * nodes is what stops a diagram implying a contiguity that never happened.
+ */
+export const EVIDENCE_CLASS = {
+  /** Same chain, same execution, one transaction leading to the next. */
+  LIVE_CONTIGUOUS: "LIVE_CONTIGUOUS",
+  /** Both sides live, but on different chains or different executions. Not one flow. */
+  LIVE_INDEPENDENT: "LIVE_INDEPENDENT",
+  /** Linked by a hash, commitment or signature that a third party can recompute. */
+  CRYPTOGRAPHICALLY_LINKED: "CRYPTOGRAPHICALLY_LINKED",
+  /** Reproducible offline from committed inputs: fixtures, conformance, replay. */
+  DETERMINISTIC_REPLAY: "DETERMINISTIC_REPLAY",
+  /** Real deployed bytecode and state, executed on a fork rather than the live chain. */
+  FORK_DERIVED: "FORK_DERIVED",
+  /** Ran, but not in the trust environment the production design calls for. */
+  SIMULATED: "SIMULATED",
+  /** Architecture only. Nothing was executed. */
+  DESIGN_ONLY: "DESIGN_ONLY",
+};
+
 const nodes = new Map();
 const edges = [];
 
@@ -27,10 +52,11 @@ const node = (id, type, attrs = {}) => {
   else Object.assign(nodes.get(id), attrs);
   return id;
 };
-const edge = (from, rel, to) => {
+const edge = (from, rel, to, evidenceClass) => {
   if (!from || !to) return;
+  if (!evidenceClass) throw new Error(`edge ${from} -${rel}-> ${to} has no evidence class`);
   const key = `${from}|${rel}|${to}`;
-  if (!edges.some((e) => `${e.from}|${e.rel}|${e.to}` === key)) edges.push({ from, rel, to });
+  if (!edges.some((e) => `${e.from}|${e.rel}|${e.to}` === key)) edges.push({ from, rel, to, evidenceClass });
 };
 
 const explorer = {
@@ -60,11 +86,11 @@ const contractNode = (key, address, label, txs = {}) => {
     network: "coston2",
     explorer: explorer.coston2Address(address),
   });
-  edge(id, "deployedOn", "network:coston2");
+  edge(id, "deployedOn", "network:coston2", EVIDENCE_CLASS.LIVE_CONTIGUOUS);
   for (const [role, hash] of Object.entries(txs)) {
     if (!hash) continue;
     const t = node(`tx:coston2:${hash}`, "transaction", { network: "coston2", hash, explorer: explorer.coston2Tx(hash) });
-    edge(id, `createdBy:${role}`, t);
+    edge(id, `createdBy:${role}`, t, EVIDENCE_CLASS.LIVE_CONTIGUOUS);
   }
   return id;
 };
@@ -90,8 +116,8 @@ if (fccSender) {
     teeMachineRegistered: fcc.teeMachineRegistered === true,
     attestation: fcc.teeMachineRegistered === true ? "unknown" : "none",
   });
-  edge(ext, "instructionSender", fccSender);
-  edge(ext, "registeredOn", "network:coston2");
+  edge(ext, "instructionSender", fccSender, EVIDENCE_CLASS.LIVE_CONTIGUOUS);
+  edge(ext, "registeredOn", "network:coston2", EVIDENCE_CLASS.LIVE_CONTIGUOUS);
 }
 for (const old of fcc.superseded ?? []) {
   const id = node(`extension:${old.extensionId}`, "fccExtension", {
@@ -101,7 +127,7 @@ for (const old of fcc.superseded ?? []) {
     reason: old.reason,
     teeMachineRegistered: false,
   });
-  if (fcc.extensionId) edge(id, "supersededBy", `extension:${fcc.extensionId}`);
+  if (fcc.extensionId) edge(id, "supersededBy", `extension:${fcc.extensionId}`, EVIDENCE_CLASS.LIVE_CONTIGUOUS);
   // Retired senders stay in the graph. They are still deployed, older receipts still point at them,
   // and dropping them would silently orphan that history.
   const retiredSender = contractNode(
@@ -111,7 +137,7 @@ for (const old of fcc.superseded ?? []) {
   );
   if (retiredSender) {
     nodes.get(retiredSender).retired = true;
-    edge(id, "instructionSender", retiredSender);
+    edge(id, "instructionSender", retiredSender, EVIDENCE_CLASS.LIVE_CONTIGUOUS);
   }
 }
 
@@ -125,7 +151,7 @@ for (const [key, entry] of Object.entries(deployments.protocol ?? {})) {
     upstream: true,
     explorer: explorer.coston2Address(entry.address),
   });
-  edge(id, "deployedOn", "network:coston2");
+  edge(id, "deployedOn", "network:coston2", EVIDENCE_CLASS.LIVE_CONTIGUOUS);
 }
 
 // ---------------------------------------------------------------- receipts
@@ -152,9 +178,9 @@ for (const file of receiptFiles) {
   });
 
   const net = networkNode(r.network);
-  if (net) edge(id, "executedOn", net);
-  if (typeof r.flareChain === "string" && r.flareChain.startsWith("coston2-fork")) edge(id, "flareStateFrom", "network:coston2-fork");
-  else if (r.flareChain === "coston2") edge(id, "flareStateFrom", "network:coston2");
+  if (net) edge(id, "executedOn", net, EVIDENCE_CLASS.LIVE_CONTIGUOUS);
+  if (typeof r.flareChain === "string" && r.flareChain.startsWith("coston2-fork")) edge(id, "flareStateFrom", "network:coston2-fork", EVIDENCE_CLASS.FORK_DERIVED);
+  else if (r.flareChain === "coston2") edge(id, "flareStateFrom", "network:coston2", EVIDENCE_CLASS.LIVE_INDEPENDENT);
 
   if (r.txHash) {
     const t = node(`tx:xrpl:${r.txHash}`, "transaction", {
@@ -164,11 +190,14 @@ for (const file of receiptFiles) {
       validatedLedger: r.validatedLedger ?? null,
       explorer: explorer.xrplTx(r.txHash),
     });
-    edge(id, "records", t);
+    edge(id, "records", t, EVIDENCE_CLASS.CRYPTOGRAPHICALLY_LINKED);
   }
   const sender = r.fcc?.registeredInstructionSender;
-  if (sender) edge(id, "derivedThrough", `contract:${sender.toLowerCase()}`);
-  if (r.fcc?.registeredExtensionId) edge(id, "derivedThrough", `extension:${r.fcc.registeredExtensionId}`);
+  // The derivation ran as a local process in every receipt we hold, so the link between a receipt
+  // and the FCC surface it names is SIMULATED, not contiguous with the chain.
+  const derivationClass = r.fcc?.teeMachineRegistered === true ? EVIDENCE_CLASS.LIVE_CONTIGUOUS : EVIDENCE_CLASS.SIMULATED;
+  if (sender) edge(id, "derivedThrough", `contract:${sender.toLowerCase()}`, derivationClass);
+  if (r.fcc?.registeredExtensionId) edge(id, "derivedThrough", `extension:${r.fcc.registeredExtensionId}`, derivationClass);
 }
 
 // ---------------------------------------------------------------- claims
@@ -181,12 +210,20 @@ for (const claim of ledger.claims) {
     limitationCount: claim.limitations?.length ?? 0,
     verifiedAt: claim.verifiedAt ?? null,
   });
-  for (const n of claim.network ?? []) edge(id, "provenOn", networkNode(n) ?? node(`network:${n}`, "network", { label: n }));
+  // A claim's link to a network is only as strong as the claim's own proof level.
+  const claimClass = claim.status !== "verified"
+    ? EVIDENCE_CLASS.DESIGN_ONLY
+    : claim.proofLevel >= 3
+      ? EVIDENCE_CLASS.LIVE_CONTIGUOUS
+      : claim.proofLevel === 2
+        ? EVIDENCE_CLASS.LIVE_INDEPENDENT
+        : EVIDENCE_CLASS.DETERMINISTIC_REPLAY;
+  for (const n of claim.network ?? []) edge(id, "provenOn", networkNode(n) ?? node(`network:${n}`, "network", { label: n }), claimClass);
   for (const reference of claim.evidence ?? []) {
     const path = reference.split("#")[0];
     const isReceipt = path.startsWith("evidence/receipts/");
     const target = isReceipt ? `receipt:${path.split("/").pop()}` : node(`artifact:${path}`, "artifact", { path, exists: existsSync(join(REPO_ROOT, path)) });
-    edge(id, "citedBy", target);
+    edge(id, "citedBy", target, isReceipt ? EVIDENCE_CLASS.CRYPTOGRAPHICALLY_LINKED : EVIDENCE_CLASS.DETERMINISTIC_REPLAY);
   }
 }
 
@@ -196,6 +233,9 @@ const graph = {
   generatedAt: ledger.generatedAt,
   generatedFrom: ["evidence/claim-ledger.json", "deployments/coston2.json", "evidence/receipts/*.json"],
   note: "Derived. Do not hand-edit: regenerate with `node scripts/build-evidence-graph.mjs`. The claim ledger is authoritative where they disagree.",
+  evidenceClasses: Object.fromEntries(
+    Object.keys(EVIDENCE_CLASS).map((k) => [k, edges.filter((e) => e.evidenceClass === k).length]),
+  ),
   counts: {
     nodes: nodes.size,
     edges: edges.length,

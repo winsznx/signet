@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-08-14T07:20:00Z",
+  "generatedAt": "2026-08-14T18:40:00Z",
   "generatedByPhase": "14",
   "proofLevels": {
     "0": "not executed",
@@ -109,9 +109,10 @@
       "evidence": [],
       "verifiedAt": null,
       "limitations": [
-        "V0 runs a simulated TEE. Simulated execution is not hardware attestation and must be labelled as simulated wherever it is shown.",
-        "Requires a real GCP Confidential Space deployment, which is out of scope for this run.",
-        "Extension 66248 is registered on live Coston2, but no TEE machine is registered for it: FTDC accepts only GCP_AMD_SEV attestation, it rejects simulated attestation, and no Confidential Space VM was available. Simulated execution is labelled simulated everywhere it appears. The route to closing this is docs/run/GATE_A_STRETCH.md."
+        "V0 runs a simulated TEE. Simulated execution is not hardware attestation and is labelled as simulated wherever it is shown.",
+        "Requires a real GCP Confidential Space deployment on AMD SEV-SNP. FTDC accepts only platform GCP_AMD_SEV; Azure, AWS Nitro, SGX and Intel TDX all fail the same check. Route: docs/run/GATE_A_STRETCH.md.",
+        "Measured rather than assumed on 2026-08-14: a running node reported platform TEST_PLATFORM, codeHash 0x194844cf… and attestation magic_pass, which the pinned docs name as the three rejection conditions. See docs/evidence/fcc-machine-attempt.md.",
+        "This is one of five separate FCC claims. Extension registered, machine registered, machine in production, simulated execution and hardware attestation are tracked independently and must never be collapsed into one another."
       ],
       "network": []
     },
@@ -626,6 +627,93 @@
         "The five gate B derivation tests exercise the read-only canonicalInstructionFor preview and the entry point selector. The state-changing authorizeRedemption is covered separately by the 12 dispatch-guard tests, added after a review found no test called it.",
         "The FCC extension sets Prior to nil unconditionally, so any request with generation > 0 is refused S018 regardless of merit and the replacement flow is dead code. Fail-closed, opens no fund-loss path, contradicts docs/evidence/phase-07.md. Open finding 2.",
         "fccinput.Decode does not reject trailing bytes although its doc comment says it does, and the corresponding test was written to accept either outcome. Not exploitable while the message bytes are built solely by abi.encode on chain. Open finding 4."
+      ]
+    },
+    {
+      "id": "claim-fcc-extension-registered",
+      "wording": "Signet's FCC extension is registered on the live Coston2 FlareTeeManager as extension 66248, and the registry routes that extension to Signet's own instruction sender.",
+      "status": "verified",
+      "proofLevel": 3,
+      "network": [
+        "coston2"
+      ],
+      "evidence": [
+        "deployments/coston2.json",
+        "docs/evidence/gate-b.md",
+        "docs/evidence/fcc-machine-attempt.md"
+      ],
+      "verifiedAt": "2026-08-14T18:30:00Z",
+      "limitations": [
+        "Extension registration is not machine registration. A registered extension with no machine cannot execute anything: getRandomTeeIds reverts 0xd65ac61e before any instruction is sent.",
+        "Extensions 66163, 66164 and 66244 are superseded. Each is recorded with its retirement reason and each has an empty active machine set."
+      ]
+    },
+    {
+      "id": "claim-fcc-machine-registered",
+      "wording": "A TEE machine is registered for Signet's FCC extension.",
+      "status": "unavailable",
+      "proofLevel": 0,
+      "network": [],
+      "evidence": [],
+      "verifiedAt": null,
+      "limitations": [
+        "No machine is registered. getActiveTeeMachines(66248) returns an empty set, and the same is true of every superseded Signet extension.",
+        "Registration was attempted on the live chain on 2026-08-14 and reverted OwnerNotAllowed: MachineManager.register() is gated on an owner allowlist Flare maintains, and the Signet deployer is not on it. Recorded in docs/evidence/fcc-machine-attempt.md.",
+        "Every other preflight passed first, including the shared indexer, proxy /ready and /info, a current lastSigningPolicyId and a publicly reachable HTTPS endpoint, so this is an access boundary rather than a configuration failure."
+      ]
+    },
+    {
+      "id": "claim-fcc-machine-production",
+      "wording": "Signet's TEE machine has reached PRODUCTION status on Flare's FCC.",
+      "status": "unavailable",
+      "proofLevel": 0,
+      "network": [],
+      "evidence": [],
+      "verifiedAt": null,
+      "limitations": [
+        "Not reached, and not reachable from here: promotion requires a registered machine, which is blocked by the owner allowlist above.",
+        "Promotion additionally requires real attestation. The node observed during the attempt reported platform TEST_PLATFORM and attestation magic_pass, both of which the pinned deployment docs name as rejection conditions.",
+        "This is a separate claim from machine registration on purpose. A registered machine is not a promoted one."
+      ]
+    },
+    {
+      "id": "claim-fcc-simulated-execution",
+      "wording": "Signet's decision has been executed through the FCC extension contract, as a local process in simulated mode, and the composed lifecycle takes the payment it signs from the FCC ActionResult rather than from a CLI.",
+      "status": "verified",
+      "proofLevel": 2,
+      "network": [
+        "coston2"
+      ],
+      "evidence": [
+        "docs/evidence/organizer-accepted-proof-boundary.md",
+        "docs/evidence/gate-b.md",
+        "scripts/fcc/extension.test.mjs",
+        "evidence/receipts/lifecycle-A10C7C3C6C644FB97B97F796C356F8CBFC8F58B19931859E470B3050AFF8399D.json"
+      ],
+      "verifiedAt": "2026-08-14T18:30:00Z",
+      "limitations": [
+        "Simulated. The extension ran as an ordinary local process, not in a Confidential Space VM. Every receipt records attestation as 'none: the extension ran as a local process'.",
+        "Simulated FCC execution is accepted for hackathon judging when disclosed as simulated. It is not evidence of hardware attestation, a registered machine, or a completed on-chain FCC instruction round trip, and it is deliberately a separate claim from all three.",
+        "No on-chain FCC instruction round trip has completed, because no machine exists to receive one."
+      ]
+    },
+    {
+      "id": "claim-machine-rotation-model",
+      "wording": "Signet specifies an explicit machine-rotation state machine in which no payment may be signed during an ambiguous binding transition, and holds it to property tests covering an old TEE with a new XRPL key, a new TEE with an old key, two simultaneously active bindings, a stale machine returning after rotation, a coordinator attempting payment mid-rotation, and receipt verification across a machine generation change.",
+      "status": "verified",
+      "proofLevel": 1,
+      "network": [],
+      "evidence": [
+        "reference/src/rotation.ts",
+        "reference/test/property/rotation.property.test.ts",
+        "docs/runbooks/rotation.md"
+      ],
+      "verifiedAt": "2026-08-14T18:40:00Z",
+      "limitations": [
+        "This is production architecture with an executable specification, not an implemented V0 control. Nothing in V0 forces a coordinator through the state machine.",
+        "Binding an FCC machine identity to an XRPL authority requires an attested machine identity, which this deployment does not have. FCC issues a new identity after a restart and offers no restore path.",
+        "The offline recovery authority that performs the XRPL SetRegularKey rotation and revocation is architecture and is not instantiated here.",
+        "What V0 does enforce is narrower and real: at most one FCC instruction dispatch per (requestId, generation), recorded on chain, and make doctor detects every rotation hazard from public state."
       ]
     }
   ]

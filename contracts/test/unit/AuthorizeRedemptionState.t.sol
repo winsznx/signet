@@ -331,6 +331,49 @@ contract AuthorizeRedemptionStateTest is Test {
         assertEq(tee.dispatches(), 1, "a restart re-opened the dispatch window");
     }
 
+    /// @notice A reverting TEE lookup must not burn the one allowed dispatch.
+    ///
+    /// The flag is written before the external call, so if `getRandomTeeIds` reverts the whole
+    /// transaction reverts and the write rolls back with it. That is the behaviour we want: no
+    /// instruction went out, so eligibility is still intact. Asserting it means a future refactor
+    /// that moves the write outside the revert scope, or catches the failure, gets caught here.
+    function test_aRevertingTeeLookupDoesNotConsumeDispatchEligibility() public {
+        tee.setMachineRegistered(false);
+
+        vm.expectRevert(CountingTeeRegistry.NoTeeMachine.selector);
+        sender.authorizeRedemption(REQUEST_ID, GENERATION);
+
+        assertFalse(sender.instructionDispatched(actionId), "a failed dispatch consumed the allowance");
+        assertEq(tee.dispatches(), 0, "nothing should have been dispatched");
+
+        // And the obligation is still payable once a machine exists.
+        tee.setMachineRegistered(true);
+        sender.authorizeRedemption(REQUEST_ID, GENERATION);
+        assertEq(tee.dispatches(), 1, "a recoverable failure permanently blocked a legitimate payment");
+    }
+
+    /// @notice ...and the reverse: once consumed, a reverting lookup cannot reopen it.
+    function test_aRevertingTeeLookupCannotReopenDispatchEligibility() public {
+        tee.setMachineRegistered(true);
+        sender.authorizeRedemption(REQUEST_ID, GENERATION);
+        assertTrue(sender.instructionDispatched(actionId), "precondition: the allowance is consumed");
+
+        // Machine disappears, comes back, disappears again. None of it clears the marker.
+        tee.setMachineRegistered(false);
+        vm.expectRevert(
+            abi.encodeWithSelector(SignetFccInstructionSender.InstructionAlreadyDispatched.selector, actionId)
+        );
+        sender.authorizeRedemption(REQUEST_ID, GENERATION);
+
+        tee.setMachineRegistered(true);
+        vm.expectRevert(
+            abi.encodeWithSelector(SignetFccInstructionSender.InstructionAlreadyDispatched.selector, actionId)
+        );
+        sender.authorizeRedemption(REQUEST_ID, GENERATION);
+
+        assertEq(tee.dispatches(), 1, "TEE availability churn reopened the dispatch window");
+    }
+
     /// @notice A different generation is a different action, and must not be blocked by this one.
     function test_aLaterGenerationIsItsOwnAction() public {
         tee.setMachineRegistered(true);

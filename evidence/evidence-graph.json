@@ -1,16 +1,25 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-08-14T07:20:00Z",
+  "generatedAt": "2026-08-14T18:40:00Z",
   "generatedFrom": [
     "evidence/claim-ledger.json",
     "deployments/coston2.json",
     "evidence/receipts/*.json"
   ],
   "note": "Derived. Do not hand-edit: regenerate with `node scripts/build-evidence-graph.mjs`. The claim ledger is authoritative where they disagree.",
+  "evidenceClasses": {
+    "LIVE_CONTIGUOUS": 52,
+    "LIVE_INDEPENDENT": 12,
+    "CRYPTOGRAPHICALLY_LINKED": 22,
+    "DETERMINISTIC_REPLAY": 110,
+    "FORK_DERIVED": 6,
+    "SIMULATED": 8,
+    "DESIGN_ONLY": 4
+  },
   "counts": {
-    "nodes": 148,
-    "edges": 202,
-    "claims": 29,
+    "nodes": 157,
+    "edges": 214,
+    "claims": 34,
     "receipts": 12
   },
   "nodes": [
@@ -114,6 +123,12 @@
       "id": "artifact:docs/evidence/artifacts/lifecycle-run.json",
       "type": "artifact",
       "path": "docs/evidence/artifacts/lifecycle-run.json",
+      "exists": true
+    },
+    {
+      "id": "artifact:docs/evidence/fcc-machine-attempt.md",
+      "type": "artifact",
+      "path": "docs/evidence/fcc-machine-attempt.md",
       "exists": true
     },
     {
@@ -249,6 +264,12 @@
       "exists": true
     },
     {
+      "id": "artifact:docs/runbooks/rotation.md",
+      "type": "artifact",
+      "path": "docs/runbooks/rotation.md",
+      "exists": true
+    },
+    {
       "id": "artifact:docs/source-lock.json",
       "type": "artifact",
       "path": "docs/source-lock.json",
@@ -315,6 +336,12 @@
       "exists": true
     },
     {
+      "id": "artifact:reference/src/rotation.ts",
+      "type": "artifact",
+      "path": "reference/src/rotation.ts",
+      "exists": true
+    },
+    {
       "id": "artifact:reference/test-vectors/decision-fixtures-v1-historical.json",
       "type": "artifact",
       "path": "reference/test-vectors/decision-fixtures-v1-historical.json",
@@ -336,6 +363,12 @@
       "id": "artifact:reference/test/property/observation.property.test.ts",
       "type": "artifact",
       "path": "reference/test/property/observation.property.test.ts",
+      "exists": true
+    },
+    {
+      "id": "artifact:reference/test/property/rotation.property.test.ts",
+      "type": "artifact",
+      "path": "reference/test/property/rotation.property.test.ts",
       "exists": true
     },
     {
@@ -557,6 +590,46 @@
       "verifiedAt": "2026-08-11T15:05:00Z"
     },
     {
+      "id": "claim:claim-fcc-extension-registered",
+      "type": "claim",
+      "status": "verified",
+      "proofLevel": 3,
+      "proofLevelLabel": "state-changing execution on a live target network",
+      "wording": "Signet's FCC extension is registered on the live Coston2 FlareTeeManager as extension 66248, and the registry routes that extension to Signet's own instruction sender.",
+      "limitationCount": 2,
+      "verifiedAt": "2026-08-14T18:30:00Z"
+    },
+    {
+      "id": "claim:claim-fcc-machine-production",
+      "type": "claim",
+      "status": "unavailable",
+      "proofLevel": 0,
+      "proofLevelLabel": "not executed",
+      "wording": "Signet's TEE machine has reached PRODUCTION status on Flare's FCC.",
+      "limitationCount": 3,
+      "verifiedAt": null
+    },
+    {
+      "id": "claim:claim-fcc-machine-registered",
+      "type": "claim",
+      "status": "unavailable",
+      "proofLevel": 0,
+      "proofLevelLabel": "not executed",
+      "wording": "A TEE machine is registered for Signet's FCC extension.",
+      "limitationCount": 3,
+      "verifiedAt": null
+    },
+    {
+      "id": "claim:claim-fcc-simulated-execution",
+      "type": "claim",
+      "status": "verified",
+      "proofLevel": 2,
+      "proofLevelLabel": "read-only verification against a live target network",
+      "wording": "Signet's decision has been executed through the FCC extension contract, as a local process in simulated mode, and the composed lifecycle takes the payment it signs from the FCC ActionResult rather than from a CLI.",
+      "limitationCount": 3,
+      "verifiedAt": "2026-08-14T18:30:00Z"
+    },
+    {
       "id": "claim:claim-fdc-proof-on-chain",
       "type": "claim",
       "status": "verified",
@@ -605,6 +678,16 @@
       "wording": "An independent verifier runs from a fresh clone with no credentials and checks a Signet receipt against sources this repository does not control: it asks every XRPL endpoint and requires agreement, reads the obligation from the Coston2 AssetManager over plain eth_call, recomputes the FAssets payment reference and the authorization commitment rather than believing the recorded ones, and reports UNVERIFIABLE with its own exit code for anything it cannot check. Ten deliberately corrupted bundles are each caught.",
       "limitationCount": 5,
       "verifiedAt": "2026-08-11T17:05:00Z"
+    },
+    {
+      "id": "claim:claim-machine-rotation-model",
+      "type": "claim",
+      "status": "verified",
+      "proofLevel": 1,
+      "proofLevelLabel": "executed locally against pinned source or fixtures",
+      "wording": "Signet specifies an explicit machine-rotation state machine in which no payment may be signed during an ambiguous binding transition, and holds it to property tests covering an old TEE with a new XRPL key, a new TEE with an old key, two simultaneously active bindings, a stale machine returning after rotation, a coordinator attempting payment mid-rotation, and receipt verification across a machine generation change.",
+      "limitationCount": 4,
+      "verifiedAt": "2026-08-14T18:40:00Z"
     },
     {
       "id": "claim:claim-production-exclusive-authority",
@@ -663,7 +746,7 @@
       "proofLevel": 0,
       "proofLevelLabel": "not executed",
       "wording": "Signet's signing key was protected from the host by hardware attestation.",
-      "limitationCount": 3,
+      "limitationCount": 4,
       "verifiedAt": null
     },
     {
@@ -1217,1012 +1300,1286 @@
     {
       "from": "claim:claim-canonical-requestid-derivation",
       "rel": "citedBy",
-      "to": "artifact:contracts/src/adapters/FAssetsAdapter.sol"
+      "to": "artifact:contracts/src/adapters/FAssetsAdapter.sol",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-canonical-requestid-derivation",
       "rel": "citedBy",
-      "to": "artifact:contracts/src/fcc/SignetFccInstructionSender.sol"
+      "to": "artifact:contracts/src/fcc/SignetFccInstructionSender.sol",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-canonical-requestid-derivation",
       "rel": "citedBy",
-      "to": "artifact:contracts/test/unit/AuthorizeRedemptionState.t.sol"
+      "to": "artifact:contracts/test/unit/AuthorizeRedemptionState.t.sol",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-canonical-requestid-derivation",
       "rel": "citedBy",
-      "to": "artifact:contracts/test/unit/CanonicalInstruction.t.sol"
+      "to": "artifact:contracts/test/unit/CanonicalInstruction.t.sol",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-canonical-requestid-derivation",
       "rel": "citedBy",
-      "to": "artifact:deployments/coston2.json"
+      "to": "artifact:deployments/coston2.json",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-canonical-requestid-derivation",
       "rel": "citedBy",
-      "to": "artifact:docs/evidence/gate-b.md"
+      "to": "artifact:docs/evidence/gate-b.md",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-canonical-requestid-derivation",
       "rel": "citedBy",
-      "to": "artifact:extension/internal/fccinput/canonical.go"
+      "to": "artifact:extension/internal/fccinput/canonical.go",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-canonical-requestid-derivation",
       "rel": "citedBy",
-      "to": "artifact:extension/internal/fccinput/override_test.go"
+      "to": "artifact:extension/internal/fccinput/override_test.go",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-canonical-requestid-derivation",
       "rel": "provenOn",
-      "to": "network:coston2"
+      "to": "network:coston2",
+      "evidenceClass": "LIVE_CONTIGUOUS"
     },
     {
       "from": "claim:claim-composed-lifecycle",
       "rel": "citedBy",
-      "to": "artifact:docs/evidence/artifacts/lifecycle-run.json"
+      "to": "artifact:docs/evidence/artifacts/lifecycle-run.json",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-composed-lifecycle",
       "rel": "citedBy",
-      "to": "artifact:docs/evidence/phase-09.md"
+      "to": "artifact:docs/evidence/phase-09.md",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-composed-lifecycle",
       "rel": "citedBy",
-      "to": "artifact:scripts/lifecycle/run.mjs"
+      "to": "artifact:scripts/lifecycle/run.mjs",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-composed-lifecycle",
       "rel": "citedBy",
-      "to": "receipt:lifecycle-0EA28A0EBC5D23D3536BABB1296007DBA50E0E3B3EA84862B32A20C32FD16B22.json"
+      "to": "receipt:lifecycle-0EA28A0EBC5D23D3536BABB1296007DBA50E0E3B3EA84862B32A20C32FD16B22.json",
+      "evidenceClass": "CRYPTOGRAPHICALLY_LINKED"
     },
     {
       "from": "claim:claim-composed-lifecycle",
       "rel": "citedBy",
-      "to": "receipt:lifecycle-28B48DC36ACFDA1C22E97C033941355E4680B8F28964DB78F68AA44B41FBEFF4.json"
+      "to": "receipt:lifecycle-28B48DC36ACFDA1C22E97C033941355E4680B8F28964DB78F68AA44B41FBEFF4.json",
+      "evidenceClass": "CRYPTOGRAPHICALLY_LINKED"
     },
     {
       "from": "claim:claim-composed-lifecycle",
       "rel": "provenOn",
-      "to": "network:coston2-fork"
+      "to": "network:coston2-fork",
+      "evidenceClass": "LIVE_INDEPENDENT"
     },
     {
       "from": "claim:claim-composed-lifecycle",
       "rel": "provenOn",
-      "to": "network:testXRP"
+      "to": "network:testXRP",
+      "evidenceClass": "LIVE_INDEPENDENT"
     },
     {
       "from": "claim:claim-contracts-cannot-authorize-arbitrary-fields",
       "rel": "citedBy",
-      "to": "artifact:contracts/src/SignetInstructionSender.sol"
+      "to": "artifact:contracts/src/SignetInstructionSender.sol",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-contracts-cannot-authorize-arbitrary-fields",
       "rel": "citedBy",
-      "to": "artifact:contracts/src/SignetRegistry.sol"
+      "to": "artifact:contracts/src/SignetRegistry.sol",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-contracts-cannot-authorize-arbitrary-fields",
       "rel": "citedBy",
-      "to": "artifact:contracts/test/unit/ObligationHashParity.t.sol"
+      "to": "artifact:contracts/test/unit/ObligationHashParity.t.sol",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-contracts-cannot-authorize-arbitrary-fields",
       "rel": "citedBy",
-      "to": "artifact:contracts/test/unit/SignetRegistry.t.sol"
+      "to": "artifact:contracts/test/unit/SignetRegistry.t.sol",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-contracts-cannot-authorize-arbitrary-fields",
       "rel": "citedBy",
-      "to": "artifact:docs/evidence/phase-06.md"
+      "to": "artifact:docs/evidence/phase-06.md",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-coordinator-durability",
       "rel": "citedBy",
-      "to": "artifact:coordinator/migrations/0001_initial.sql"
+      "to": "artifact:coordinator/migrations/0001_initial.sql",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-coordinator-durability",
       "rel": "citedBy",
-      "to": "artifact:coordinator/test/durability.test.mjs"
+      "to": "artifact:coordinator/test/durability.test.mjs",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-coordinator-durability",
       "rel": "citedBy",
-      "to": "artifact:docs/evidence/phase-08.md"
+      "to": "artifact:docs/evidence/phase-08.md",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-core-lifecycle",
       "rel": "provenOn",
-      "to": "network:coston2"
+      "to": "network:coston2",
+      "evidenceClass": "DESIGN_ONLY"
     },
     {
       "from": "claim:claim-core-lifecycle",
       "rel": "provenOn",
-      "to": "network:testXRP"
+      "to": "network:testXRP",
+      "evidenceClass": "DESIGN_ONLY"
     },
     {
       "from": "claim:claim-coston2-addresses-verified",
       "rel": "citedBy",
-      "to": "artifact:deployments/coston2.json"
+      "to": "artifact:deployments/coston2.json",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-coston2-addresses-verified",
       "rel": "citedBy",
-      "to": "artifact:docs/evidence/phase-00.md"
+      "to": "artifact:docs/evidence/phase-00.md",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-coston2-addresses-verified",
       "rel": "citedBy",
-      "to": "artifact:docs/source-lock.json"
+      "to": "artifact:docs/source-lock.json",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-coston2-addresses-verified",
       "rel": "citedBy",
-      "to": "artifact:scripts/resolve-coston2.mjs"
+      "to": "artifact:scripts/resolve-coston2.mjs",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-coston2-addresses-verified",
       "rel": "provenOn",
-      "to": "network:coston2"
+      "to": "network:coston2",
+      "evidenceClass": "LIVE_INDEPENDENT"
     },
     {
       "from": "claim:claim-coston2-deployment",
       "rel": "citedBy",
-      "to": "artifact:deployments/coston2.json"
+      "to": "artifact:deployments/coston2.json",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-coston2-deployment",
       "rel": "citedBy",
-      "to": "artifact:docs/evidence/phase-10.md"
+      "to": "artifact:docs/evidence/phase-10.md",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-coston2-deployment",
       "rel": "citedBy",
-      "to": "artifact:scripts/deploy-coston2.mjs"
+      "to": "artifact:scripts/deploy-coston2.mjs",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-coston2-deployment",
       "rel": "provenOn",
-      "to": "network:coston2"
+      "to": "network:coston2",
+      "evidenceClass": "LIVE_CONTIGUOUS"
     },
     {
       "from": "claim:claim-duplicate-payment-gap",
       "rel": "citedBy",
-      "to": "artifact:docs/adr/0003-underlying-payment-precheck.md"
+      "to": "artifact:docs/adr/0003-underlying-payment-precheck.md",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-duplicate-payment-gap",
       "rel": "citedBy",
-      "to": "artifact:docs/evidence/phase-10.md"
+      "to": "artifact:docs/evidence/phase-10.md",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-duplicate-payment-gap",
       "rel": "citedBy",
-      "to": "artifact:docs/guarantee.md"
+      "to": "artifact:docs/guarantee.md",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-duplicate-payment-gap",
       "rel": "citedBy",
-      "to": "artifact:reference/test-vectors/decision-fixtures-v2.json"
+      "to": "artifact:reference/test-vectors/decision-fixtures-v2.json",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-duplicate-payment-gap",
       "rel": "citedBy",
-      "to": "artifact:scripts/lifecycle/incident-44928272.test.mjs"
+      "to": "artifact:scripts/lifecycle/incident-44928272.test.mjs",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-duplicate-payment-gap",
       "rel": "citedBy",
-      "to": "artifact:scripts/xrpl/observe.mjs"
+      "to": "artifact:scripts/xrpl/observe.mjs",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-duplicate-payment-gap",
       "rel": "provenOn",
-      "to": "network:coston2"
+      "to": "network:coston2",
+      "evidenceClass": "LIVE_CONTIGUOUS"
     },
     {
       "from": "claim:claim-duplicate-payment-gap",
       "rel": "provenOn",
-      "to": "network:testXRP"
+      "to": "network:testXRP",
+      "evidenceClass": "LIVE_CONTIGUOUS"
     },
     {
       "from": "claim:claim-execution-layer",
       "rel": "citedBy",
-      "to": "artifact:deployments/coston2.json"
+      "to": "artifact:deployments/coston2.json",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-execution-layer",
       "rel": "citedBy",
-      "to": "artifact:docs/evidence/organizer-accepted-proof-boundary.md"
+      "to": "artifact:docs/evidence/organizer-accepted-proof-boundary.md",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-execution-layer",
       "rel": "citedBy",
-      "to": "artifact:extension/cmd/signet-fcc-extension/main.go"
+      "to": "artifact:extension/cmd/signet-fcc-extension/main.go",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-execution-layer",
       "rel": "citedBy",
-      "to": "artifact:scripts/fcc/extension.test.mjs"
+      "to": "artifact:scripts/fcc/extension.test.mjs",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-execution-layer",
       "rel": "citedBy",
-      "to": "artifact:scripts/lifecycle/incident-44928272.test.mjs"
+      "to": "artifact:scripts/lifecycle/incident-44928272.test.mjs",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-execution-layer",
       "rel": "citedBy",
-      "to": "artifact:scripts/lifecycle/run.mjs"
+      "to": "artifact:scripts/lifecycle/run.mjs",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-execution-layer",
       "rel": "citedBy",
-      "to": "receipt:lifecycle-A2E16620E86423A4E835B8AB6E9BF43C6B81123E977F5BD42F6EEDD2495C605C.json"
+      "to": "receipt:lifecycle-A2E16620E86423A4E835B8AB6E9BF43C6B81123E977F5BD42F6EEDD2495C605C.json",
+      "evidenceClass": "CRYPTOGRAPHICALLY_LINKED"
     },
     {
       "from": "claim:claim-execution-layer",
       "rel": "provenOn",
-      "to": "network:coston2"
+      "to": "network:coston2",
+      "evidenceClass": "LIVE_CONTIGUOUS"
     },
     {
       "from": "claim:claim-execution-layer",
       "rel": "provenOn",
-      "to": "network:testXRP"
+      "to": "network:testXRP",
+      "evidenceClass": "LIVE_CONTIGUOUS"
     },
     {
       "from": "claim:claim-fassets-fxrp-live",
       "rel": "citedBy",
-      "to": "artifact:docs/evidence/phase-00.md"
+      "to": "artifact:docs/evidence/phase-00.md",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-fassets-fxrp-live",
       "rel": "citedBy",
-      "to": "artifact:docs/protocol-seams/fassets-access-probe.json"
+      "to": "artifact:docs/protocol-seams/fassets-access-probe.json",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-fassets-fxrp-live",
       "rel": "citedBy",
-      "to": "artifact:docs/source-lock.json"
+      "to": "artifact:docs/source-lock.json",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-fassets-fxrp-live",
       "rel": "provenOn",
-      "to": "network:coston2"
+      "to": "network:coston2",
+      "evidenceClass": "LIVE_INDEPENDENT"
     },
     {
       "from": "claim:claim-fassets-seam-proven",
       "rel": "citedBy",
-      "to": "artifact:contracts/src/adapters/FAssetsAdapter.sol"
+      "to": "artifact:contracts/src/adapters/FAssetsAdapter.sol",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-fassets-seam-proven",
       "rel": "citedBy",
-      "to": "artifact:contracts/test/fork/FAssetsSeam.t.sol"
+      "to": "artifact:contracts/test/fork/FAssetsSeam.t.sol",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-fassets-seam-proven",
       "rel": "citedBy",
-      "to": "artifact:docs/evidence/phase-02.md"
+      "to": "artifact:docs/evidence/phase-02.md",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-fassets-seam-proven",
       "rel": "citedBy",
-      "to": "artifact:docs/protocol-seams/fassets-seam-evidence.json"
+      "to": "artifact:docs/protocol-seams/fassets-seam-evidence.json",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-fassets-seam-proven",
       "rel": "citedBy",
-      "to": "artifact:docs/protocol-seams/fassets.md"
+      "to": "artifact:docs/protocol-seams/fassets.md",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-fassets-seam-proven",
       "rel": "provenOn",
-      "to": "network:coston2"
+      "to": "network:coston2",
+      "evidenceClass": "LIVE_INDEPENDENT"
+    },
+    {
+      "from": "claim:claim-fcc-extension-registered",
+      "rel": "citedBy",
+      "to": "artifact:deployments/coston2.json",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
+    },
+    {
+      "from": "claim:claim-fcc-extension-registered",
+      "rel": "citedBy",
+      "to": "artifact:docs/evidence/fcc-machine-attempt.md",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
+    },
+    {
+      "from": "claim:claim-fcc-extension-registered",
+      "rel": "citedBy",
+      "to": "artifact:docs/evidence/gate-b.md",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
+    },
+    {
+      "from": "claim:claim-fcc-extension-registered",
+      "rel": "provenOn",
+      "to": "network:coston2",
+      "evidenceClass": "LIVE_CONTIGUOUS"
+    },
+    {
+      "from": "claim:claim-fcc-simulated-execution",
+      "rel": "citedBy",
+      "to": "artifact:docs/evidence/gate-b.md",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
+    },
+    {
+      "from": "claim:claim-fcc-simulated-execution",
+      "rel": "citedBy",
+      "to": "artifact:docs/evidence/organizer-accepted-proof-boundary.md",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
+    },
+    {
+      "from": "claim:claim-fcc-simulated-execution",
+      "rel": "citedBy",
+      "to": "artifact:scripts/fcc/extension.test.mjs",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
+    },
+    {
+      "from": "claim:claim-fcc-simulated-execution",
+      "rel": "citedBy",
+      "to": "receipt:lifecycle-A10C7C3C6C644FB97B97F796C356F8CBFC8F58B19931859E470B3050AFF8399D.json",
+      "evidenceClass": "CRYPTOGRAPHICALLY_LINKED"
+    },
+    {
+      "from": "claim:claim-fcc-simulated-execution",
+      "rel": "provenOn",
+      "to": "network:coston2",
+      "evidenceClass": "LIVE_INDEPENDENT"
     },
     {
       "from": "claim:claim-fdc-proof-on-chain",
       "rel": "citedBy",
-      "to": "artifact:docs/evidence/phase-10.md"
+      "to": "artifact:docs/evidence/phase-10.md",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-fdc-proof-on-chain",
       "rel": "citedBy",
-      "to": "artifact:scripts/fdc/prove.mjs"
+      "to": "artifact:scripts/fdc/prove.mjs",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-fdc-proof-on-chain",
       "rel": "citedBy",
-      "to": "receipt:fdc-proof-28B48DC36ACFDA1C22E97C033941355E4680B8F28964DB78F68AA44B41FBEFF4.json"
+      "to": "receipt:fdc-proof-28B48DC36ACFDA1C22E97C033941355E4680B8F28964DB78F68AA44B41FBEFF4.json",
+      "evidenceClass": "CRYPTOGRAPHICALLY_LINKED"
     },
     {
       "from": "claim:claim-fdc-proof-on-chain",
       "rel": "citedBy",
-      "to": "receipt:target-chain-8A1492D15309AEBA34ABDE3D03D2FAD5B735165435A3C90F8C6CAFCB571AB51A.json"
+      "to": "receipt:target-chain-8A1492D15309AEBA34ABDE3D03D2FAD5B735165435A3C90F8C6CAFCB571AB51A.json",
+      "evidenceClass": "CRYPTOGRAPHICALLY_LINKED"
     },
     {
       "from": "claim:claim-fdc-proof-on-chain",
       "rel": "provenOn",
-      "to": "network:coston2"
+      "to": "network:coston2",
+      "evidenceClass": "LIVE_CONTIGUOUS"
     },
     {
       "from": "claim:claim-fdc-proof-on-chain",
       "rel": "provenOn",
-      "to": "network:testXRP"
+      "to": "network:testXRP",
+      "evidenceClass": "LIVE_CONTIGUOUS"
     },
     {
       "from": "claim:claim-fdc-request-and-response-proven",
       "rel": "citedBy",
-      "to": "artifact:docs/evidence/phase-05.md"
+      "to": "artifact:docs/evidence/phase-05.md",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-fdc-request-and-response-proven",
       "rel": "citedBy",
-      "to": "artifact:docs/protocol-seams/fdc.md"
+      "to": "artifact:docs/protocol-seams/fdc.md",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-fdc-request-and-response-proven",
       "rel": "citedBy",
-      "to": "receipt:fdc-request-7500DA52CAB254DBD1B64BC88975B2D01C4DFDF309A6C78398C57142493759AF.json"
+      "to": "receipt:fdc-request-7500DA52CAB254DBD1B64BC88975B2D01C4DFDF309A6C78398C57142493759AF.json",
+      "evidenceClass": "CRYPTOGRAPHICALLY_LINKED"
     },
     {
       "from": "claim:claim-fdc-request-and-response-proven",
       "rel": "provenOn",
-      "to": "network:coston2"
+      "to": "network:coston2",
+      "evidenceClass": "LIVE_INDEPENDENT"
     },
     {
       "from": "claim:claim-fdc-request-and-response-proven",
       "rel": "provenOn",
-      "to": "network:testXRP"
+      "to": "network:testXRP",
+      "evidenceClass": "LIVE_INDEPENDENT"
     },
     {
       "from": "claim:claim-go-matches-reference-model",
       "rel": "citedBy",
-      "to": "artifact:docs/evidence/phase-07.md"
+      "to": "artifact:docs/evidence/phase-07.md",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-go-matches-reference-model",
       "rel": "citedBy",
-      "to": "artifact:extension/internal/canonical/encoding.go"
+      "to": "artifact:extension/internal/canonical/encoding.go",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-go-matches-reference-model",
       "rel": "citedBy",
-      "to": "artifact:extension/internal/conformance/fixtures_test.go"
+      "to": "artifact:extension/internal/conformance/fixtures_test.go",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-go-matches-reference-model",
       "rel": "citedBy",
-      "to": "artifact:extension/internal/policy/policy.go"
+      "to": "artifact:extension/internal/policy/policy.go",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-go-matches-reference-model",
       "rel": "citedBy",
-      "to": "artifact:reference/test-vectors/decision-fixtures.json"
+      "to": "artifact:reference/test-vectors/decision-fixtures.json",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-hardening",
       "rel": "citedBy",
-      "to": "artifact:docs/evidence/phase-13.md"
+      "to": "artifact:docs/evidence/phase-13.md",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-hardening",
       "rel": "citedBy",
-      "to": "artifact:docs/runbooks/recovery.md"
+      "to": "artifact:docs/runbooks/recovery.md",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-hardening",
       "rel": "citedBy",
-      "to": "artifact:docs/threat-model.md"
+      "to": "artifact:docs/threat-model.md",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-hardening",
       "rel": "citedBy",
-      "to": "artifact:extension/internal/policy/fuzz_test.go"
+      "to": "artifact:extension/internal/policy/fuzz_test.go",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-hardening",
       "rel": "citedBy",
-      "to": "artifact:extension/internal/wire/fuzz_test.go"
+      "to": "artifact:extension/internal/wire/fuzz_test.go",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-hardening",
       "rel": "provenOn",
-      "to": "network:coston2"
+      "to": "network:coston2",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-independent-verifier",
       "rel": "citedBy",
-      "to": "artifact:docs/evidence-schema.md"
+      "to": "artifact:docs/evidence-schema.md",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-independent-verifier",
       "rel": "citedBy",
-      "to": "artifact:docs/evidence/phase-11.md"
+      "to": "artifact:docs/evidence/phase-11.md",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-independent-verifier",
       "rel": "citedBy",
-      "to": "artifact:verifier/src/verify.ts"
+      "to": "artifact:verifier/src/verify.ts",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-independent-verifier",
       "rel": "citedBy",
-      "to": "artifact:verifier/test/corruption.test.ts"
+      "to": "artifact:verifier/test/corruption.test.ts",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-independent-verifier",
       "rel": "citedBy",
-      "to": "receipt:lifecycle-0EA28A0EBC5D23D3536BABB1296007DBA50E0E3B3EA84862B32A20C32FD16B22.json"
+      "to": "receipt:lifecycle-0EA28A0EBC5D23D3536BABB1296007DBA50E0E3B3EA84862B32A20C32FD16B22.json",
+      "evidenceClass": "CRYPTOGRAPHICALLY_LINKED"
     },
     {
       "from": "claim:claim-independent-verifier",
       "rel": "citedBy",
-      "to": "receipt:lifecycle-28B48DC36ACFDA1C22E97C033941355E4680B8F28964DB78F68AA44B41FBEFF4.json"
+      "to": "receipt:lifecycle-28B48DC36ACFDA1C22E97C033941355E4680B8F28964DB78F68AA44B41FBEFF4.json",
+      "evidenceClass": "CRYPTOGRAPHICALLY_LINKED"
     },
     {
       "from": "claim:claim-independent-verifier",
       "rel": "provenOn",
-      "to": "network:coston2"
+      "to": "network:coston2",
+      "evidenceClass": "LIVE_INDEPENDENT"
     },
     {
       "from": "claim:claim-independent-verifier",
       "rel": "provenOn",
-      "to": "network:testXRP"
+      "to": "network:testXRP",
+      "evidenceClass": "LIVE_INDEPENDENT"
+    },
+    {
+      "from": "claim:claim-machine-rotation-model",
+      "rel": "citedBy",
+      "to": "artifact:docs/runbooks/rotation.md",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
+    },
+    {
+      "from": "claim:claim-machine-rotation-model",
+      "rel": "citedBy",
+      "to": "artifact:reference/src/rotation.ts",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
+    },
+    {
+      "from": "claim:claim-machine-rotation-model",
+      "rel": "citedBy",
+      "to": "artifact:reference/test/property/rotation.property.test.ts",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-proof-surface",
       "rel": "citedBy",
-      "to": "artifact:docs/evidence/phase-12.md"
+      "to": "artifact:docs/evidence/phase-12.md",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-proof-surface",
       "rel": "citedBy",
-      "to": "artifact:web/src/build.mjs"
+      "to": "artifact:web/src/build.mjs",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-proof-surface",
       "rel": "citedBy",
-      "to": "artifact:web/test/check.mjs"
+      "to": "artifact:web/test/check.mjs",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-reference-model-frozen",
       "rel": "citedBy",
-      "to": "artifact:docs/adr/0001-canonical-encoding.md"
+      "to": "artifact:docs/adr/0001-canonical-encoding.md",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-reference-model-frozen",
       "rel": "citedBy",
-      "to": "artifact:docs/adr/0002-policy-semantics.md"
+      "to": "artifact:docs/adr/0002-policy-semantics.md",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-reference-model-frozen",
       "rel": "citedBy",
-      "to": "artifact:docs/evidence/phase-01.md"
+      "to": "artifact:docs/evidence/phase-01.md",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-reference-model-frozen",
       "rel": "citedBy",
-      "to": "artifact:reference/src/decide.ts"
+      "to": "artifact:reference/src/decide.ts",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-reference-model-frozen",
       "rel": "citedBy",
-      "to": "artifact:reference/test-vectors/decision-fixtures.json"
+      "to": "artifact:reference/test-vectors/decision-fixtures.json",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-source-lock",
       "rel": "citedBy",
-      "to": "artifact:docs/evidence/phase-00.md"
+      "to": "artifact:docs/evidence/phase-00.md",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-source-lock",
       "rel": "citedBy",
-      "to": "artifact:docs/source-lock.json"
+      "to": "artifact:docs/source-lock.json",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-source-lock",
       "rel": "citedBy",
-      "to": "artifact:scripts/fetch-upstream.mjs"
+      "to": "artifact:scripts/fetch-upstream.mjs",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-source-lock",
       "rel": "citedBy",
-      "to": "artifact:scripts/verify-source-lock.mjs"
+      "to": "artifact:scripts/verify-source-lock.mjs",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-target-chain-lifecycle",
       "rel": "citedBy",
-      "to": "artifact:docs/evidence/phase-10.md"
+      "to": "artifact:docs/evidence/phase-10.md",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-target-chain-lifecycle",
       "rel": "citedBy",
-      "to": "artifact:scripts/lifecycle/target-chain.mjs"
+      "to": "artifact:scripts/lifecycle/target-chain.mjs",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-target-chain-lifecycle",
       "rel": "citedBy",
-      "to": "receipt:target-chain-8A1492D15309AEBA34ABDE3D03D2FAD5B735165435A3C90F8C6CAFCB571AB51A.json"
+      "to": "receipt:target-chain-8A1492D15309AEBA34ABDE3D03D2FAD5B735165435A3C90F8C6CAFCB571AB51A.json",
+      "evidenceClass": "CRYPTOGRAPHICALLY_LINKED"
     },
     {
       "from": "claim:claim-target-chain-lifecycle",
       "rel": "provenOn",
-      "to": "network:coston2"
+      "to": "network:coston2",
+      "evidenceClass": "LIVE_CONTIGUOUS"
     },
     {
       "from": "claim:claim-target-chain-lifecycle",
       "rel": "provenOn",
-      "to": "network:testXRP"
+      "to": "network:testXRP",
+      "evidenceClass": "LIVE_CONTIGUOUS"
     },
     {
       "from": "claim:claim-unauthorized-refused",
       "rel": "provenOn",
-      "to": "network:coston2"
+      "to": "network:coston2",
+      "evidenceClass": "DESIGN_ONLY"
     },
     {
       "from": "claim:claim-unauthorized-refused",
       "rel": "provenOn",
-      "to": "network:testXRP"
+      "to": "network:testXRP",
+      "evidenceClass": "DESIGN_ONLY"
     },
     {
       "from": "claim:claim-upstream-reproducible",
       "rel": "citedBy",
-      "to": "artifact:docs/evidence/phase-02.md"
+      "to": "artifact:docs/evidence/phase-02.md",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-upstream-reproducible",
       "rel": "citedBy",
-      "to": "artifact:docs/source-lock.json"
+      "to": "artifact:docs/source-lock.json",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-upstream-reproducible",
       "rel": "citedBy",
-      "to": "artifact:scripts/fetch-upstream.mjs"
+      "to": "artifact:scripts/fetch-upstream.mjs",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-upstream-reproducible",
       "rel": "citedBy",
-      "to": "artifact:scripts/verify-source-lock.mjs"
+      "to": "artifact:scripts/verify-source-lock.mjs",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-v1-preserved",
       "rel": "citedBy",
-      "to": "artifact:reference/test-vectors/decision-fixtures-v1-historical.json"
+      "to": "artifact:reference/test-vectors/decision-fixtures-v1-historical.json",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-v1-preserved",
       "rel": "citedBy",
-      "to": "artifact:reference/test/v1-historical.test.ts"
+      "to": "artifact:reference/test/v1-historical.test.ts",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-v2-underlying-observation",
       "rel": "citedBy",
-      "to": "artifact:docs/guarantee.md"
+      "to": "artifact:docs/guarantee.md",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-v2-underlying-observation",
       "rel": "citedBy",
-      "to": "artifact:extension/internal/policy/policy.go"
+      "to": "artifact:extension/internal/policy/policy.go",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-v2-underlying-observation",
       "rel": "citedBy",
-      "to": "artifact:reference/src/decide.ts"
+      "to": "artifact:reference/src/decide.ts",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-v2-underlying-observation",
       "rel": "citedBy",
-      "to": "artifact:reference/test-vectors/decision-fixtures-v2.json"
+      "to": "artifact:reference/test-vectors/decision-fixtures-v2.json",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-v2-underlying-observation",
       "rel": "citedBy",
-      "to": "artifact:reference/test/property/observation.property.test.ts"
+      "to": "artifact:reference/test/property/observation.property.test.ts",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-v2-underlying-observation",
       "rel": "citedBy",
-      "to": "artifact:scripts/xrpl/observe.mjs"
+      "to": "artifact:scripts/xrpl/observe.mjs",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-v2-underlying-observation",
       "rel": "citedBy",
-      "to": "artifact:scripts/xrpl/observe.test.mjs"
+      "to": "artifact:scripts/xrpl/observe.test.mjs",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-v2-underlying-observation",
       "rel": "citedBy",
-      "to": "artifact:verifier/test/corruption.test.ts"
+      "to": "artifact:verifier/test/corruption.test.ts",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-v2-underlying-observation",
       "rel": "provenOn",
-      "to": "network:testXRP"
+      "to": "network:testXRP",
+      "evidenceClass": "LIVE_INDEPENDENT"
     },
     {
       "from": "claim:claim-xrpl-exact-payment-validated",
       "rel": "citedBy",
-      "to": "artifact:docs/evidence/phase-04.md"
+      "to": "artifact:docs/evidence/phase-04.md",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-xrpl-exact-payment-validated",
       "rel": "citedBy",
-      "to": "artifact:docs/protocol-seams/xrpl.md"
+      "to": "artifact:docs/protocol-seams/xrpl.md",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-xrpl-exact-payment-validated",
       "rel": "citedBy",
-      "to": "receipt:xrpl-payment-7500DA52CAB254DBD1B64BC88975B2D01C4DFDF309A6C78398C57142493759AF.json"
+      "to": "receipt:xrpl-payment-7500DA52CAB254DBD1B64BC88975B2D01C4DFDF309A6C78398C57142493759AF.json",
+      "evidenceClass": "CRYPTOGRAPHICALLY_LINKED"
     },
     {
       "from": "claim:claim-xrpl-exact-payment-validated",
       "rel": "provenOn",
-      "to": "network:testXRP"
+      "to": "network:testXRP",
+      "evidenceClass": "LIVE_CONTIGUOUS"
     },
     {
       "from": "claim:claim-xrpl-key-lifecycle",
       "rel": "citedBy",
-      "to": "artifact:docs/evidence/phase-04.md"
+      "to": "artifact:docs/evidence/phase-04.md",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-xrpl-key-lifecycle",
       "rel": "citedBy",
-      "to": "artifact:docs/protocol-seams/xrpl.md"
+      "to": "artifact:docs/protocol-seams/xrpl.md",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-xrpl-key-lifecycle",
       "rel": "citedBy",
-      "to": "receipt:xrpl-set-regular-key-03445ECA6C42EA46BDF2AA0CBAA348C0A889529334798126602BDC9477E3C82F.json"
+      "to": "receipt:xrpl-set-regular-key-03445ECA6C42EA46BDF2AA0CBAA348C0A889529334798126602BDC9477E3C82F.json",
+      "evidenceClass": "CRYPTOGRAPHICALLY_LINKED"
     },
     {
       "from": "claim:claim-xrpl-key-lifecycle",
       "rel": "provenOn",
-      "to": "network:testXRP"
+      "to": "network:testXRP",
+      "evidenceClass": "LIVE_CONTIGUOUS"
     },
     {
       "from": "claim:claim-xrpl-reliable-submission",
       "rel": "citedBy",
-      "to": "artifact:docs/evidence/phase-04.md"
+      "to": "artifact:docs/evidence/phase-04.md",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-xrpl-reliable-submission",
       "rel": "citedBy",
-      "to": "artifact:docs/protocol-seams/xrpl.md"
+      "to": "artifact:docs/protocol-seams/xrpl.md",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-xrpl-reliable-submission",
       "rel": "citedBy",
-      "to": "artifact:scripts/xrpl/reconcile.test.mjs"
+      "to": "artifact:scripts/xrpl/reconcile.test.mjs",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-xrpl-reliable-submission",
       "rel": "citedBy",
-      "to": "artifact:scripts/xrpl/submit.mjs"
+      "to": "artifact:scripts/xrpl/submit.mjs",
+      "evidenceClass": "DETERMINISTIC_REPLAY"
     },
     {
       "from": "claim:claim-xrpl-reliable-submission",
       "rel": "citedBy",
-      "to": "receipt:xrpl-adversarial.json"
+      "to": "receipt:xrpl-adversarial.json",
+      "evidenceClass": "CRYPTOGRAPHICALLY_LINKED"
     },
     {
       "from": "claim:claim-xrpl-reliable-submission",
       "rel": "provenOn",
-      "to": "network:testXRP"
+      "to": "network:testXRP",
+      "evidenceClass": "LIVE_CONTIGUOUS"
     },
     {
       "from": "contract:0x191a1282ac700ede65c5b0aaf313bacc3ea7fc7e",
       "rel": "deployedOn",
-      "to": "network:coston2"
+      "to": "network:coston2",
+      "evidenceClass": "LIVE_CONTIGUOUS"
     },
     {
       "from": "contract:0x1a9c4a0f9d76c0b1d91d22e24e573a9b377618ae",
       "rel": "deployedOn",
-      "to": "network:coston2"
+      "to": "network:coston2",
+      "evidenceClass": "LIVE_CONTIGUOUS"
     },
     {
       "from": "contract:0x1c772f700308af4c13897cc7b9c41effb82c50c0",
       "rel": "deployedOn",
-      "to": "network:coston2"
+      "to": "network:coston2",
+      "evidenceClass": "LIVE_CONTIGUOUS"
     },
     {
       "from": "contract:0x381bde5961695914b28b16f405d51e8acb877f6e",
       "rel": "createdBy:registry",
-      "to": "tx:coston2:0xacbce0e5b67fef34c25693074bffaae7324c7e1ce3c4bff97432196fabbfc88b"
+      "to": "tx:coston2:0xacbce0e5b67fef34c25693074bffaae7324c7e1ce3c4bff97432196fabbfc88b",
+      "evidenceClass": "LIVE_CONTIGUOUS"
     },
     {
       "from": "contract:0x381bde5961695914b28b16f405d51e8acb877f6e",
       "rel": "deployedOn",
-      "to": "network:coston2"
+      "to": "network:coston2",
+      "evidenceClass": "LIVE_CONTIGUOUS"
     },
     {
       "from": "contract:0x3ffa63a3bf21a626c1b391d2577b1800e67f5be0",
       "rel": "deployedOn",
-      "to": "network:coston2"
+      "to": "network:coston2",
+      "evidenceClass": "LIVE_CONTIGUOUS"
     },
     {
       "from": "contract:0x48ac463d7975828989331f4de43341627b9c5f1d",
       "rel": "deployedOn",
-      "to": "network:coston2"
+      "to": "network:coston2",
+      "evidenceClass": "LIVE_CONTIGUOUS"
     },
     {
       "from": "contract:0x6d49c54d2f75214616a0964bd52c695384f1b6e2",
       "rel": "deployedOn",
-      "to": "network:coston2"
+      "to": "network:coston2",
+      "evidenceClass": "LIVE_CONTIGUOUS"
     },
     {
       "from": "contract:0x7e2dd9078c7d741e0cf81904264a79e70212963a",
       "rel": "createdBy:deploy",
-      "to": "tx:coston2:0x60ba84a3899f5d3e040acc8798ddfe05fb4738b7eed25e562fd57a675809ee72"
+      "to": "tx:coston2:0x60ba84a3899f5d3e040acc8798ddfe05fb4738b7eed25e562fd57a675809ee72",
+      "evidenceClass": "LIVE_CONTIGUOUS"
     },
     {
       "from": "contract:0x7e2dd9078c7d741e0cf81904264a79e70212963a",
       "rel": "createdBy:register",
-      "to": "tx:coston2:0x8bd0c42111d1d117a52e5c56a27a7708aed095eea6877e2f9125df767ce230a5"
+      "to": "tx:coston2:0x8bd0c42111d1d117a52e5c56a27a7708aed095eea6877e2f9125df767ce230a5",
+      "evidenceClass": "LIVE_CONTIGUOUS"
     },
     {
       "from": "contract:0x7e2dd9078c7d741e0cf81904264a79e70212963a",
       "rel": "createdBy:setExtensionId",
-      "to": "tx:coston2:0x430e1bace9371c68afce868e22b1e91ba57c6f99556d17ba04e22b74bd2f1f14"
+      "to": "tx:coston2:0x430e1bace9371c68afce868e22b1e91ba57c6f99556d17ba04e22b74bd2f1f14",
+      "evidenceClass": "LIVE_CONTIGUOUS"
     },
     {
       "from": "contract:0x7e2dd9078c7d741e0cf81904264a79e70212963a",
       "rel": "deployedOn",
-      "to": "network:coston2"
+      "to": "network:coston2",
+      "evidenceClass": "LIVE_CONTIGUOUS"
     },
     {
       "from": "contract:0x906507e0b64bcd494db73bd0459d1c667e14b933",
       "rel": "deployedOn",
-      "to": "network:coston2"
+      "to": "network:coston2",
+      "evidenceClass": "LIVE_CONTIGUOUS"
     },
     {
       "from": "contract:0xa10b672d1c62e5457b17af63d4302add6a99d7de",
       "rel": "deployedOn",
-      "to": "network:coston2"
+      "to": "network:coston2",
+      "evidenceClass": "LIVE_CONTIGUOUS"
     },
     {
       "from": "contract:0xad67fe66660fb8dfe9d6b1b4240d8650e30f6019",
       "rel": "deployedOn",
-      "to": "network:coston2"
+      "to": "network:coston2",
+      "evidenceClass": "LIVE_CONTIGUOUS"
     },
     {
       "from": "contract:0xc1ca88b937d0b528842f95d5731ffb586f4fbdfa",
       "rel": "deployedOn",
-      "to": "network:coston2"
+      "to": "network:coston2",
+      "evidenceClass": "LIVE_CONTIGUOUS"
     },
     {
       "from": "contract:0xd6cf30b6411db8465147ffdcf0e0418030b4b9ca",
       "rel": "createdBy:instructionSender",
-      "to": "tx:coston2:0x7814313d1809c9200f2b1059a3829b02fff6ce53517367606cbdd3b5034f0083"
+      "to": "tx:coston2:0x7814313d1809c9200f2b1059a3829b02fff6ce53517367606cbdd3b5034f0083",
+      "evidenceClass": "LIVE_CONTIGUOUS"
     },
     {
       "from": "contract:0xd6cf30b6411db8465147ffdcf0e0418030b4b9ca",
       "rel": "deployedOn",
-      "to": "network:coston2"
+      "to": "network:coston2",
+      "evidenceClass": "LIVE_CONTIGUOUS"
     },
     {
       "from": "contract:0xdd8aa7a4f43f01258a426a30d02032821de9bc6e",
       "rel": "deployedOn",
-      "to": "network:coston2"
+      "to": "network:coston2",
+      "evidenceClass": "LIVE_CONTIGUOUS"
     },
     {
       "from": "extension:66163",
       "rel": "instructionSender",
-      "to": "contract:0x6d49c54d2f75214616a0964bd52c695384f1b6e2"
+      "to": "contract:0x6d49c54d2f75214616a0964bd52c695384f1b6e2",
+      "evidenceClass": "LIVE_CONTIGUOUS"
     },
     {
       "from": "extension:66163",
       "rel": "supersededBy",
-      "to": "extension:66248"
+      "to": "extension:66248",
+      "evidenceClass": "LIVE_CONTIGUOUS"
     },
     {
       "from": "extension:66164",
       "rel": "instructionSender",
-      "to": "contract:0xdd8aa7a4f43f01258a426a30d02032821de9bc6e"
+      "to": "contract:0xdd8aa7a4f43f01258a426a30d02032821de9bc6e",
+      "evidenceClass": "LIVE_CONTIGUOUS"
     },
     {
       "from": "extension:66164",
       "rel": "supersededBy",
-      "to": "extension:66248"
+      "to": "extension:66248",
+      "evidenceClass": "LIVE_CONTIGUOUS"
     },
     {
       "from": "extension:66244",
       "rel": "instructionSender",
-      "to": "contract:0x3ffa63a3bf21a626c1b391d2577b1800e67f5be0"
+      "to": "contract:0x3ffa63a3bf21a626c1b391d2577b1800e67f5be0",
+      "evidenceClass": "LIVE_CONTIGUOUS"
     },
     {
       "from": "extension:66244",
       "rel": "supersededBy",
-      "to": "extension:66248"
+      "to": "extension:66248",
+      "evidenceClass": "LIVE_CONTIGUOUS"
     },
     {
       "from": "extension:66248",
       "rel": "instructionSender",
-      "to": "contract:0x7e2dd9078c7d741e0cf81904264a79e70212963a"
+      "to": "contract:0x7e2dd9078c7d741e0cf81904264a79e70212963a",
+      "evidenceClass": "LIVE_CONTIGUOUS"
     },
     {
       "from": "extension:66248",
       "rel": "registeredOn",
-      "to": "network:coston2"
+      "to": "network:coston2",
+      "evidenceClass": "LIVE_CONTIGUOUS"
     },
     {
       "from": "receipt:fdc-proof-28B48DC36ACFDA1C22E97C033941355E4680B8F28964DB78F68AA44B41FBEFF4.json",
       "rel": "executedOn",
-      "to": "network:coston2"
+      "to": "network:coston2",
+      "evidenceClass": "LIVE_CONTIGUOUS"
     },
     {
       "from": "receipt:lifecycle-0EA28A0EBC5D23D3536BABB1296007DBA50E0E3B3EA84862B32A20C32FD16B22.json",
       "rel": "executedOn",
-      "to": "network:testXRP"
+      "to": "network:testXRP",
+      "evidenceClass": "LIVE_CONTIGUOUS"
     },
     {
       "from": "receipt:lifecycle-0EA28A0EBC5D23D3536BABB1296007DBA50E0E3B3EA84862B32A20C32FD16B22.json",
       "rel": "flareStateFrom",
-      "to": "network:coston2-fork"
+      "to": "network:coston2-fork",
+      "evidenceClass": "FORK_DERIVED"
     },
     {
       "from": "receipt:lifecycle-0EA28A0EBC5D23D3536BABB1296007DBA50E0E3B3EA84862B32A20C32FD16B22.json",
       "rel": "records",
-      "to": "tx:xrpl:0EA28A0EBC5D23D3536BABB1296007DBA50E0E3B3EA84862B32A20C32FD16B22"
+      "to": "tx:xrpl:0EA28A0EBC5D23D3536BABB1296007DBA50E0E3B3EA84862B32A20C32FD16B22",
+      "evidenceClass": "CRYPTOGRAPHICALLY_LINKED"
     },
     {
       "from": "receipt:lifecycle-28B48DC36ACFDA1C22E97C033941355E4680B8F28964DB78F68AA44B41FBEFF4.json",
       "rel": "executedOn",
-      "to": "network:testXRP"
+      "to": "network:testXRP",
+      "evidenceClass": "LIVE_CONTIGUOUS"
     },
     {
       "from": "receipt:lifecycle-28B48DC36ACFDA1C22E97C033941355E4680B8F28964DB78F68AA44B41FBEFF4.json",
       "rel": "flareStateFrom",
-      "to": "network:coston2-fork"
+      "to": "network:coston2-fork",
+      "evidenceClass": "FORK_DERIVED"
     },
     {
       "from": "receipt:lifecycle-28B48DC36ACFDA1C22E97C033941355E4680B8F28964DB78F68AA44B41FBEFF4.json",
       "rel": "records",
-      "to": "tx:xrpl:28B48DC36ACFDA1C22E97C033941355E4680B8F28964DB78F68AA44B41FBEFF4"
+      "to": "tx:xrpl:28B48DC36ACFDA1C22E97C033941355E4680B8F28964DB78F68AA44B41FBEFF4",
+      "evidenceClass": "CRYPTOGRAPHICALLY_LINKED"
     },
     {
       "from": "receipt:lifecycle-85EA5E5BB4381FCB6500C57E08F77E35FA349E31E79F5DEE9E6E941F62FA23EA.json",
       "rel": "derivedThrough",
-      "to": "contract:0xdd8aa7a4f43f01258a426a30d02032821de9bc6e"
+      "to": "contract:0xdd8aa7a4f43f01258a426a30d02032821de9bc6e",
+      "evidenceClass": "SIMULATED"
     },
     {
       "from": "receipt:lifecycle-85EA5E5BB4381FCB6500C57E08F77E35FA349E31E79F5DEE9E6E941F62FA23EA.json",
       "rel": "derivedThrough",
-      "to": "extension:66164"
+      "to": "extension:66164",
+      "evidenceClass": "SIMULATED"
     },
     {
       "from": "receipt:lifecycle-85EA5E5BB4381FCB6500C57E08F77E35FA349E31E79F5DEE9E6E941F62FA23EA.json",
       "rel": "executedOn",
-      "to": "network:testXRP"
+      "to": "network:testXRP",
+      "evidenceClass": "LIVE_CONTIGUOUS"
     },
     {
       "from": "receipt:lifecycle-85EA5E5BB4381FCB6500C57E08F77E35FA349E31E79F5DEE9E6E941F62FA23EA.json",
       "rel": "flareStateFrom",
-      "to": "network:coston2-fork"
+      "to": "network:coston2-fork",
+      "evidenceClass": "FORK_DERIVED"
     },
     {
       "from": "receipt:lifecycle-85EA5E5BB4381FCB6500C57E08F77E35FA349E31E79F5DEE9E6E941F62FA23EA.json",
       "rel": "records",
-      "to": "tx:xrpl:85EA5E5BB4381FCB6500C57E08F77E35FA349E31E79F5DEE9E6E941F62FA23EA"
+      "to": "tx:xrpl:85EA5E5BB4381FCB6500C57E08F77E35FA349E31E79F5DEE9E6E941F62FA23EA",
+      "evidenceClass": "CRYPTOGRAPHICALLY_LINKED"
     },
     {
       "from": "receipt:lifecycle-907C3E3D0E6F96697219880F5868F3392D9CAD7952C6011095A7E6ACD9A3E3D1.json",
       "rel": "derivedThrough",
-      "to": "contract:0xdd8aa7a4f43f01258a426a30d02032821de9bc6e"
+      "to": "contract:0xdd8aa7a4f43f01258a426a30d02032821de9bc6e",
+      "evidenceClass": "SIMULATED"
     },
     {
       "from": "receipt:lifecycle-907C3E3D0E6F96697219880F5868F3392D9CAD7952C6011095A7E6ACD9A3E3D1.json",
       "rel": "derivedThrough",
-      "to": "extension:66164"
+      "to": "extension:66164",
+      "evidenceClass": "SIMULATED"
     },
     {
       "from": "receipt:lifecycle-907C3E3D0E6F96697219880F5868F3392D9CAD7952C6011095A7E6ACD9A3E3D1.json",
       "rel": "executedOn",
-      "to": "network:testXRP"
+      "to": "network:testXRP",
+      "evidenceClass": "LIVE_CONTIGUOUS"
     },
     {
       "from": "receipt:lifecycle-907C3E3D0E6F96697219880F5868F3392D9CAD7952C6011095A7E6ACD9A3E3D1.json",
       "rel": "flareStateFrom",
-      "to": "network:coston2-fork"
+      "to": "network:coston2-fork",
+      "evidenceClass": "FORK_DERIVED"
     },
     {
       "from": "receipt:lifecycle-907C3E3D0E6F96697219880F5868F3392D9CAD7952C6011095A7E6ACD9A3E3D1.json",
       "rel": "records",
-      "to": "tx:xrpl:907C3E3D0E6F96697219880F5868F3392D9CAD7952C6011095A7E6ACD9A3E3D1"
+      "to": "tx:xrpl:907C3E3D0E6F96697219880F5868F3392D9CAD7952C6011095A7E6ACD9A3E3D1",
+      "evidenceClass": "CRYPTOGRAPHICALLY_LINKED"
     },
     {
       "from": "receipt:lifecycle-A10C7C3C6C644FB97B97F796C356F8CBFC8F58B19931859E470B3050AFF8399D.json",
       "rel": "derivedThrough",
-      "to": "contract:0x3ffa63a3bf21a626c1b391d2577b1800e67f5be0"
+      "to": "contract:0x3ffa63a3bf21a626c1b391d2577b1800e67f5be0",
+      "evidenceClass": "SIMULATED"
     },
     {
       "from": "receipt:lifecycle-A10C7C3C6C644FB97B97F796C356F8CBFC8F58B19931859E470B3050AFF8399D.json",
       "rel": "derivedThrough",
-      "to": "extension:66244"
+      "to": "extension:66244",
+      "evidenceClass": "SIMULATED"
     },
     {
       "from": "receipt:lifecycle-A10C7C3C6C644FB97B97F796C356F8CBFC8F58B19931859E470B3050AFF8399D.json",
       "rel": "executedOn",
-      "to": "network:testXRP"
+      "to": "network:testXRP",
+      "evidenceClass": "LIVE_CONTIGUOUS"
     },
     {
       "from": "receipt:lifecycle-A10C7C3C6C644FB97B97F796C356F8CBFC8F58B19931859E470B3050AFF8399D.json",
       "rel": "flareStateFrom",
-      "to": "network:coston2-fork"
+      "to": "network:coston2-fork",
+      "evidenceClass": "FORK_DERIVED"
     },
     {
       "from": "receipt:lifecycle-A10C7C3C6C644FB97B97F796C356F8CBFC8F58B19931859E470B3050AFF8399D.json",
       "rel": "records",
-      "to": "tx:xrpl:A10C7C3C6C644FB97B97F796C356F8CBFC8F58B19931859E470B3050AFF8399D"
+      "to": "tx:xrpl:A10C7C3C6C644FB97B97F796C356F8CBFC8F58B19931859E470B3050AFF8399D",
+      "evidenceClass": "CRYPTOGRAPHICALLY_LINKED"
     },
     {
       "from": "receipt:lifecycle-A2E16620E86423A4E835B8AB6E9BF43C6B81123E977F5BD42F6EEDD2495C605C.json",
       "rel": "derivedThrough",
-      "to": "contract:0x6d49c54d2f75214616a0964bd52c695384f1b6e2"
+      "to": "contract:0x6d49c54d2f75214616a0964bd52c695384f1b6e2",
+      "evidenceClass": "SIMULATED"
     },
     {
       "from": "receipt:lifecycle-A2E16620E86423A4E835B8AB6E9BF43C6B81123E977F5BD42F6EEDD2495C605C.json",
       "rel": "derivedThrough",
-      "to": "extension:66163"
+      "to": "extension:66163",
+      "evidenceClass": "SIMULATED"
     },
     {
       "from": "receipt:lifecycle-A2E16620E86423A4E835B8AB6E9BF43C6B81123E977F5BD42F6EEDD2495C605C.json",
       "rel": "executedOn",
-      "to": "network:testXRP"
+      "to": "network:testXRP",
+      "evidenceClass": "LIVE_CONTIGUOUS"
     },
     {
       "from": "receipt:lifecycle-A2E16620E86423A4E835B8AB6E9BF43C6B81123E977F5BD42F6EEDD2495C605C.json",
       "rel": "flareStateFrom",
-      "to": "network:coston2-fork"
+      "to": "network:coston2-fork",
+      "evidenceClass": "FORK_DERIVED"
     },
     {
       "from": "receipt:lifecycle-A2E16620E86423A4E835B8AB6E9BF43C6B81123E977F5BD42F6EEDD2495C605C.json",
       "rel": "records",
-      "to": "tx:xrpl:A2E16620E86423A4E835B8AB6E9BF43C6B81123E977F5BD42F6EEDD2495C605C"
+      "to": "tx:xrpl:A2E16620E86423A4E835B8AB6E9BF43C6B81123E977F5BD42F6EEDD2495C605C",
+      "evidenceClass": "CRYPTOGRAPHICALLY_LINKED"
     },
     {
       "from": "receipt:target-chain-8A1492D15309AEBA34ABDE3D03D2FAD5B735165435A3C90F8C6CAFCB571AB51A.json",
       "rel": "executedOn",
-      "to": "network:testXRP"
+      "to": "network:testXRP",
+      "evidenceClass": "LIVE_CONTIGUOUS"
     },
     {
       "from": "receipt:target-chain-8A1492D15309AEBA34ABDE3D03D2FAD5B735165435A3C90F8C6CAFCB571AB51A.json",
       "rel": "flareStateFrom",
-      "to": "network:coston2"
+      "to": "network:coston2",
+      "evidenceClass": "LIVE_INDEPENDENT"
     },
     {
       "from": "receipt:target-chain-8A1492D15309AEBA34ABDE3D03D2FAD5B735165435A3C90F8C6CAFCB571AB51A.json",
       "rel": "records",
-      "to": "tx:xrpl:8A1492D15309AEBA34ABDE3D03D2FAD5B735165435A3C90F8C6CAFCB571AB51A"
+      "to": "tx:xrpl:8A1492D15309AEBA34ABDE3D03D2FAD5B735165435A3C90F8C6CAFCB571AB51A",
+      "evidenceClass": "CRYPTOGRAPHICALLY_LINKED"
     },
     {
       "from": "receipt:xrpl-adversarial.json",
       "rel": "executedOn",
-      "to": "network:testXRP"
+      "to": "network:testXRP",
+      "evidenceClass": "LIVE_CONTIGUOUS"
     },
     {
       "from": "receipt:xrpl-payment-7500DA52CAB254DBD1B64BC88975B2D01C4DFDF309A6C78398C57142493759AF.json",
       "rel": "executedOn",
-      "to": "network:testXRP"
+      "to": "network:testXRP",
+      "evidenceClass": "LIVE_CONTIGUOUS"
     },
     {
       "from": "receipt:xrpl-payment-7500DA52CAB254DBD1B64BC88975B2D01C4DFDF309A6C78398C57142493759AF.json",
       "rel": "records",
-      "to": "tx:xrpl:7500DA52CAB254DBD1B64BC88975B2D01C4DFDF309A6C78398C57142493759AF"
+      "to": "tx:xrpl:7500DA52CAB254DBD1B64BC88975B2D01C4DFDF309A6C78398C57142493759AF",
+      "evidenceClass": "CRYPTOGRAPHICALLY_LINKED"
     },
     {
       "from": "receipt:xrpl-set-regular-key-03445ECA6C42EA46BDF2AA0CBAA348C0A889529334798126602BDC9477E3C82F.json",
       "rel": "executedOn",
-      "to": "network:testXRP"
+      "to": "network:testXRP",
+      "evidenceClass": "LIVE_CONTIGUOUS"
     },
     {
       "from": "receipt:xrpl-set-regular-key-03445ECA6C42EA46BDF2AA0CBAA348C0A889529334798126602BDC9477E3C82F.json",
       "rel": "records",
-      "to": "tx:xrpl:03445ECA6C42EA46BDF2AA0CBAA348C0A889529334798126602BDC9477E3C82F"
+      "to": "tx:xrpl:03445ECA6C42EA46BDF2AA0CBAA348C0A889529334798126602BDC9477E3C82F",
+      "evidenceClass": "CRYPTOGRAPHICALLY_LINKED"
     }
   ]
 }
