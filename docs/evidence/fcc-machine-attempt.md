@@ -67,11 +67,16 @@ would apply next, and it is measured rather than assumed. Live `/info` from the 
 | field | observed | what the pinned docs require |
 |---|---|---|
 | `platform` | `0x544553545f504c4154464f524d…` = **`TEST_PLATFORM`** | must be `0x4743505f414d445f534556…` (`GCP_AMD_SEV`) |
-| `codeHash` | `0x194844cf417dde867073e5ab7199fa4d21fd82b5dbe2bdea8b3d7fc18d10fdc2` | must **not** be `0x194844cf…`, which is the documented simulated value |
+| `codeHash` | `0x194844cf…` — the documented simulated value, byte for byte | must **not** be `0x194844cf…` |
 | `attestation` | `magic_pass` | must be a real GCP Confidential Space JWT |
 
 Sources: `upstream/fce-sign/DEPLOYMENT_STEPS.md:287`, `upstream/fce-sign/TESTNET_DEPLOYMENT.md:419`
 and `:471`.
+
+> The simulated code hash is written abbreviated on purpose. The secret scanner refuses any 64-hex
+> token that is not already recorded in a generated artefact, and it caught the full value here on a
+> fresh clone. The rule is worth more than the convenience: a scanner that tolerates hand-written
+> 64-hex blobs in prose is one a private key can hide in.
 
 So even with an allowlisted owner, promotion would require a real GCP Confidential Space VM on AMD
 SEV-SNP. That remains the gate A stretch: [`../run/GATE_A_STRETCH.md`](../run/GATE_A_STRETCH.md).

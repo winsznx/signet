@@ -91,6 +91,11 @@ header.masthead { padding: 56px 0 40px; }
 h1 { font-size: 56px; line-height: 1.12; font-weight: 600; letter-spacing: -0.015em; color: var(--obsidian); margin: 24px 0 0; }
 @media (max-width: 720px) { h1 { font-size: 36px; } main { padding: 0 20px 72px; } }
 .lede { font-size: 18px; line-height: 1.45; color: var(--iron); margin: 16px 0 0; max-width: 62ch; }
+/* The six-step chain. Scrolls inside itself rather than forcing the page sideways on a phone. */
+.chain { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+  font-size: 13px; line-height: 1.6; color: var(--iron);
+  background: var(--snow); border: 1px solid var(--cloud); border-radius: 24px;
+  padding: 20px 24px; margin: 18px 0 0; overflow-x: auto; }
 
 h2 { font-size: 32px; line-height: 1.5; font-weight: 700; color: var(--obsidian); margin: 64px 0 4px; }
 h3 { font-size: 20px; line-height: 1.5; font-weight: 600; color: var(--slate); margin: 0 0 8px; }
@@ -200,6 +205,56 @@ const claimCard = (claim) => `
 const settlementReceipts = receipts.filter((r) => r.body.txHash);
 
 const proofBody = `
+<section aria-labelledby="mechanism-h">
+  <h2 id="mechanism-h">The mechanism</h2>
+  <p class="lede"><strong>FAssets decides what is owed. Signet decides whether that exact XRP payment
+  may exist. FDC proves what happened.</strong></p>
+  <pre class="chain" aria-label="the six step chain">requestId
+  &rarr; canonical FAssets obligation
+    &rarr; Signet/FCC authorization
+      &rarr; XRPL observation
+        &rarr; exact XRP payment
+          &rarr; FDC proof</pre>
+  <p class="section-note">For an FAssets agent today, the thing that decides what to pay and the
+  thing that holds the key are the same process, so an operator mistake or a compromised coordinator
+  is a wrong payment. Signet is the thing in between.</p>
+</section>
+
+<section aria-labelledby="notgeneric-h">
+  <h2 id="notgeneric-h">Why this is not a generic policy signer</h2>
+  <div class="grid">
+    <article class="card">
+      <h3>A generic policy signer</h3>
+      <p>The operator defines the recipient, the budget and the allowlist. A TEE evaluates the policy
+      the operator wrote, and signs. If the operator is compromised or wrong, the policy is
+      compromised or wrong with it, and the signature is still valid.</p>
+    </article>
+    <article class="card">
+      <h3>Signet</h3>
+      <p>FAssets creates the obligation. The caller supplies a <code>requestId</code> and nothing
+      else. Protocol state determines the destination, amount, reference, tag and payment window.
+      Nobody authors the policy: <strong>the obligation is the policy</strong>, and FAssets writes
+      it.</p>
+      <p class="section-note">The deployed entry point is
+      <code>authorizeRedemption(uint256,uint32)</code>. There is no destination parameter, no amount,
+      no reference, no window. Not validated &mdash; absent.</p>
+    </article>
+  </div>
+  <h3>The removal test</h3>
+  <table>
+    <thead><tr><th scope="col">Remove</th><th scope="col">What breaks</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">FAssets</td><td>there is no authoritative obligation, and Signet degrades into a policy someone typed</td></tr>
+      <tr><td class="mono">FCC</td><td>a compromised host can sign arbitrary XRP</td></tr>
+      <tr><td class="mono">XRPL observation</td><td>a payment already made by another party is invisible. This is incident 44928272, not a hypothetical</td></tr>
+      <tr><td class="mono">FDC</td><td>completion cannot be independently established on Flare; the operator's word becomes the evidence</td></tr>
+    </tbody>
+  </table>
+  <p class="section-note">Primary user: independent or institutional FAssets agent operators who
+  retain control of an underlying redemption account. The job is fulfilling redemption obligations
+  without leaving an unrestricted XRPL spending key available to a compromised operator host.</p>
+</section>
+
 <section aria-labelledby="ledger-h">
   <h2 id="ledger-h">Claims</h2>
   <p class="section-note">Every public claim, with what it does not prove stated beside it. A claim
