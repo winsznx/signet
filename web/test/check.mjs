@@ -19,7 +19,7 @@
  * deeper route, it may not disappear. It is asserted by named id, never by counting rows, because
  * counting rows is how the gate B row went missing for a whole deploy.
  */
-import { readFileSync, existsSync } from "node:fs";
+import { readFileSync, existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -241,6 +241,33 @@ check(
   !/href="\$\{[^}]*(input|value|param|query)/i.test(app),
 );
 check("no wallet object is serialized", !/JSON\.stringify\([^)]*(provider|ethereum|wallet)\b/i.test(app));
+
+// ---------------------------------------------------------------- no stale output
+
+/**
+ * A file left over from a previous build is a second, older product at a live URL.
+ * `operator.html` survived the move to `operator/index.html`, kept being deployed, and Cloudflare
+ * served it at /operator while /operator/ served the current page. Both returned 200. Nothing
+ * failed. Asserting the exact expected file set is what makes that impossible.
+ */
+const walk = (dir, prefix = "") =>
+  readdirSync(join(DIST, dir), { withFileTypes: true }).flatMap((entry) =>
+    entry.isDirectory() ? walk(join(dir, entry.name), `${prefix}${entry.name}/`) : [`${prefix}${entry.name}`],
+  );
+const emitted = walk(".").sort();
+const expected = [
+  "_headers",
+  "app.js",
+  "index.html",
+  "operator/index.html",
+  "proof/claims/index.html",
+  "proof/incident/44928272/index.html",
+  "proof/index.html",
+  "proof/transactions/index.html",
+].sort();
+const unexpected = emitted.filter((f) => !f.startsWith("brand/") && !expected.includes(f));
+check("the build emits no stale or unexpected files", unexpected.length === 0, unexpected.join(", "));
+check("every expected route file is emitted", expected.every((f) => emitted.includes(f)));
 
 // ---------------------------------------------------------------- assets
 

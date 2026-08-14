@@ -11,7 +11,7 @@
  * already pins. Every route renders its full meaning with scripting off; the safe demo works with
  * scripting off too, because it is radio inputs and CSS rather than a framework.
  */
-import { mkdirSync, writeFileSync, copyFileSync, readdirSync, existsSync } from "node:fs";
+import { mkdirSync, writeFileSync, copyFileSync, readdirSync, existsSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import {
   REPO_ROOT, ledger, deployment, fccStatuses, homeCards, claimGroups, claimTotals, transactions,
@@ -618,6 +618,11 @@ const routes = [
   [`proof/incident/${incident.requestId}/index.html`, { title: `Incident ${incident.requestId} — Signet`, description: "Signet double-paid a live Coston2 redemption. What happened, why, and the protocol change it forced.", current: "incident", body: incidentPage() }],
 ];
 
+// Build into a clean directory. Without this the output is cumulative: an `operator.html` from the
+// pre-refactor site survived the move to `operator/index.html`, kept being deployed, and Cloudflare
+// served it at /operator while /operator/ served the current page. Two different products at two
+// URLs, both returning 200, and nothing in the build or the tests could see it.
+rmSync(OUT, { recursive: true, force: true });
 mkdirSync(OUT, { recursive: true });
 for (const [file, model] of routes) {
   const target = join(OUT, file);
